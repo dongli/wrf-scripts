@@ -1,0 +1,183 @@
+#!/usr/bin/env python3.6
+
+import argparse
+import fileinput
+from glob import glob
+import netCDF4
+import os
+import pendulum
+import re
+from shutil import copyfile
+
+def parse_time(string):
+	match = re.match(r'(\d{4}\d{2}\d{2}\d{2})(\d{2})?', string)
+	if match.group(2):
+		return pendulum.from_format(string, '%Y%m%d%H%M')
+	else:
+		return pendulum.from_format(string, '%Y%m%d%H')
+
+parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
+parser.add_argument('-c', '--config-root', dest='config_root', help='Configuration directory containing namelist.wps and other files')
+parser.add_argument('-w', '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3)')
+parser.add_argument('-p', '--wps-root', dest='wps_root', help='WPS root directory (e.g. WPS)')
+parser.add_argument('-g', '--gfs-root', dest='gfs_root', help='GFS root directory (e.g. gfs)')
+parser.add_argument('-s', '--start-date', dest='start_date', help='Start date time (e.g. YYYYmmddHH)', type=parse_time)
+parser.add_argument('-f', '--forecast-hours', dest='forecast_hours', help='Forecast hours (e.g. 48)', type=int)
+parser.add_argument('--force', help='Force to run', action='store_true')
+args = parser.parse_args()
+
+if not args.config_root and os.getenv('CONFIG_ROOT'):
+	args.config_root = os.getenv('CONFIG_ROOT')
+elif not args.config_root:
+	print('[Error]: Option --config-root or environment variable CONFIG_ROOT need to be set!')
+	exit(1)
+
+args.config_root = os.path.abspath(args.config_root)
+
+if not args.wrf_root and os.getenv('WRF_ROOT'):
+	args.wrf_root = os.getenv('WRF_ROOT')
+elif not args.wrf_root:
+	print('[Error]: Option --wrf-root or environment variable WRF_ROOT need to be set!')
+	exit(1)
+
+if not args.wps_root and os.getenv('WPS_ROOT'):
+	args.wps_root = os.getenv('WPS_ROOT')
+elif not args.wps_root:
+	print('[Error]: Option --wps-root or environment variable WPS_ROOT need to be set!')
+	exit(1)
+
+if not args.gfs_root and os.getenv('GFS_ROOT'):
+	args.gfs_root = os.getenv('GFS_ROOT')
+elif not args.gfs_root:
+	print('[Error]: Option --gfs-root or environment variable GFS_ROOT need to be set!')
+	exit(1)
+
+def edit_file(filepath, changes):
+	try:
+		with fileinput.FileInput(filepath, inplace=True) as file:
+			for line in file:
+				found = False
+				for change in changes:
+					if re.search(change[0], line, re.I):
+						print(change[1])
+						found = True
+						break
+				if not found:
+					print(line, end='')
+	except Exception as e:
+		print('[Error]: Failed to edit file {}! {}'.format(filepath, e))
+		exit(1)
+
+def check_files(expected_files):
+	result = True
+	for file in expected_files:
+		if not os.path.isfile(file):
+			result = False
+			break
+	return result
+
+end_date = args.start_date.add(hours=args.forecast_hours)
+datetime_fmt = '%Y-%m-%d_%H:%M:%S'
+
+# ------------------------------------------------------------------------------
+#                                    WPS
+
+os.chdir(args.wps_root)
+
+copyfile(args.config_root + '/namelist.wps', './namelist.wps')
+max_dom = int(re.search('max_dom\s*=\s*(\d+)', open('./namelist.wps').read())[1])
+
+# Set start and end dates in namelist.wps.
+edit_file('./namelist.wps', [
+	['^\s*start_date.*$', ' start_date = \'{0}\', \'{0}\''.format(args.start_date.format(datetime_fmt))],
+	['^\s*end_date.*$', ' end_date = \'{}\', \'{}\''.format(end_date.format(datetime_fmt), args.start_date.format(datetime_fmt))]
+])
+
+print('[Notice]: Run geogrid.exe ...')
+if not check_files(['geo_em.d{:02d}.nc'.format(i + 1) for i in range(max_dom)]) or args.force:
+	os.system('rm -f geo_em.d*.nc')
+	os.system('./geogrid.exe > geogrid.out 2>&1')
+	if not check_files(['geo_em.d{:02d}.nc'.format(i + 1) for i in range(max_dom)]):
+		print('[Error]: Failed to run geogrid.exe! Check output {}/geogrid.out.'.format(os.path.abspath(args.wps_root)))
+		exit(1)
+else:
+	print('[Notice]: File geo_em.*.nc already exist.')
+os.system('ls -l geo_em.*.nc')
+
+print('[Notice]: Run ungrib.exe ...')
+# Find out suitable GFS data that cover forecast time period.
+def is_gfs_exist(date, hour):
+	dir_name = '{}/gfs.{}'.format(args.gfs_root, date.format('%Y%m%d%H'))
+	file_name = 'gfs.t{:02d}z.pgrb2.0p25.f{:03d}'.format(date.hour, hour)
+	return os.path.isfile('{}/{}'.format(dir_name, file_name))
+
+found = False
+for date in (args.start_date, args.start_date.subtract(days=1)):
+	if found: break
+	for hour in (18, 12, 6, 0):
+		if ((args.start_date - date).days == 1 or args.start_date.hour >= hour) and is_gfs_exist(date, hour):
+			gfs_start_date = pendulum.create(date.year, date.month, date.day, hour)
+			found = True
+			break
+if not found:
+	print('[Error]: GFS data is not available!')
+	exit(1)
+
+interval_seconds = int(re.search('interval_seconds\s*=\s*(\d+)', open('./namelist.wps').read())[1])
+os.system('ln -sf ungrib/Variable_Tables/Vtable.GFS Vtable')
+dt = pendulum.interval(seconds=interval_seconds)
+gfs_dates = [gfs_start_date]
+while gfs_dates[len(gfs_dates) - 1] < end_date:
+	gfs_dates.append(gfs_dates[len(gfs_dates) - 1] + dt)
+if not check_files(['FILE:{}'.format(date.format('%Y-%m-%d_%H')) for date in gfs_dates]) or args.force:
+	os.system('rm -f FILE:*')
+	os.system('./link_grib.csh {}/gfs.{}/*'.format(args.gfs_root, gfs_start_date.format('%Y%m%d%H')))
+	os.system('./ungrib.exe > ungrib.out 2>&1')
+	if not check_files(['FILE:{}'.format(date.format('%Y-%m-%d_%H')) for date in gfs_dates]):
+		print('[Error]: Failed to run ungrib.exe! Check output {}/ungrib.out.'.format(args.wps_root))
+		exit(1)
+else:
+	print('[Noitce]: File FILE:* already exist.')
+os.system('ls -l FILE:*')
+
+print('[Notice]: Run metgrid.exe ...')
+if not check_files(['met_em.d01.{}.nc'.format(date.format(datetime_fmt)) for date in gfs_dates]) or args.force:
+	os.system('./metgrid.exe > metgrid.out 2>&1')
+	if not check_files(['met_em.d01.{}.nc'.format(date.format(datetime_fmt)) for date in gfs_dates]):
+		print('[Error]: Failed to run metgrid.exe! Check output {}/metgrid.out.'.format(args.wps_root))
+		exit(1)
+else:
+	print('[Notice]: File met_em.* already exist.')
+os.system('ls -l met_em.*')
+
+# Collect parameters for WRF.
+dataset = netCDF4.Dataset('met_em.d01.{}.nc'.format(gfs_start_date.format(datetime_fmt)), 'r')
+num_metgrid_levels = dataset.dimensions['num_metgrid_levels'].size
+exit(0)
+
+# ------------------------------------------------------------------------------
+#                                    WRF
+
+os.chdir(args.wrf_root + '/run')
+
+copyfile(args.config_root + '/namelist.input', './namelist.input')
+
+edit_file('./namelist.wps', [
+	['^\s*start_year.*$', ' start_year = \'{0}\', \'{0}\''.format(args.start_date.year)],
+	['^\s*start_month.*$', ' start_month = \'{0}\', \'{0}\''.format(args.start_date.month)],
+	['^\s*start_day.*$', ' start_day = \'{0}\', \'{0}\''.format(args.start_date.day)],
+	['^\s*start_hour.*$', ' start_hour = \'{0}\', \'{0}\''.format(args.start_date.hour)],
+	['^\s*end_year.*$', ' end_year = \'{0}\', \'{0}\''.format(end_date.year)],
+	['^\s*end_month.*$', ' end_month = \'{0}\', \'{0}\''.format(end_date.month)],
+	['^\s*end_day.*$', ' end_day = \'{0}\', \'{0}\''.format(end_date.day)],
+	['^\s*end_hour.*$', ' end_hour = \'{0}\', \'{0}\''.format(end_date.hour)],
+	['^\s*e_we.*$', ' e_we = {}, {}'.format(e_we[0], e_we[1])],
+	['^\s*e_sn.*$', ' e_sn = {}, {}'.format(e_sn[0], e_sn[1])],
+	['^\s*e_vert.*$', ' e_vert = {}, {}'.format(e_vert[0], e_vert[1])],
+	['^\s*num_metgrid_levels.*$', ' num_metgrid_levels = {}'.format(num_metgrid_levels)],
+	['^\s*dx.*$', ' dx = {}, {}'.format(dx[0], dx[1])],
+	['^\s*dy.*$', ' dy = {}, {}'.format(dy[0], dy[1])],
+	['^\s*i_parent_start.*$', ' i_parent_start = 1, {}'.format(i_parent_start[1])],
+	['^\s*j_parent_start.*$', ' j_parent_start = 1, {}'.format(j_parent_start[1])],
+])
+
