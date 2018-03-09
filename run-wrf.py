@@ -17,8 +17,8 @@ def parse_time(string):
 		return pendulum.from_format(string, '%Y%m%d%H')
 
 parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
-parser.add_argument('-c', '--config-root', dest='config_root', help='Configuration directory containing namelist.wps and other files')
-parser.add_argument('--codes', help='Root directory of all codes (e.g. WRFV3, WPS)')
+parser.add_argument('-t', '--template-root', dest='template_root', help='Configuration directory containing namelist.wps and other files')
+parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRFV3, WPS)')
 parser.add_argument('-w', '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3)')
 parser.add_argument('-p', '--wps-root', dest='wps_root', help='WPS root directory (e.g. WPS)')
 parser.add_argument('-g', '--gfs-root', dest='gfs_root', help='GFS root directory (e.g. gfs)')
@@ -29,16 +29,16 @@ args = parser.parse_args()
 
 script_root = os.path.dirname(os.path.realpath(__file__))
 
-if not args.config_root:
-	if os.getenv('CONFIG_ROOT'):
-		args.config_root = os.getenv('CONFIG_ROOT')
+if not args.template_root:
+	if os.getenv('TEMPLATE_ROOT'):
+		args.template_root = os.getenv('TEMPLATE_ROOT')
 	elif os.path.isdir('{}/config'.format(script_root)):
-		args.config_root = '{}/config'.format(script_root)
+		args.template_root = '{}/config'.format(script_root)
 	else:
-		print('[Error]: Option --config-root or environment variable CONFIG_ROOT need to be set!')
+		print('[Error]: Option --config-root or environment variable TEMPLATE_ROOT need to be set!')
 		exit(1)
 
-args.config_root = os.path.abspath(args.config_root)
+args.template_root = os.path.abspath(args.template_root)
 
 if not args.wrf_root:
 	if os.getenv('WRF_ROOT'):
@@ -97,13 +97,16 @@ datetime_fmt = '%Y-%m-%d_%H:%M:%S'
 
 os.chdir(args.wps_root)
 
-copyfile(args.config_root + '/namelist.wps', './namelist.wps')
+copyfile(args.template_root + '/namelist.wps', './namelist.wps')
 max_dom = int(re.search('max_dom\s*=\s*(\d+)', open('./namelist.wps').read())[1])
 
 # Set start and end dates in namelist.wps.
+if max_dom > 3:
+	print('[Error]: Sorry, we just add support for 3 max_dom. You may need to edit script.')
+	exit(0)
 edit_file('./namelist.wps', [
-	['^\s*start_date.*$', ' start_date = \'{0}\', \'{0}\''.format(args.start_date.format(datetime_fmt))],
-	['^\s*end_date.*$', ' end_date = \'{}\', \'{}\''.format(end_date.format(datetime_fmt), args.start_date.format(datetime_fmt))]
+	['^\s*start_date.*$', ' start_date = \'{0}\', \'{0}\', \'{0}\''.format(args.start_date.format(datetime_fmt))],
+	['^\s*end_date.*$', ' end_date = \'{0}\', \'{1}\', \'{1}\''.format(end_date.format(datetime_fmt), args.start_date.format(datetime_fmt))]
 ])
 
 print('[Notice]: Run geogrid.exe ...')
@@ -173,17 +176,17 @@ exit(0)
 
 os.chdir(args.wrf_root + '/run')
 
-copyfile(args.config_root + '/namelist.input', './namelist.input')
+copyfile(args.template_root + '/namelist.input', './namelist.input')
 
 edit_file('./namelist.wps', [
-	['^\s*start_year.*$', ' start_year = \'{0}\', \'{0}\''.format(args.start_date.year)],
-	['^\s*start_month.*$', ' start_month = \'{0}\', \'{0}\''.format(args.start_date.month)],
-	['^\s*start_day.*$', ' start_day = \'{0}\', \'{0}\''.format(args.start_date.day)],
-	['^\s*start_hour.*$', ' start_hour = \'{0}\', \'{0}\''.format(args.start_date.hour)],
-	['^\s*end_year.*$', ' end_year = \'{0}\', \'{0}\''.format(end_date.year)],
-	['^\s*end_month.*$', ' end_month = \'{0}\', \'{0}\''.format(end_date.month)],
-	['^\s*end_day.*$', ' end_day = \'{0}\', \'{0}\''.format(end_date.day)],
-	['^\s*end_hour.*$', ' end_hour = \'{0}\', \'{0}\''.format(end_date.hour)],
+	['^\s*start_year.*$', ' start_year = \'{0}\', \'{0}\', \'{0}\','.format(args.start_date.year)],
+	['^\s*start_month.*$', ' start_month = \'{0}\', \'{0}\', \'{0}\','.format(args.start_date.month)],
+	['^\s*start_day.*$', ' start_day = \'{0}\', \'{0}\', \'{0}\','.format(args.start_date.day)],
+	['^\s*start_hour.*$', ' start_hour = \'{0}\', \'{0}\', \'{0}\','.format(args.start_date.hour)],
+	['^\s*end_year.*$', ' end_year = \'{0}\', \'{0}\', \'{0}\','.format(end_date.year)],
+	['^\s*end_month.*$', ' end_month = \'{0}\', \'{0}\', \'{0}\','.format(end_date.month)],
+	['^\s*end_day.*$', ' end_day = \'{0}\', \'{0}\', \'{0}\','.format(end_date.day)],
+	['^\s*end_hour.*$', ' end_hour = \'{0}\', \'{0}\', \'{0}\','.format(end_date.hour)],
 	['^\s*e_we.*$', ' e_we = {}, {}'.format(e_we[0], e_we[1])],
 	['^\s*e_sn.*$', ' e_sn = {}, {}'.format(e_sn[0], e_sn[1])],
 	['^\s*e_vert.*$', ' e_vert = {}, {}'.format(e_vert[0], e_vert[1])],

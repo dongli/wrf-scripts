@@ -8,11 +8,11 @@ import re
 from shutil import copyfile
 
 parser = argparse.ArgumentParser(description="Build WRF model and its friends.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
-parser.add_argument('--codes', help='Root directory of all codes (e.g. WRFV3, WPS)')
+parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRFV3, WPS)')
 parser.add_argument('-w', '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3)')
 parser.add_argument('-p', '--wps-root', dest='wps_root', help='WPS root directory (e.g. WPS)')
 parser.add_argument('-b', '--use-hyb', dest='use_hyb', help='Use hybrid vertical coordinate', action='store_true')
-parser.add_argument('-c', '--compiler-suite', dest='compiler_suite', help='Compiler suite', choices=['gnu', 'intel'])
+parser.add_argument('-s', '--compiler-suite', dest='compiler_suite', help='Compiler suite', choices=['gnu', 'intel'])
 parser.add_argument('-f', '--force', help='Force to rebuild if already built', action='store_true')
 args = parser.parse_args()
 
