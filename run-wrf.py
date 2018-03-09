@@ -24,6 +24,7 @@ parser.add_argument('-p', '--wps-root', dest='wps_root', help='WPS root director
 parser.add_argument('-g', '--gfs-root', dest='gfs_root', help='GFS root directory (e.g. gfs)')
 parser.add_argument('-s', '--start-date', dest='start_date', help='Start date time (e.g. YYYYmmddHH)', type=parse_time)
 parser.add_argument('-f', '--forecast-hours', dest='forecast_hours', help='Forecast hours (e.g. 48)', type=int)
+parser.add_argument('-r', '--resolution', help='Coarsest grid resolution in kilometer.', type=float)
 parser.add_argument('--force', help='Force to run', action='store_true')
 args = parser.parse_args()
 
@@ -169,7 +170,14 @@ os.system('ls -l met_em.*')
 # Collect parameters for WRF.
 dataset = netCDF4.Dataset('met_em.d01.{}.nc'.format(gfs_start_date.format(datetime_fmt)), 'r')
 num_metgrid_levels = dataset.dimensions['num_metgrid_levels'].size
-exit(0)
+namelist_wps = open('{}/namelist.wps'.format(args.wps_root)).read()
+e_we = [int(x.replace(',', '')) for x in re.search('e_we\s*=\s*(.*)', namelist_wps)[1].split()]
+e_sn = [int(x.replace(',', '')) for x in re.search('e_sn\s*=\s*(.*)', namelist_wps)[1].split()]
+i_parent_start = [int(x.replace(',', '')) for x in re.search('i_parent_start\s*=\s*(.*)', namelist_wps)[1].split()]
+j_parent_start = [int(x.replace(',', '')) for x in re.search('j_parent_start\s*=\s*(.*)', namelist_wps)[1].split()]
+parent_grid_ratio = [int(x.replace(',', '')) for x in re.search('parent_grid_ratio\s*=\s*(.*)', namelist_wps)[1].split()]
+
+e_vert = [30, 30, 30]
 
 # ------------------------------------------------------------------------------
 #                                    WRF
@@ -178,22 +186,48 @@ os.chdir(args.wrf_root + '/run')
 
 copyfile(args.template_root + '/namelist.input', './namelist.input')
 
-edit_file('./namelist.wps', [
-	['^\s*start_year.*$', ' start_year = \'{0}\', \'{0}\', \'{0}\','.format(args.start_date.year)],
-	['^\s*start_month.*$', ' start_month = \'{0}\', \'{0}\', \'{0}\','.format(args.start_date.month)],
-	['^\s*start_day.*$', ' start_day = \'{0}\', \'{0}\', \'{0}\','.format(args.start_date.day)],
-	['^\s*start_hour.*$', ' start_hour = \'{0}\', \'{0}\', \'{0}\','.format(args.start_date.hour)],
-	['^\s*end_year.*$', ' end_year = \'{0}\', \'{0}\', \'{0}\','.format(end_date.year)],
-	['^\s*end_month.*$', ' end_month = \'{0}\', \'{0}\', \'{0}\','.format(end_date.month)],
-	['^\s*end_day.*$', ' end_day = \'{0}\', \'{0}\', \'{0}\','.format(end_date.day)],
-	['^\s*end_hour.*$', ' end_hour = \'{0}\', \'{0}\', \'{0}\','.format(end_date.hour)],
-	['^\s*e_we.*$', ' e_we = {}, {}'.format(e_we[0], e_we[1])],
-	['^\s*e_sn.*$', ' e_sn = {}, {}'.format(e_sn[0], e_sn[1])],
-	['^\s*e_vert.*$', ' e_vert = {}, {}'.format(e_vert[0], e_vert[1])],
-	['^\s*num_metgrid_levels.*$', ' num_metgrid_levels = {}'.format(num_metgrid_levels)],
-	['^\s*dx.*$', ' dx = {}, {}'.format(dx[0], dx[1])],
-	['^\s*dy.*$', ' dy = {}, {}'.format(dy[0], dy[1])],
-	['^\s*i_parent_start.*$', ' i_parent_start = 1, {}'.format(i_parent_start[1])],
-	['^\s*j_parent_start.*$', ' j_parent_start = 1, {}'.format(j_parent_start[1])],
+edit_file('./namelist.input', [
+	['^\s*run_hours.*$', ' run_hours = {},'.format(args.forecast_hours)],
+	['^\s*start_year.*$', ' start_year = {0}, {0}, {0},'.format(args.start_date.year)],
+	['^\s*start_month.*$', ' start_month = {0}, {0}, {0},'.format(args.start_date.month)],
+	['^\s*start_day.*$', ' start_day = {0}, {0}, {0},'.format(args.start_date.day)],
+	['^\s*start_hour.*$', ' start_hour = {0}, {0}, {0},'.format(args.start_date.hour)],
+	['^\s*end_year.*$', ' end_year = {0}, {0}, {0},'.format(end_date.year)],
+	['^\s*end_month.*$', ' end_month = {0}, {0}, {0},'.format(end_date.month)],
+	['^\s*end_day.*$', ' end_day = {0}, {0}, {0},'.format(end_date.day)],
+	['^\s*end_hour.*$', ' end_hour = {0}, {0}, {0},'.format(end_date.hour)],
+	['^\s*num_metgrid_levels.*$', ' num_metgrid_levels = {},'.format(num_metgrid_levels)],
 ])
+
+if max_dom == 2:
+	edit_file('./namelist.input', [
+		['^\s*i_parent_start.*$', ' i_parent_start = 1, {}'.format(i_parent_start[1])],
+		['^\s*j_parent_start.*$', ' j_parent_start = 1, {}'.format(j_parent_start[1])],
+		['^\s*e_we.*$', ' e_we = {}, {},'.format(e_we[0], e_we[1])],
+		['^\s*e_sn.*$', ' e_sn = {}, {},'.format(e_sn[0], e_sn[1])],
+		['^\s*e_vert.*$', ' e_vert = {}, {},'.format(e_vert[0], e_vert[1])],
+		['^\s*dx.*$', ' dx = {}, {}'.format(args.resolution * 1000, args.resolution / parent_grid_ratio[1] * 1000)],
+		['^\s*dy.*$', ' dy = {}, {}'.format(args.resolution * 1000, args.resolution / parent_grid_ratio[1] * 1000)],
+	])
+elif max_dom == 3:
+	edit_file('./namelist.input', [
+		['^\s*i_parent_start.*$', ' i_parent_start = 1, {}, {},'.format(i_parent_start[1], i_parent_start[2])],
+		['^\s*j_parent_start.*$', ' j_parent_start = 1, {}, {},'.format(j_parent_start[1], j_parent_start[2])],
+		['^\s*e_we.*$', ' e_we = {}, {}, {},'.format(e_we[0], e_we[1], e_we[2])],
+		['^\s*e_sn.*$', ' e_sn = {}, {}, {},'.format(e_sn[0], e_sn[1], e_sn[2])],
+		['^\s*e_vert.*$', ' e_vert = {}, {}, {},'.format(e_vert[0], e_vert[1], e_vert[2])],
+		['^\s*dx.*$', ' dx = {}, {}, {},'.format(args.resolution * 1000, args.resolution / parent_grid_ratio[1] * 1000, args.resolution / parent_grid_ratio[1] / parent_grid_ratio[2] * 1000)],
+		['^\s*dy.*$', ' dy = {}, {}, {},'.format(args.resolution * 1000, args.resolution / parent_grid_ratio[1] * 1000, args.resolution / parent_grid_ratio[1] / parent_grid_ratio[2] * 1000)],
+	])
+
+print('[Notice]: Run real.exe ...')
+if not check_files(['wrfinput_d{:02d}'.format(i + 1) for i in range(max_dom)] + ['wrfbdy_d01']) or args.force:
+	os.system('rm -f wrfinput_*')
+	os.system('./real.exe > real.out 2>&1')
+	if not check_files(['wrfinput_d{:02d}'.format(i + 1) for i in range(max_dom)] + ['wrfbdy_d01']):
+		print('[Error]: Failed to run real.exe! Check output {}/run/real.out.'.format(os.path.abspath(args.wrf_root)))
+		exit(1)
+else:
+	print('[Notice]: File wrfbdy_d01 and wrfinput_* already exist.')
+os.system('ls -l wrfbdy_d01 wrfinput_*')
 
