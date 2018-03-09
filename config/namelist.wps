@@ -1,19 +1,19 @@
 &share
  wrf_core = 'ARW',
- max_dom = 2,
- start_date = '2018-02-09_00:00:00','2018-02-09_00:00:00',
- end_date   = '2018-02-09_06:00:00','2018-02-09_00:00:00',
+ max_dom = 3,
+ start_date = '2018-02-09_00:00:00','2018-02-09_00:00:00','2018-02-09_00:00:00',
+ end_date   = '2018-02-09_06:00:00','2018-02-09_00:00:00','2018-02-09_00:00:00',
  interval_seconds = 21600
  io_form_geogrid = 2,
 /
 
 &geogrid
- parent_id         =   1,   1,
- parent_grid_ratio =   1,   3,
- i_parent_start    =   1,  115,
- j_parent_start    =   1,  80,
- e_we              = 200, 112,
- e_sn              = 160,  97,
+ parent_id         =   1,   1,    2,
+ parent_grid_ratio =   1,   3,    3,
+ i_parent_start    =   1,  42,   32,
+ j_parent_start    =   1,  27,   32,
+ e_we              = 120, 118,  163,
+ e_sn              =  90, 118,  163,
  !
  !!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT NOTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! The default datasets used to produce the HGT_M, GREENFRAC, 
@@ -33,11 +33,11 @@
  dx = 27000,
  dy = 27000,
  map_proj = 'lambert',
- ref_lat   =  36.00,
- ref_lon   = 105.00,
- truelat1  =  30.0,
- truelat2  =  60.0,
- stand_lon = 105.0,
+ ref_lat   =  29.00,
+ ref_lon   = 120.00,
+ truelat1  =  20.0,
+ truelat2  =  40.0,
+ stand_lon = 120.0,
  geog_data_path = '/nfs/models/wrf/statics/geog/'
 /
 

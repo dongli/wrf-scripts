@@ -8,23 +8,31 @@ import re
 from shutil import copyfile
 
 parser = argparse.ArgumentParser(description="Build WRF model and its friends.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
+parser.add_argument('--codes', help='Root directory of all codes (e.g. WRFV3, WPS)')
 parser.add_argument('-w', '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3)')
 parser.add_argument('-p', '--wps-root', dest='wps_root', help='WPS root directory (e.g. WPS)')
 parser.add_argument('-b', '--use-hyb', dest='use_hyb', help='Use hybrid vertical coordinate', action='store_true')
+parser.add_argument('-c', '--compiler-suite', dest='compiler_suite', help='Compiler suite', choices=['gnu', 'intel'])
 parser.add_argument('-f', '--force', help='Force to rebuild if already built', action='store_true')
 args = parser.parse_args()
 
-if not args.wrf_root and os.getenv('WRF_ROOT'):
-	args.wrf_root = os.getenv('WRF_ROOT')
-elif not args.wrf_root:
-	print('[Error]: Option --wrf-root or environment variable WRF_ROOT need to be set!')
-	exit(1)
+if not args.wrf_root:
+	if os.getenv('WRF_ROOT'):
+		args.wrf_root = os.getenv('WRF_ROOT')
+	elif args.codes:
+		args.wrf_root = args.codes + '/WRFV3'
+	else:
+		print('[Error]: Option --wrf-root or environment variable WRF_ROOT need to be set!')
+		exit(1)
 
-if not args.wps_root and os.getenv('WPS_ROOT'):
-	args.wps_root = os.getenv('WPS_ROOT')
-elif not args.wps_root:
-	print('[Error]: Option --wps-root or environment variable WPS_ROOT need to be set!')
-	exit(1)
+if not args.wps_root:
+	if os.getenv('WPS_ROOT'):
+		args.wps_root = os.getenv('WPS_ROOT')
+	elif args.codes:
+		args.wps_root = args.codes + '/WPS'
+	else:
+		print('[Error]: Option --wps-root or environment variable WPS_ROOT need to be set!')
+		exit(1)
 
 def check_build_result(expected_exe_files):
 	result = True
@@ -68,7 +76,10 @@ if not check_build_result(('main/wrf.exe', 'main/real.exe', 'main/ndown.exe', 'm
 	else:
 		child = pexpect.spawn('./configure')
 	child.expect('Enter selection.*')
-	child.sendline('34')
+	if args.compiler_suite == 'intel':
+		child.sendline('15')
+	elif args.compiler_suite == 'gnu':
+		child.sendline('34')
 	child.expect('Compile for nesting.*')
 	child.sendline('1')
 	child.wait()
@@ -98,7 +109,10 @@ if not check_build_result(('geogrid/src/geogrid.exe', 'metgrid/src/metgrid.exe',
 	print('[Notice]: Configure WPS ...')
 	child = pexpect.spawn('./configure')
 	child.expect('Enter selection.*')
-	child.sendline('3')
+	if args.compiler_suite == 'intel':
+		child.sendline('19')
+	elif args.compiler_suite == 'gnu':
+		child.sendline('3')
 	child.wait()
 
 	os.system('sed -i "s/mpif90 -f90/mpif90 -fc/" configure.wps')

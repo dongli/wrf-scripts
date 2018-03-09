@@ -18,6 +18,7 @@ def parse_time(string):
 
 parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-c', '--config-root', dest='config_root', help='Configuration directory containing namelist.wps and other files')
+parser.add_argument('--codes', help='Root directory of all codes (e.g. WRFV3, WPS)')
 parser.add_argument('-w', '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3)')
 parser.add_argument('-p', '--wps-root', dest='wps_root', help='WPS root directory (e.g. WPS)')
 parser.add_argument('-g', '--gfs-root', dest='gfs_root', help='GFS root directory (e.g. gfs)')
@@ -26,31 +27,43 @@ parser.add_argument('-f', '--forecast-hours', dest='forecast_hours', help='Forec
 parser.add_argument('--force', help='Force to run', action='store_true')
 args = parser.parse_args()
 
-if not args.config_root and os.getenv('CONFIG_ROOT'):
-	args.config_root = os.getenv('CONFIG_ROOT')
-elif not args.config_root:
-	print('[Error]: Option --config-root or environment variable CONFIG_ROOT need to be set!')
-	exit(1)
+script_root = os.path.dirname(os.path.realpath(__file__))
+
+if not args.config_root:
+	if os.getenv('CONFIG_ROOT'):
+		args.config_root = os.getenv('CONFIG_ROOT')
+	elif os.path.isdir('{}/config'.format(script_root)):
+		args.config_root = '{}/config'.format(script_root)
+	else:
+		print('[Error]: Option --config-root or environment variable CONFIG_ROOT need to be set!')
+		exit(1)
 
 args.config_root = os.path.abspath(args.config_root)
 
-if not args.wrf_root and os.getenv('WRF_ROOT'):
-	args.wrf_root = os.getenv('WRF_ROOT')
-elif not args.wrf_root:
-	print('[Error]: Option --wrf-root or environment variable WRF_ROOT need to be set!')
-	exit(1)
+if not args.wrf_root:
+	if os.getenv('WRF_ROOT'):
+		args.wrf_root = os.getenv('WRF_ROOT')
+	elif args.codes:
+		args.wrf_root = args.codes + '/WRFV3'
+	else:
+		print('[Error]: Option --wrf-root or environment variable WRF_ROOT need to be set!')
+		exit(1)
 
-if not args.wps_root and os.getenv('WPS_ROOT'):
-	args.wps_root = os.getenv('WPS_ROOT')
-elif not args.wps_root:
-	print('[Error]: Option --wps-root or environment variable WPS_ROOT need to be set!')
-	exit(1)
+if not args.wps_root:
+	if os.getenv('WPS_ROOT'):
+		args.wps_root = os.getenv('WPS_ROOT')
+	elif args.codes:
+		args.wps_root = args.codes + '/WPS'
+	else:
+		print('[Error]: Option --wps-root or environment variable WPS_ROOT need to be set!')
+		exit(1)
 
-if not args.gfs_root and os.getenv('GFS_ROOT'):
-	args.gfs_root = os.getenv('GFS_ROOT')
-elif not args.gfs_root:
-	print('[Error]: Option --gfs-root or environment variable GFS_ROOT need to be set!')
-	exit(1)
+if not args.gfs_root:
+	if os.getenv('GFS_ROOT'):
+		args.gfs_root = os.getenv('GFS_ROOT')
+	else:
+		print('[Error]: Option --gfs-root or environment variable GFS_ROOT need to be set!')
+		exit(1)
 
 def edit_file(filepath, changes):
 	try:
