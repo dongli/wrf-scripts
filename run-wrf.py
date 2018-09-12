@@ -50,6 +50,8 @@ if not args.wrf_root:
 		print('[Error]: Option --wrf-root or environment variable WRF_ROOT need to be set!')
 		exit(1)
 
+args.wrf_root = os.path.abspath(args.wrf_root)
+
 if not args.wps_root:
 	if os.getenv('WPS_ROOT'):
 		args.wps_root = os.getenv('WPS_ROOT')
@@ -58,6 +60,8 @@ if not args.wps_root:
 	else:
 		print('[Error]: Option --wps-root or environment variable WPS_ROOT need to be set!')
 		exit(1)
+
+args.wps_root = os.path.abspath(args.wps_root)
 
 if not args.gfs_root:
 	if os.getenv('GFS_ROOT'):
@@ -159,6 +163,8 @@ os.system('ls -l FILE:*')
 
 print('[Notice]: Run metgrid.exe ...')
 if not check_files(['met_em.d01.{}.nc'.format(date.format(datetime_fmt)) for date in gfs_dates]) or args.force:
+	# Remove possible existing met_em files.
+	os.system('rm -f met_em.*')
 	os.system('./metgrid.exe > metgrid.out 2>&1')
 	if not check_files(['met_em.d01.{}.nc'.format(date.format(datetime_fmt)) for date in gfs_dates]):
 		print('[Error]: Failed to run metgrid.exe! Check output {}/metgrid.out.'.format(args.wps_root))
@@ -166,6 +172,7 @@ if not check_files(['met_em.d01.{}.nc'.format(date.format(datetime_fmt)) for dat
 else:
 	print('[Notice]: File met_em.* already exist.')
 os.system('ls -l met_em.*')
+met_em_files = glob('met_em.*')
 
 # Collect parameters for WRF.
 dataset = netCDF4.Dataset('met_em.d01.{}.nc'.format(gfs_start_date.format(datetime_fmt)), 'r')
@@ -201,8 +208,9 @@ edit_file('./namelist.input', [
 
 if max_dom == 2:
 	edit_file('./namelist.input', [
-		['^\s*i_parent_start.*$', ' i_parent_start = 1, {}'.format(i_parent_start[1])],
-		['^\s*j_parent_start.*$', ' j_parent_start = 1, {}'.format(j_parent_start[1])],
+		['^\s*i_parent_start.*$', ' i_parent_start = 1, {},'.format(i_parent_start[1])],
+		['^\s*j_parent_start.*$', ' j_parent_start = 1, {},'.format(j_parent_start[1])],
+		['^\s*parent_grid_ratio.*$', ' parent_grid_ratio = 1, {},'.format(parent_grid_ratio[1])],
 		['^\s*e_we.*$', ' e_we = {}, {},'.format(e_we[0], e_we[1])],
 		['^\s*e_sn.*$', ' e_sn = {}, {},'.format(e_sn[0], e_sn[1])],
 		['^\s*e_vert.*$', ' e_vert = {}, {},'.format(e_vert[0], e_vert[1])],
@@ -213,6 +221,7 @@ elif max_dom == 3:
 	edit_file('./namelist.input', [
 		['^\s*i_parent_start.*$', ' i_parent_start = 1, {}, {},'.format(i_parent_start[1], i_parent_start[2])],
 		['^\s*j_parent_start.*$', ' j_parent_start = 1, {}, {},'.format(j_parent_start[1], j_parent_start[2])],
+		['^\s*parent_grid_ratio.*$', ' parent_grid_ratio = 1, {}, {},'.format(parent_grid_ratio[1], parent_grid_ratio[2])],
 		['^\s*e_we.*$', ' e_we = {}, {}, {},'.format(e_we[0], e_we[1], e_we[2])],
 		['^\s*e_sn.*$', ' e_sn = {}, {}, {},'.format(e_sn[0], e_sn[1], e_sn[2])],
 		['^\s*e_vert.*$', ' e_vert = {}, {}, {},'.format(e_vert[0], e_vert[1], e_vert[2])],
@@ -222,7 +231,11 @@ elif max_dom == 3:
 
 print('[Notice]: Run real.exe ...')
 if not check_files(['wrfinput_d{:02d}'.format(i + 1) for i in range(max_dom)] + ['wrfbdy_d01']) or args.force:
+	for file in met_em_files:
+		os.system('ln -sf {}/{} .' .format(args.wps_root, file))
+	# FIXME: Link met_em files into here.
 	os.system('rm -f wrfinput_*')
+	# FIXME: Use mpiexec to run.
 	os.system('./real.exe > real.out 2>&1')
 	if not check_files(['wrfinput_d{:02d}'.format(i + 1) for i in range(max_dom)] + ['wrfbdy_d01']):
 		print('[Error]: Failed to run real.exe! Check output {}/run/real.out.'.format(os.path.abspath(args.wrf_root)))
