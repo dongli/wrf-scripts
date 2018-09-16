@@ -11,6 +11,7 @@ parser = argparse.ArgumentParser(description="Build WRF model and its friends.\n
 parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRFV3, WPS)')
 parser.add_argument('-w', '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3)')
 parser.add_argument('-p', '--wps-root', dest='wps_root', help='WPS root directory (e.g. WPS)')
+parser.add_argument('-d', '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRF for V4)')
 parser.add_argument('-v', '--wrf-major', dest='wrf_major', help='WRF major version (e.g. 3, 4)', default='4')
 parser.add_argument('-b', '--use-hyb', dest='use_hyb', help='Use hybrid vertical coordinate', action='store_true')
 parser.add_argument('-g', '--use-grib', dest='use_grib', help='Use GRIB IO capability of WRF', action='store_true')
@@ -39,10 +40,20 @@ if not args.wps_root:
 		print('[Error]: Option --wps-root or environment variable WPS_ROOT need to be set!')
 		exit(1)
 
-def check_build_result(expected_exe_files):
+if not args.wrfda_root:
+	if os.getenv('WRFDA_ROOT'):
+		args.wrfda_root = os.getenv('WRFDA_ROOT')
+	elif args.codes:
+		args.wrfda_root = args.codes + '/WRFDA'
+	else:
+		print('[Error]: Option --wrfda-root or environment variable WRFDA_ROOT need to be set!')
+		exit(1)
+
+def check_build_result(expected_exe_files, print_info=False):
 	result = True
 	for exe in expected_exe_files:
 		if not os.path.isfile(exe):
+			if print_info: print(f'[Error]: File {exe} has not been generated!')
 			result = False
 			break
 	return result
@@ -67,14 +78,8 @@ owd = os.getcwd()
 
 os.chdir(args.wrf_root)
 if args.force: os.system('./clean -a 1> /dev/null 2>&1')
-if not check_build_result(('main/wrf.exe', 'main/real.exe', 'main/ndown.exe', 'main/tc.exe')):
-	# Fix bug when find netcdf.
-	#edit_file('./configure', [
-	#	['if \[ -f "$NETCDF/lib/libnetcdff.a" -o -f "$NETCDF/lib/libnetcdff.so" \] ; then',
-	#	 'if \[ -f "$NETCDF/lib64/libnetcdff.a" -o -f "$NETCDF/lib64/libnetcdff.so" -o -f "$NETCDF/lib/libnetcdff.a" -o -f "$NETCDF/lib/libnetcdff.so" \] ; then'],
-	#	['if \[ -f "$NETCDF/lib/libnetcdf.a" -o -f "$NETCDF/lib/libnetcdf.so" \] ; then',
-	#	 'if \[ -f "$NETCDF/lib64/libnetcdf.a" -o -f "$NETCDF/lib64/libnetcdf.so" -o -f "$NETCDF/lib/libnetcdf.a" -o -f "$NETCDF/lib/libnetcdf.so" \] ; then']
-	#])
+expected_exe_files = ('main/wrf.exe', 'main/real.exe', 'main/ndown.exe', 'main/tc.exe')
+if not check_build_result(expected_exe_files):
 	print('[Notice]: Configure WRF ...')
 	if args.use_grib:
 		print('[Notice]: Set GRIB2 flag.')
@@ -105,7 +110,7 @@ if not check_build_result(('main/wrf.exe', 'main/real.exe', 'main/ndown.exe', 'm
 	print('[Notice]: Compile WRF ...')
 	os.system('./compile em_real > compile.out 2>&1')
 	
-	if check_build_result(('main/wrf.exe', 'main/real.exe', 'main/ndown.exe', 'main/tc.exe')):
+	if check_build_result(expected_exe_files):
 		print('[Notice]: Succeeded.')
 	else:
 		print('[Error]: Failed! Check {}/compile.out'.format(args.wrf_root))
@@ -118,12 +123,8 @@ os.chdir(owd)
 
 os.chdir(args.wps_root)
 if args.force: os.system('./clean -a 1> /dev/null 2>&1')
-if not check_build_result(('geogrid/src/geogrid.exe', 'metgrid/src/metgrid.exe', 'ungrib/src/ungrib.exe')):
-	# Fix bug when find netcdf.
-	#edit_file('./configure', [
-	#	['if [ -f "$NETCDF/lib/libnetcdff.a" ] ; then',
-	#	 'if [ -f "$NETCDF/lib/libnetcdff.a" -o -f "$NETCDF/lib64/libnetcdff.a" -o -f "$NETCDF/lib/libnetcdff.so" -o -f "$NETCDF/lib64/libnetcdff.so" ] ; then']
-	#])
+expected_exe_files = ('geogrid/src/geogrid.exe', 'metgrid/src/metgrid.exe', 'ungrib/src/ungrib.exe')
+if not check_build_result(expected_exe_files):
 	print('[Notice]: Configure WPS ...')
 	child = pexpect.spawn('./configure')
 	child.expect('Enter selection.*')
@@ -141,12 +142,13 @@ if not check_build_result(('geogrid/src/geogrid.exe', 'metgrid/src/metgrid.exe',
 			['mpif90', 'mpifort']
 		])
 
-	os.system('sed -i "s/mpif90 -f90/mpif90 -fc/" configure.wps')
-	
+	os.system('sed -i "s/mpicc -cc=.*/mpicc/" configure.wps')
+	os.system('sed -i "s/mpif90 -f90=.*/mpif90/" configure.wps')
+
 	print('[Notice]: Compile WPS ...')
 	os.system('./compile > compile.out 2>&1')
 
-	if check_build_result(('geogrid/src/geogrid.exe', 'metgrid/src/metgrid.exe', 'ungrib/src/ungrib.exe')):
+	if check_build_result(expected_exe_files):
 		print('[Notice]: Succeeded.')
 	else:
 		print('[Error]: Failed! Check {}/compile.out'.format(args.wps_root))
@@ -156,3 +158,75 @@ else:
 	print('[Notice]: WPS is already built.')
 
 os.chdir(owd)
+
+os.chdir(args.wrfda_root)
+if args.force: os.system('./clean -a 1> /dev/null 2>&1')
+expected_exe_files = (
+	'var/build/da_advance_time.exe',
+	'var/build/da_bias_airmass.exe',
+	'var/build/da_bias_scan.exe',
+	'var/build/da_bias_sele.exe',
+	'var/build/da_bias_verif.exe',
+	'var/build/da_rad_diags.exe',
+	'var/build/da_tune_obs_desroziers.exe',
+	'var/build/da_tune_obs_hollingsworth1.exe',
+	'var/build/da_tune_obs_hollingsworth2.exe',
+	'var/build/da_update_bc_ad.exe',
+	'var/build/da_update_bc.exe',
+	'var/build/da_verif_grid.exe',
+	'var/build/da_verif_obs.exe',
+	'var/build/da_wrfvar.exe',
+	'var/build/gen_be_addmean.exe',
+	'var/build/gen_be_cov2d3d_contrib.exe',
+	'var/build/gen_be_cov2d.exe',
+	'var/build/gen_be_cov3d2d_contrib.exe',
+	'var/build/gen_be_cov3d3d_bin3d_contrib.exe',
+	'var/build/gen_be_cov3d3d_contrib.exe',
+	'var/build/gen_be_cov3d.exe',
+	'var/build/gen_be_diags.exe',
+	'var/build/gen_be_diags_read.exe',
+	'var/build/gen_be_ensmean.exe',
+	'var/build/gen_be_ensrf.exe',
+	'var/build/gen_be_ep1.exe',
+	'var/build/gen_be_ep2.exe',
+	'var/build/gen_be_etkf.exe',
+	'var/build/gen_be_hist.exe',
+	'var/build/gen_be_stage0_gsi.exe',
+	'var/build/gen_be_stage0_wrf.exe',
+	'var/build/gen_be_stage1_1dvar.exe',
+	'var/build/gen_be_stage1.exe',
+	'var/build/gen_be_stage1_gsi.exe',
+	'var/build/gen_be_stage2_1dvar.exe',
+	'var/build/gen_be_stage2a.exe',
+	'var/build/gen_be_stage2.exe',
+	'var/build/gen_be_stage2_gsi.exe',
+	'var/build/gen_be_stage3.exe',
+	'var/build/gen_be_stage4_global.exe',
+	'var/build/gen_be_stage4_regional.exe',
+	'var/build/gen_be_vertloc.exe',
+	'var/build/gen_mbe_stage2.exe',
+	'var/obsproc/src/obsproc.exe')
+if not check_build_result(expected_exe_files):
+	print('[Notice]: Configure WRFDA ...')
+	child = pexpect.spawn('./configure wrfda')
+	child.expect('Enter selection.*')
+	if args.compiler_suite == 'intel':
+		child.sendline('15')
+	elif args.compiler_suite == 'gnu':
+		child.sendline('34')
+	elif args.compiler_suite == 'pgi':
+		child.sendline('54')
+	child.wait()
+
+	print('[Notice]: Compile WRFDA ...')
+	os.system('./compile all_wrfvar > compile.wrfvar.out 2>&1')
+
+	if check_build_result(expected_exe_files, print_info=True):
+		print('[Notice]: Succeeded.')
+	else:
+		print('[Error]: Failed! Check {}/compile.wrfda.out'.format(args.wrfda_root))
+		os.chdir(owd)
+		exit(1)
+else:
+	print('[Notice]: WRFDA is already built.')
+

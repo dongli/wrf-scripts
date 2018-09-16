@@ -9,11 +9,11 @@
 
 &geogrid
  parent_id         =   1,   1,    2,
- parent_grid_ratio =   1,   3,    3,
- i_parent_start    =   1,  42,   32,
- j_parent_start    =   1,  27,   32,
- e_we              = 120, 118,  163,
- e_sn              =  90, 118,  163,
+ parent_grid_ratio =   1,   5,    3,
+ i_parent_start    =   1,  23,   57,
+ j_parent_start    =   1,  27,   60,
+ e_we              =  96, 286,  511,
+ e_sn              = 103, 281,  481,
  !
  !!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT NOTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! The default datasets used to produce the HGT_M, GREENFRAC, 
@@ -29,16 +29,16 @@
  !
  !!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT NOTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!
  !
- geog_data_res = 'default','default','default',
- dx = 27000,
- dy = 27000,
+ geog_data_res = '5m','2m','30s',
+ dx = 15000,
+ dy = 15000,
  map_proj = 'lambert',
- ref_lat   =  29.00,
- ref_lon   = 120.00,
+ ref_lat   =  28.8,
+ ref_lon   = 120.0,
  truelat1  =  20.0,
  truelat2  =  40.0,
  stand_lon = 120.0,
- geog_data_path = '/nfs/models/wrf/statics/geog/'
+ geog_data_path = '/nfs/nwp/longrun-forecast/geog/'
 /
 
 &ungrib
