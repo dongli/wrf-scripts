@@ -1,0 +1,11 @@
+{
+  "tag": "test",
+  "start_time": "2018091600",
+  "forecast_hour": 48,
+  "min_lon": 70.0,
+  "max_lon": 140.0,
+  "min_lat": 10.0,
+  "max_lat": 55.0,
+  "resolution": 9000.0,
+  "max_dom": 1
+}

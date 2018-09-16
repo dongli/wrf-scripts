@@ -7,8 +7,8 @@ def edit_file(filepath, changes):
 			for line in file:
 				found = False
 				for change in changes:
-					if re.search(change[0], line, re.I):
-						print(line.replace(change[0], change[1]))
+					if re.search(change[0], line, flags=re.IGNORECASE):
+						print(re.sub(change[0], change[1], line, flags=re.IGNORECASE), end='')
 						found = True
 						break
 				if not found:

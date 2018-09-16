@@ -6,7 +6,7 @@ import os
 import pexpect
 import sys
 sys.path.append('./utils')
-from utils import edit_file, cli
+from utils import edit_file, run, cli, check_files
 
 parser = argparse.ArgumentParser(description="Build WRF model and its friends.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRFV3, WPS)')
@@ -47,26 +47,17 @@ if not args.wrfda_root:
 	else:
 		cli.error('Option --wrfda-root or environment variable WRFDA_ROOT need to be set!')
 
-def check_build_result(expected_exe_files, fatal=False):
-	result = True
-	for exe in expected_exe_files:
-		if not os.path.isfile(exe):
-			if fatal: cli.error(f'File {exe} has not been generated!')
-			result = False
-			break
-	return result
-
 owd = os.getcwd()
 
 os.chdir(args.wrf_root)
-if args.force: os.system('./clean -a 1> /dev/null 2>&1')
+if args.force: run('./clean -a 1> /dev/null 2>&1')
 expected_exe_files = ('main/wrf.exe', 'main/real.exe', 'main/ndown.exe', 'main/tc.exe')
-if not check_build_result(expected_exe_files):
+if not check_files(expected_exe_files):
 	cli.notice('Configure WRF ...')
 	if args.use_grib:
 		cli.notice('Set GRIB2 flag.')
 		edit_file('./arch/Config.pl', [
-			['$I_really_want_to_output_grib2_from_WRF = "FALSE"', '$I_really_want_to_output_grib2_from_WRF = "TRUE"']
+			['\$I_really_want_to_output_grib2_from_WRF = "FALSE"', '$I_really_want_to_output_grib2_from_WRF = "TRUE"']
 		])
 	if args.wrf_major == '3' and args.use_hyb:
 		child = pexpect.spawn('./configure -hyb')
@@ -90,9 +81,9 @@ if not check_build_result(expected_exe_files):
 		])
 
 	cli.notice('Compile WRF ...')
-	os.system('./compile em_real > compile.out 2>&1')
+	run('./compile em_real > compile.out 2>&1')
 	
-	if check_build_result(expected_exe_files):
+	if check_files(expected_exe_files):
 		cli.notice('Succeeded.')
 	else:
 		cli.error(f'Failed! Check {args.wrf_root}/compile.out')
@@ -102,9 +93,9 @@ else:
 os.chdir(owd)
 
 os.chdir(args.wps_root)
-if args.force: os.system('./clean -a 1> /dev/null 2>&1')
+if args.force: run('./clean -a 1> /dev/null 2>&1')
 expected_exe_files = ('geogrid/src/geogrid.exe', 'metgrid/src/metgrid.exe', 'ungrib/src/ungrib.exe')
-if not check_build_result(expected_exe_files):
+if not check_files(expected_exe_files):
 	cli.notice('Configure WPS ...')
 	child = pexpect.spawn('./configure')
 	child.expect('Enter selection.*')
@@ -122,13 +113,13 @@ if not check_build_result(expected_exe_files):
 			['mpif90', 'mpifort']
 		])
 
-	os.system('sed -i "s/mpicc -cc=.*/mpicc/" configure.wps')
-	os.system('sed -i "s/mpif90 -f90=.*/mpif90/" configure.wps')
+	run('sed -i "s/mpicc -cc=.*/mpicc/" configure.wps')
+	run('sed -i "s/mpif90 -f90=.*/mpif90/" configure.wps')
 
 	cli.notice('Compile WPS ...')
-	os.system('./compile > compile.out 2>&1')
+	run('./compile > compile.out 2>&1')
 
-	if check_build_result(expected_exe_files):
+	if check_files(expected_exe_files):
 		cli.notice('Succeeded.')
 	else:
 		cli.error(f'Failed! Check {args.wps_root}/compile.out')
@@ -138,7 +129,7 @@ else:
 os.chdir(owd)
 
 os.chdir(args.wrfda_root)
-if args.force: os.system('./clean -a 1> /dev/null 2>&1')
+if args.force: run('./clean -a 1> /dev/null 2>&1')
 expected_exe_files = (
 	'var/build/da_advance_time.exe',
 	'var/build/da_bias_airmass.exe',
@@ -184,7 +175,7 @@ expected_exe_files = (
 	'var/build/gen_be_vertloc.exe',
 	'var/build/gen_mbe_stage2.exe',
 	'var/obsproc/src/obsproc.exe')
-if not check_build_result(expected_exe_files):
+if not check_files(expected_exe_files):
 	cli.notice('Configure WRFDA ...')
 	child = pexpect.spawn('./configure wrfda')
 	child.expect('Enter selection.*')
@@ -197,9 +188,9 @@ if not check_build_result(expected_exe_files):
 	child.wait()
 
 	cli.notice('Compile WRFDA ...')
-	os.system('./compile all_wrfvar > compile.wrfvar.out 2>&1')
+	run('./compile all_wrfvar > compile.wrfvar.out 2>&1')
 
-	if check_build_result(expected_exe_files, fatal=True):
+	if check_files(expected_exe_files, fatal=True):
 		cli.notice('Succeeded.')
 	else:
 		cli.error(f'Failed! Check {args.wrfda_root}/compile.out')
