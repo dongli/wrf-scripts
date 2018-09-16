@@ -11,7 +11,7 @@ import sys
 sys.path.append('./utils')
 from utils import cli, edit_file, parse_config
 
-parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
+parser = argparse.ArgumentParser(description="Configure WRF model.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS)')
 parser.add_argument('-w', '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRF)')
 parser.add_argument('-p', '--wps-root', dest='wps_root', help='WPS root directory (e.g. WPS)')
@@ -81,3 +81,5 @@ edit_file('./namelist.wps', [
 	['^\s*stand_lon.*$', f' stand_lon = {config["stand_lon"]},'],
 	['^\s*geog_data_path.*$', f' geog_data_path = \'{args.geog_root}\',']
 ])
+
+cli.notice('Succeeded.')

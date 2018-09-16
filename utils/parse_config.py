@@ -1,3 +1,4 @@
+import cli
 import json
 import os
 import pendulum
@@ -18,7 +19,10 @@ def parse_config(config_json):
 	if os.path.isfile(config_json):
 		config = json.loads(open(config_json, 'r').read())
 	else:
-		config = json.loads(config_json)
+		try:
+			config = json.loads(config_json)
+		except:
+			cli.error(f'{cli.red(config_json)} is not a JSON file or text!')
 
 	# Set defaults.
 	if not 'max_dom' in config: config['max_dom'] = 1

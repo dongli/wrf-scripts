@@ -51,6 +51,7 @@ if not check_files(['geo_em.d{:02d}.nc'.format(i + 1) for i in range(config['max
 	run('./geogrid.exe > geogrid.out 2>&1')
 	if not check_files(['geo_em.d{:02d}.nc'.format(i + 1) for i in range(config['max_dom'])]):
 		cli.error(f'Failed to run geogrid.exe! Check output {os.path.abspath(args.wps_root)}/geogrid.out.')
+	cli.notice('Succeeded.')
 else:
 	cli.notice('File geo_em.*.nc already exist.')
 run(f'ls -l {args.wps_root}/geo_em.*.nc')
@@ -84,6 +85,7 @@ if not check_files([f'FILE:{date.format("YYYY-MM-DD_HH")}' for date in gfs_dates
 	run('./ungrib.exe > ungrib.out 2>&1')
 	if not check_files([f'FILE:{date.format("YYYY-MM-DD_HH")}' for date in gfs_dates]):
 		cli.error(f'Failed to run ungrib.exe! Check output {args.wps_root}/ungrib.out.')
+	cli.notice('Succeeded.')
 else:
 	cli.notice('File FILE:* already exist.')
 run('ls -l FILE:*')
@@ -96,6 +98,7 @@ if not check_files(expected_files) or args.force:
 	run('./metgrid.exe > metgrid.out 2>&1')
 	if not check_files(expected_files):
 		cli.error('Failed to run metgrid.exe! Check output {}/metgrid.out.'.format(args.wps_root))
+	cli.notice('Succeeded.')
 else:
 	cli.notice('File met_em.* already exist.')
 run('ls -l met_em.*')
