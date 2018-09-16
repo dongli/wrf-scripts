@@ -1,11 +1,12 @@
 #!/usr/bin/env python3.6
 
 import argparse
-import fileinput
+import re
 import os
 import pexpect
-import re
-from shutil import copyfile
+import sys
+sys.path.append('./utils')
+from utils import edit_file, cli
 
 parser = argparse.ArgumentParser(description="Build WRF model and its friends.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRFV3, WPS)')
@@ -28,8 +29,7 @@ if not args.wrf_root:
 		elif args.wrf_major == '4':
 			args.wrf_root = args.codes + '/WRF'
 	else:
-		print('[Error]: Option --wrf-root or environment variable WRF_ROOT need to be set!')
-		exit(1)
+		cli.error('Option --wrf-root or environment variable WRF_ROOT need to be set!')
 
 if not args.wps_root:
 	if os.getenv('WPS_ROOT'):
@@ -37,8 +37,7 @@ if not args.wps_root:
 	elif args.codes:
 		args.wps_root = args.codes + '/WPS'
 	else:
-		print('[Error]: Option --wps-root or environment variable WPS_ROOT need to be set!')
-		exit(1)
+		cli.error('Option --wps-root or environment variable WPS_ROOT need to be set!')
 
 if not args.wrfda_root:
 	if os.getenv('WRFDA_ROOT'):
@@ -46,33 +45,16 @@ if not args.wrfda_root:
 	elif args.codes:
 		args.wrfda_root = args.codes + '/WRFDA'
 	else:
-		print('[Error]: Option --wrfda-root or environment variable WRFDA_ROOT need to be set!')
-		exit(1)
+		cli.error('Option --wrfda-root or environment variable WRFDA_ROOT need to be set!')
 
-def check_build_result(expected_exe_files, print_info=False):
+def check_build_result(expected_exe_files, fatal=False):
 	result = True
 	for exe in expected_exe_files:
 		if not os.path.isfile(exe):
-			if print_info: print(f'[Error]: File {exe} has not been generated!')
+			if fatal: cli.error(f'File {exe} has not been generated!')
 			result = False
 			break
 	return result
-
-def edit_file(filepath, changes):
-	try:
-		with fileinput.FileInput(filepath, inplace=True) as file:
-			for line in file:
-				found = False
-				for change in changes:
-					if re.search(change[0], line, re.I):
-						print(line.replace(change[0], change[1]))
-						found = True
-						break
-				if not found:
-					print(line, end='')
-	except Exception as e:
-		print('[Error]: Failed to edit file {}! {}'.format(filepath, e))
-		exit(1)
 
 owd = os.getcwd()
 
@@ -80,9 +62,9 @@ os.chdir(args.wrf_root)
 if args.force: os.system('./clean -a 1> /dev/null 2>&1')
 expected_exe_files = ('main/wrf.exe', 'main/real.exe', 'main/ndown.exe', 'main/tc.exe')
 if not check_build_result(expected_exe_files):
-	print('[Notice]: Configure WRF ...')
+	cli.notice('Configure WRF ...')
 	if args.use_grib:
-		print('[Notice]: Set GRIB2 flag.')
+		cli.notice('Set GRIB2 flag.')
 		edit_file('./arch/Config.pl', [
 			['$I_really_want_to_output_grib2_from_WRF = "FALSE"', '$I_really_want_to_output_grib2_from_WRF = "TRUE"']
 		])
@@ -107,17 +89,15 @@ if not check_build_result(expected_exe_files):
 			['mpif90', 'mpifort']
 		])
 
-	print('[Notice]: Compile WRF ...')
+	cli.notice('Compile WRF ...')
 	os.system('./compile em_real > compile.out 2>&1')
 	
 	if check_build_result(expected_exe_files):
-		print('[Notice]: Succeeded.')
+		cli.notice('Succeeded.')
 	else:
-		print('[Error]: Failed! Check {}/compile.out'.format(args.wrf_root))
-		os.chdir(owd)
-		exit(1)
+		cli.error(f'Failed! Check {args.wrf_root}/compile.out')
 else:
-	print('[Notice]: WRF is already built.')
+	cli.notice('WRF is already built.')
 
 os.chdir(owd)
 
@@ -125,7 +105,7 @@ os.chdir(args.wps_root)
 if args.force: os.system('./clean -a 1> /dev/null 2>&1')
 expected_exe_files = ('geogrid/src/geogrid.exe', 'metgrid/src/metgrid.exe', 'ungrib/src/ungrib.exe')
 if not check_build_result(expected_exe_files):
-	print('[Notice]: Configure WPS ...')
+	cli.notice('Configure WPS ...')
 	child = pexpect.spawn('./configure')
 	child.expect('Enter selection.*')
 	if args.compiler_suite == 'intel':
@@ -145,17 +125,15 @@ if not check_build_result(expected_exe_files):
 	os.system('sed -i "s/mpicc -cc=.*/mpicc/" configure.wps')
 	os.system('sed -i "s/mpif90 -f90=.*/mpif90/" configure.wps')
 
-	print('[Notice]: Compile WPS ...')
+	cli.notice('Compile WPS ...')
 	os.system('./compile > compile.out 2>&1')
 
 	if check_build_result(expected_exe_files):
-		print('[Notice]: Succeeded.')
+		cli.notice('Succeeded.')
 	else:
-		print('[Error]: Failed! Check {}/compile.out'.format(args.wps_root))
-		os.chdir(owd)
-		exit(1)
+		cli.error(f'Failed! Check {args.wps_root}/compile.out')
 else:
-	print('[Notice]: WPS is already built.')
+	cli.notice('WPS is already built.')
 
 os.chdir(owd)
 
@@ -207,7 +185,7 @@ expected_exe_files = (
 	'var/build/gen_mbe_stage2.exe',
 	'var/obsproc/src/obsproc.exe')
 if not check_build_result(expected_exe_files):
-	print('[Notice]: Configure WRFDA ...')
+	cli.notice('Configure WRFDA ...')
 	child = pexpect.spawn('./configure wrfda')
 	child.expect('Enter selection.*')
 	if args.compiler_suite == 'intel':
@@ -218,15 +196,13 @@ if not check_build_result(expected_exe_files):
 		child.sendline('54')
 	child.wait()
 
-	print('[Notice]: Compile WRFDA ...')
+	cli.notice('Compile WRFDA ...')
 	os.system('./compile all_wrfvar > compile.wrfvar.out 2>&1')
 
-	if check_build_result(expected_exe_files, print_info=True):
-		print('[Notice]: Succeeded.')
+	if check_build_result(expected_exe_files, fatal=True):
+		cli.notice('Succeeded.')
 	else:
-		print('[Error]: Failed! Check {}/compile.wrfda.out'.format(args.wrfda_root))
-		os.chdir(owd)
-		exit(1)
+		cli.error(f'Failed! Check {args.wrfda_root}/compile.out')
 else:
-	print('[Notice]: WRFDA is already built.')
+	cli.notice('WRFDA is already built.')
 
