@@ -103,3 +103,38 @@ if not check_files(expected_exe_files):
 		cli.error(f'Failed! Check {args.gsi_root}/build/make.out')
 else:
 	cli.notice('GSI has already been built.')
+
+os.chdir(f'{args.gsi_root}/util/bufr_tools')
+if args.force: run('make clean')
+expected_exe_files = (
+	'bufr_append_sample.exe',
+	'bufr_decode_radiance.exe',
+	'bufr_decode_sample.exe',
+	'bufr_encode_sample.exe',
+	'prepbufr_append_retrieve.exe',
+	'prepbufr_append_surface.exe',
+	'prepbufr_append_upperair.exe',
+	'prepbufr_decode_all.exe',
+	'prepbufr_encode_surface.exe',
+	'prepbufr_encode_upperair.exe',
+	'prepbufr_inventory.exe'
+)
+if not check_files(expected_exe_files):
+	if args.compiler_suite == 'gnu':
+		fc = 'gfortran'
+	elif args.compiler_suite == 'intel':
+		fc = 'ifort'
+
+	edit_file('makefile', [
+		['^\s*FC\s*=.*$', f'FC = {fc}'],
+		['-I\.\./\.\./dtc', '-I../../build'],
+		['-L\.\./\.\./dtc', '-L../../build'],
+		['-lbufr_i4r8', '-lbufr_v10.2.5']
+	])
+
+	run('make &> make.out')
+
+	if not check_files(expected_exe_files):
+		cli.error(f'Failed! Check {args.gsi_root}/util/bufr_tools/make.out')
+else:
+	cli.notice('GSI bufr_tools has been built.')
