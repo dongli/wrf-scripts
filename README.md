@@ -9,6 +9,13 @@ $ ./build-wrf.py --codes <WRF程序目录> --compiler-suite gnu [--force]
 ```
 其中`<WRF程序目录>`应该包含WRF、WPS、WRFDA源程序目录。
 
+## 编译GSI
+
+```
+$ ./build-gsi.py --codes <WRF和GSI程序目录> --compiler-suite gnu [--force]
+```
+其中`<WRF和GSI程序目录>`应该包含WRF、GSI源程序目录。
+
 ## 配置WRF
 
 输入设定的JSON配置文件，例如
