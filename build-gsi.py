@@ -132,9 +132,12 @@ if not check_files(expected_exe_files):
 		['-lbufr_i4r8', '-lbufr_v10.2.5']
 	])
 
+	cli.notice('Compile bufr_tools ...')
 	run('make &> make.out')
 
-	if not check_files(expected_exe_files):
+	if check_files(expected_exe_files):
+		cli.notice('Succeeded.')
+	else:
 		cli.error(f'Failed! Check {args.gsi_root}/util/bufr_tools/make.out')
 else:
 	cli.notice('GSI bufr_tools has been built.')
