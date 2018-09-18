@@ -36,7 +36,10 @@ if not args.gsi_root:
 
 args.gsi_root = os.path.abspath(args.gsi_root)
 
-owd = os.getcwd()
+if args.compiler_suite == 'gnu':
+	fc = 'gfortran'
+elif args.compiler_suite == 'intel':
+	fc = 'ifort'
 
 # Check environment.
 if not os.getenv('NETCDF'):
@@ -48,8 +51,6 @@ os.chdir(args.wrf_root)
 expected_exe_files = ('main/wrf.exe', 'main/real.exe', 'main/ndown.exe', 'main/tc.exe')
 if not check_files(expected_exe_files):
 	cli.error('WRF has not been built! Build it first.')
-
-os.chdir(owd)
 
 os.chdir(args.gsi_root)
 if args.force: run('rm -rf build')
@@ -120,11 +121,6 @@ expected_exe_files = (
 	'prepbufr_inventory.exe'
 )
 if not check_files(expected_exe_files):
-	if args.compiler_suite == 'gnu':
-		fc = 'gfortran'
-	elif args.compiler_suite == 'intel':
-		fc = 'ifort'
-
 	edit_file('makefile', [
 		['^\s*FC\s*=.*$', f'FC = {fc}'],
 		['-I\.\./\.\./dtc', '-I../../build'],
@@ -141,3 +137,27 @@ if not check_files(expected_exe_files):
 		cli.error(f'Failed! Check {args.gsi_root}/util/bufr_tools/make.out')
 else:
 	cli.notice('GSI bufr_tools has been built.')
+
+os.chdir(f'{args.gsi_root}/util/Analysis_Utilities/read_diag/')
+expected_exe_files = (
+	'read_diag_conv.exe',
+	'read_diag_conv_ens.exe',
+	'read_diag_rad.exe'
+)
+if not check_files(expected_exe_files):
+	edit_file('makefile', [
+		['include \.\./\.\./\.\./dtc/configure.gsi', ''],
+		['\$\(SFC\)', fc],
+		['-I\.\./\.\./\.\./dtc', '-I../../../build'],
+		['-L\.\./\.\./\.\./src -lgsi', '-L../../../build/lib -lgsilib_shrd'],
+	])
+
+	cli.notice('Compile read_diag ...')
+	run('make &> make.out')
+
+	if check_files(expected_exe_files):
+		cli.notice('Succeeded.')
+	else:
+		cli.error(f'Failed! Check {args.gsi_root}/util/Analysis_Utilities/read_diag/make.out')
+else:
+	cli.notice('GSI read_diag has been built.')
