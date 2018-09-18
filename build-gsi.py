@@ -150,6 +150,7 @@ if not check_files(expected_exe_files):
 		['\$\(SFC\)', fc],
 		['-I\.\./\.\./\.\./dtc', '-I../../../build'],
 		['-L\.\./\.\./\.\./src -lgsi', '-L../../../build/lib -lgsilib_shrd'],
+		['FLAGS= \$\(FFLAGS_DEFAULT\)', 'FLAGS = -fconvert=big-endian']
 	])
 
 	cli.notice('Compile read_diag ...')
