@@ -24,12 +24,13 @@ def parse_config(config_json):
 		except:
 			cli.error(f'{cli.red(config_json)} is not a JSON file or text!')
 
+	common_config = config['common']
 	# Set defaults.
-	if not 'max_dom' in config: config['max_dom'] = 1
+	if not 'max_dom' in common_config: common_config['max_dom'] = 1
 
 	# Transform parameters.
-	config['start_time'] = pendulum.from_format(config['start_time'], 'YYYYMMDDHH')
-	config['end_time'] = config['start_time'].add(hours=config['forecast_hour'])
-	parse_domain(config)
+	common_config['start_time'] = pendulum.from_format(common_config['start_time'], 'YYYYMMDDHH')
+	common_config['end_time'] = common_config['start_time'].add(hours=common_config['forecast_hour'])
+	parse_domain(common_config)
 
 	return config

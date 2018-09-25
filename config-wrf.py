@@ -2,7 +2,6 @@
 
 import argparse
 from glob import glob
-import netCDF4
 import os
 import pendulum
 import re
@@ -54,6 +53,7 @@ if not args.geog_root:
 args.geog_root = os.path.abspath(args.geog_root)
 
 config = parse_config(args.config_json)
+common_config = config['common']
 
 time_format_str = 'YYYY-MM-DD_HH:mm:ss'
 
@@ -61,24 +61,24 @@ os.chdir(args.wps_root)
 
 start_date_str = ''
 end_date_str = ''
-for i in range(config['max_dom']):
-	start_date_str += f"'{config['start_time'].format(time_format_str)}', "
+for i in range(common_config['max_dom']):
+	start_date_str += f"'{common_config['start_time'].format(time_format_str)}', "
 	if i == 0:
-		end_date_str += f"'{config['end_time'].format(time_format_str)}', "
+		end_date_str += f"'{common_config['end_time'].format(time_format_str)}', "
 	else:
-		end_date_str += f"'{config['start_time'].format(time_format_str)}', "
+		end_date_str += f"'{common_config['start_time'].format(time_format_str)}', "
 cli.notice('Edit namelist.wps.')
 edit_file('./namelist.wps', [
-	['^\s*max_dom.*$', f' max_dom = {config["max_dom"]},'],
+	['^\s*max_dom.*$', f' max_dom = {common_config["max_dom"]},'],
 	['^\s*start_date.*$', f' start_date = {start_date_str}'],
 	['^\s*end_date.*$', f' end_date = {end_date_str}'],
-	['^\s*dx.*$', f' dx = {config["resolution"]},'],
-	['^\s*dy.*$', f' dy = {config["resolution"]},'],
-	['^\s*ref_lat.*$', f' ref_lat = {config["ref_lat"]},'],
-	['^\s*ref_lon.*$', f' ref_lon = {config["ref_lon"]},'],
-	['^\s*truelat1.*$', f' truelat1 = {config["truelat1"]},'],
-	['^\s*truelat2.*$', f' truelat2 = {config["truelat2"]},'],
-	['^\s*stand_lon.*$', f' stand_lon = {config["stand_lon"]},'],
+	['^\s*dx.*$', f' dx = {common_config["resolution"]},'],
+	['^\s*dy.*$', f' dy = {common_config["resolution"]},'],
+	['^\s*ref_lat.*$', f' ref_lat = {common_config["ref_lat"]},'],
+	['^\s*ref_lon.*$', f' ref_lon = {common_config["ref_lon"]},'],
+	['^\s*truelat1.*$', f' truelat1 = {common_config["truelat1"]},'],
+	['^\s*truelat2.*$', f' truelat2 = {common_config["truelat2"]},'],
+	['^\s*stand_lon.*$', f' stand_lon = {common_config["stand_lon"]},'],
 	['^\s*geog_data_path.*$', f' geog_data_path = \'{args.geog_root}\',']
 ])
 

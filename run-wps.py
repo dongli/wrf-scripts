@@ -2,7 +2,6 @@
 
 import argparse
 from glob import glob
-import netCDF4
 import os
 import pendulum
 import re
@@ -40,16 +39,17 @@ if not args.gfs_root:
 args.gfs_root = os.path.abspath(args.gfs_root)
 
 config = parse_config(args.config_json)
+common_config = config['common']
 
 time_format_str = 'YYYY-MM-DD_HH:mm:ss'
 
 os.chdir(args.wps_root)
 
 cli.notice('Run geogrid.exe ...')
-if not check_files(['geo_em.d{:02d}.nc'.format(i + 1) for i in range(config['max_dom'])]) or args.force:
+if not check_files(['geo_em.d{:02d}.nc'.format(i + 1) for i in range(common_config['max_dom'])]) or args.force:
 	run('rm -f geo_em.d*.nc')
 	run('./geogrid.exe > geogrid.out 2>&1')
-	if not check_files(['geo_em.d{:02d}.nc'.format(i + 1) for i in range(config['max_dom'])]):
+	if not check_files(['geo_em.d{:02d}.nc'.format(i + 1) for i in range(common_config['max_dom'])]):
 		cli.error(f'Failed to run geogrid.exe! Check output {os.path.abspath(args.wps_root)}/geogrid.out.')
 	cli.notice('Succeeded.')
 else:
@@ -64,10 +64,10 @@ def is_gfs_exist(date, hour):
 	return os.path.isfile(f'{dir_name}/{file_name}')
 
 found = False
-for date in (config['start_time'], config['start_time'].subtract(days=1)):
+for date in (common_config['start_time'], common_config['start_time'].subtract(days=1)):
 	if found: break
 	for hour in (18, 12, 6, 0):
-		if ((config['start_time'] - date).days == 1 or config['start_time'].hour >= hour) and is_gfs_exist(date, hour):
+		if ((common_config['start_time'] - date).days == 1 or common_config['start_time'].hour >= hour) and is_gfs_exist(date, hour):
 			gfs_start_date = pendulum.datetime(date.year, date.month, date.day, hour)
 			found = True
 			break
@@ -77,7 +77,7 @@ if not found:
 interval_seconds = int(re.search('interval_seconds\s*=\s*(\d+)', open('./namelist.wps').read())[1])
 run('ln -sf ungrib/Variable_Tables/Vtable.GFS Vtable')
 gfs_dates = [gfs_start_date]
-while gfs_dates[len(gfs_dates) - 1] < config['end_time']:
+while gfs_dates[len(gfs_dates) - 1] < common_config['end_time']:
 	gfs_dates.append(gfs_dates[len(gfs_dates) - 1].add(seconds=interval_seconds))
 if not check_files([f'FILE:{date.format("YYYY-MM-DD_HH")}' for date in gfs_dates]) or args.force:
 	run('rm -f FILE:*')
