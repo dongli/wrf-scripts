@@ -13,6 +13,7 @@ parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF
 parser.add_argument('-w', '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRF)')
 parser.add_argument('-g', '--gsi-root', dest='gsi_root', help='GSI root directory (e.g. GSI)')
 parser.add_argument('-s', '--compiler-suite', dest='compiler_suite', help='Compiler suite', choices=['gnu', 'pgi', 'intel'])
+parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
 parser.add_argument('-f', '--force', help='Force to rebuild if already built', action='store_true')
 args = parser.parse_args()
 
@@ -96,12 +97,18 @@ if not check_files(expected_exe_files):
 		run(f'CC=gcc CXX=g++ FC=gfortran cmake .. -DBUILD_CORELIBS=ON -DWRFPATH={args.wrf_root} &> cmake.out')
 
 	cli.notice('Compile GSI ...')
-	run('make &> make.out')
+	if args.verbose:
+		run('make')
+	else:
+		run('make &> make.out')
 
 	if check_files(expected_exe_files):
 		cli.notice('Succeeded.')
 	else:
-		cli.error(f'Failed! Check {args.gsi_root}/build/make.out')
+		if args.verbose:
+			cli.error('Failed')
+		else:
+			cli.error(f'Failed! Check {args.gsi_root}/build/make.out')
 else:
 	cli.notice('GSI has already been built.')
 
@@ -129,12 +136,18 @@ if not check_files(expected_exe_files):
 	])
 
 	cli.notice('Compile bufr_tools ...')
-	run('make &> make.out')
+	if args.verbose:
+		run('make')
+	else:
+		run('make &> make.out')
 
 	if check_files(expected_exe_files):
 		cli.notice('Succeeded.')
 	else:
-		cli.error(f'Failed! Check {args.gsi_root}/util/bufr_tools/make.out')
+		if args.verbose:
+			cli.error('Failed!')
+		else:
+			cli.error(f'Failed! Check {args.gsi_root}/util/bufr_tools/make.out')
 else:
 	cli.notice('GSI bufr_tools has been built.')
 
@@ -154,11 +167,17 @@ if not check_files(expected_exe_files):
 	])
 
 	cli.notice('Compile read_diag ...')
-	run('make &> make.out')
+	if args.verbose:
+		run('make')
+	else:
+		run('make &> make.out')
 
 	if check_files(expected_exe_files):
 		cli.notice('Succeeded.')
 	else:
-		cli.error(f'Failed! Check {args.gsi_root}/util/Analysis_Utilities/read_diag/make.out')
+		if args.verbose:
+			cli.error('Failed')
+		else:
+			cli.error(f'Failed! Check {args.gsi_root}/util/Analysis_Utilities/read_diag/make.out')
 else:
 	cli.notice('GSI read_diag has been built.')
