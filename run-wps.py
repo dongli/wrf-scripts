@@ -46,11 +46,12 @@ time_format_str = 'YYYY-MM-DD_HH:mm:ss'
 os.chdir(args.wps_root)
 
 cli.notice('Run geogrid.exe ...')
-if not check_files(['geo_em.d{:02d}.nc'.format(i + 1) for i in range(common_config['max_dom'])]) or args.force:
+expected_files = ['geo_em.d{:02d}.nc'.format(i + 1) for i in range(common_config['max_dom'])]
+if not check_files(expected_files) or args.force:
 	run('rm -f geo_em.d*.nc')
-	run('./geogrid.exe > geogrid.out 2>&1')
-	if not check_files(['geo_em.d{:02d}.nc'.format(i + 1) for i in range(common_config['max_dom'])]):
-		cli.error(f'Failed to run geogrid.exe! Check output {os.path.abspath(args.wps_root)}/geogrid.out.')
+	run('./geogrid.exe &> geogrid.out')
+	if not check_files(expected_files):
+		cli.error(f'Failed! Check output {os.path.abspath(args.wps_root)}/geogrid.out.')
 	cli.notice('Succeeded.')
 else:
 	cli.notice('File geo_em.*.nc already exist.')
@@ -79,12 +80,13 @@ run('ln -sf ungrib/Variable_Tables/Vtable.GFS Vtable')
 gfs_dates = [gfs_start_date]
 while gfs_dates[len(gfs_dates) - 1] < common_config['end_time']:
 	gfs_dates.append(gfs_dates[len(gfs_dates) - 1].add(seconds=interval_seconds))
-if not check_files([f'FILE:{date.format("YYYY-MM-DD_HH")}' for date in gfs_dates]) or args.force:
+expected_files = [f'FILE:{date.format("YYYY-MM-DD_HH")}' for date in gfs_dates]
+if not check_files(expected_files) or args.force:
 	run('rm -f FILE:*')
 	run(f'./link_grib.csh {args.gfs_root}/gfs.{gfs_start_date.format("YYYYMMDDHH")}/*')
-	run('./ungrib.exe > ungrib.out 2>&1')
-	if not check_files([f'FILE:{date.format("YYYY-MM-DD_HH")}' for date in gfs_dates]):
-		cli.error(f'Failed to run ungrib.exe! Check output {args.wps_root}/ungrib.out.')
+	run('./ungrib.exe &> ungrib.out')
+	if not check_files(expected_files):
+		cli.error(f'Failed! Check output {args.wps_root}/ungrib.out.')
 	cli.notice('Succeeded.')
 else:
 	cli.notice('File FILE:* already exist.')
@@ -97,7 +99,7 @@ if not check_files(expected_files) or args.force:
 	run('rm -f met_em.*')
 	run('./metgrid.exe > metgrid.out 2>&1')
 	if not check_files(expected_files):
-		cli.error('Failed to run metgrid.exe! Check output {}/metgrid.out.'.format(args.wps_root))
+		cli.error('Failed! Check output {}/metgrid.out.'.format(args.wps_root))
 	cli.notice('Succeeded.')
 else:
 	cli.notice('File met_em.* already exist.')
