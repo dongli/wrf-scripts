@@ -7,6 +7,7 @@ import pendulum
 import re
 from math import radians, cos, sin, asin, sqrt
 from shutil import copyfile
+from pprint import pprint
 import sys
 sys.path.append('./utils')
 from utils import cli, edit_file, parse_config
@@ -54,6 +55,7 @@ if not args.geog_root:
 args.geog_root = os.path.abspath(args.geog_root)
 
 config = parse_config(args.config_json)
+pprint(config)
 common_config = config['common']
 
 # Shortcuts
@@ -126,7 +128,10 @@ edit_file('./namelist.input', [
 	['^\s*dy.*$',          f' dy          = {str.join(", ", [str(dy / grid_ratio[i]) for i in range(max_dom)])},'],
 	['^\s*e_we.*$',        f' e_we  = {str.join(", ", [str(e_we[i]) for i in range(max_dom)])},'],
 	['^\s*e_sn.*$',        f' e_sn  = {str.join(", ", [str(e_sn[i]) for i in range(max_dom)])},'],
+	['^\s*parent_id.*$',         f' parent_id         = {str.join(", ", [str(0 if i == 0 else parent_id[i]) for i in range(max_dom)])},'],
 	['^\s*parent_grid_ratio.*$', f' parent_grid_ratio = {str.join(", ", [str(grid_ratio[i]) for i in range(max_dom)])},'],
+	['^\s*i_parent_start.*$',    f' i_parent_start    = {str.join(", ", [str(i_parent_start[i]) for i in range(max_dom)])},'],
+	['^\s*j_parent_start.*$',    f' j_parent_start    = {str.join(", ", [str(j_parent_start[i]) for i in range(max_dom)])},'],
 	['^\s*parent_time_step_ratio.*$', f' parent_time_step_ratio = {str.join(", ", [str(grid_ratio[i]) for i in range(max_dom)])},'],
 ])
 

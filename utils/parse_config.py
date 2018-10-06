@@ -5,7 +5,6 @@ import pendulum
 import numpy as np
 import decimal
 from math import cos, sin, asin, sqrt
-from pprint import pprint
 from pyproj import *
 
 EARTH_RADIUS = 6378388
