@@ -6,6 +6,7 @@ import numpy as np
 import decimal
 from math import cos, sin, asin, sqrt
 from pprint import pprint
+from pyproj import *
 
 EARTH_RADIUS = 6378388
 
@@ -19,6 +20,7 @@ def parse_domain(config):
 	if config['max_dom'] > 1 and not 'parent_grid_ratio' in config:
 		cli.error('parent_grid_ratio is needed in config file!')
 
+	# Coarse domain
 	if 'min_lon' in config and type(config['min_lon']) != list: config['min_lon'] = [config['min_lon']]
 	if 'max_lon' in config and type(config['max_lon']) != list: config['max_lon'] = [config['max_lon']]
 	if 'min_lat' in config and type(config['min_lat']) != list: config['min_lat'] = [config['min_lat']]
@@ -38,29 +40,65 @@ def parse_domain(config):
 		config['truelat1'] = 30.0
 		config['truelat2'] = 60.0
 
-	# Calculate grid numbers.
-	min_lon = np.radians(config['min_lon'])
-	max_lon = np.radians(config['max_lon'])
-	min_lat = np.radians(config['min_lat'])
-	max_lat = np.radians(config['max_lat'])
-	# TODO: Handle edge cases.
-	lon_span = max_lon - min_lon
-	lat_span = max_lat - min_lat
-	dx = config['resolution']
-	dy = config['resolution']
-	config['e_we'] = [round_grid_number(EARTH_RADIUS * cos(np.radians(config['ref_lat'])) * lon_span[0] / dx)]
-	config['e_sn'] = [round_grid_number(EARTH_RADIUS * lat_span[0] / dy)]
+	# Create proj object.
+	p = Proj('+proj=lcc +lon_0=105.0 +lat_0=32.5 +lat_1=30.0 +lat_2=60.0')
+	proj = Proj(f'''
+		+proj=lcc
+		+lon_0={config["ref_lon"]}
+		+lat_0={config["ref_lat"]}
+		+lat_1={config["truelat1"]}
+		+lat_2={config["truelat2"]}
+	''')
 
-	# For nested domains.
+	# Calculate grid numbers.
+	# For coarse domain
+	dx = [config['resolution']]
+	dy = [config['resolution']]
+	min_lon = config['min_lon'][0]
+	max_lon = config['max_lon'][0]
+	min_lat = config['min_lat'][0]
+	max_lat = config['max_lat'][0]
+	west_middle  = proj(min_lon, (min_lat + max_lat) * 0.5)
+	east_middle  = proj(max_lon, (min_lat + max_lat) * 0.5)
+	south_middle = proj((min_lon + max_lon) * 0.5, min_lat)
+	north_middle = proj((min_lon + max_lon) * 0.5, max_lat)
+	# TODO: Handle edge cases.
+	x_span = east_middle[0] - west_middle[0]
+	y_span = north_middle[1] - south_middle[1]
+	config['e_we'] = [round_grid_number(x_span / dx[0])]
+	config['e_sn'] = [round_grid_number(y_span / dy[0])]
+	config['i_parent_start'] = [1]
+	config['j_parent_start'] = [1]
+	config['_west_south_x'] = [-x_span * 0.5]
+	config['_west_south_y'] = [-y_span * 0.5]
+
+	# For nested domains
 	for i in range(1, config['max_dom']):
+		parent_id = config['parent_id'][i] - 1
 		grid_ratio = config['parent_grid_ratio'][i]
-		dx = config['resolution'] / grid_ratio
-		dy = config['resolution'] / grid_ratio
-		lat = min_lat[i] + lat_span[i] / 2
-		n = round_grid_number(EARTH_RADIUS * cos(lat) * lon_span[i] / dx)
-		config['e_we'].append(int(n / grid_ratio) * grid_ratio + 1)
-		n = round_grid_number(EARTH_RADIUS * lat_span[i] / dy)
-		config['e_sn'].append(int(n / grid_ratio) * grid_ratio + 1)
+		dx.append(dx[parent_id] / grid_ratio)
+		dy.append(dy[parent_id] / grid_ratio)
+		nest_min_lon = config['min_lon'][i]
+		nest_max_lon = config['max_lon'][i]
+		nest_min_lat = config['min_lat'][i]
+		nest_max_lat = config['max_lat'][i]
+		nest_west_middle  = proj(nest_min_lon, (nest_min_lat + nest_max_lat) * 0.5)
+		nest_east_middle  = proj(nest_max_lon, (nest_min_lat + nest_max_lat) * 0.5)
+		nest_south_middle = proj((nest_min_lon + nest_max_lon) * 0.5, nest_min_lat)
+		nest_north_middle = proj((nest_min_lon + nest_max_lon) * 0.5, nest_max_lat)
+		nest_x_span = nest_east_middle[0] - nest_west_middle[0]
+		nest_y_span = nest_north_middle[1] - nest_south_middle[1]
+		config['e_we'].append(round_grid_number(nest_x_span / dx[i]))
+		config['e_sn'].append(round_grid_number(nest_y_span / dy[i]))
+		nest_ref_x, nest_ref_y = proj((nest_min_lon + nest_max_lon) * 0.5, (nest_min_lat + nest_max_lat) * 0.5)
+		config['_west_south_x'].append(nest_ref_x - nest_x_span * 0.5)
+		config['_west_south_y'].append(nest_ref_y - nest_y_span * 0.5)
+		config['i_parent_start'].append(int((config['_west_south_x'][i] - config['_west_south_x'][parent_id]) / dx[parent_id]))
+		config['j_parent_start'].append(int((config['_west_south_y'][i] - config['_west_south_y'][parent_id]) / dy[parent_id]))
+
+	# Clean internal data.
+	config.pop('_west_south_x')
+	config.pop('_west_south_y')
 
 def parse_config(config_json):
 	config = {}

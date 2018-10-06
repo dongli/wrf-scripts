@@ -56,19 +56,7 @@ args.geog_root = os.path.abspath(args.geog_root)
 config = parse_config(args.config_json)
 common_config = config['common']
 
-time_format_str = 'YYYY-MM-DD_HH:mm:ss'
-
-os.chdir(args.wps_root)
-
-start_date_str = ''
-end_date_str = ''
-for i in range(common_config['max_dom']):
-	start_date_str += f"'{common_config['start_time'].format(time_format_str)}', "
-	if i == 0:
-		end_date_str += f"'{common_config['end_time'].format(time_format_str)}', "
-	else:
-		end_date_str += f"'{common_config['start_time'].format(time_format_str)}', "
-
+# Shortcuts
 start_time = common_config['start_time']
 end_time = common_config['end_time']
 max_dom = common_config['max_dom']
@@ -79,9 +67,25 @@ truelat2 = common_config['truelat2']
 stand_lon = common_config['stand_lon']
 dx = common_config['resolution']
 dy = common_config['resolution']
+parent_id = common_config['parent_id']
 grid_ratio = common_config['parent_grid_ratio']
+i_parent_start = common_config['i_parent_start']
+j_parent_start = common_config['j_parent_start']
 e_we = common_config['e_we']
 e_sn = common_config['e_sn']
+
+time_format_str = 'YYYY-MM-DD_HH:mm:ss'
+
+os.chdir(args.wps_root)
+
+start_date_str = ''
+end_date_str = ''
+for i in range(common_config['max_dom']):
+	start_date_str += f"'{start_time.format(time_format_str)}', "
+	if i == 0:
+		end_date_str += f"'{end_time.format(time_format_str)}', "
+	else:
+		end_date_str += f"'{start_time.format(time_format_str)}', "
 
 cli.notice('Edit namelist.wps for WPS.')
 edit_file('./namelist.wps', [
@@ -92,7 +96,10 @@ edit_file('./namelist.wps', [
 	['^\s*dy.*$',                f' dy         = {dy},'],
 	['^\s*e_we.*$',              f' e_we       = {str.join(", ", [str(e_we[i]) for i in range(max_dom)])},'],
 	['^\s*e_sn.*$',              f' e_sn       = {str.join(", ", [str(e_sn[i]) for i in range(max_dom)])},'],
+	['^\s*parent_id.*$',         f' parent_id         = {str.join(", ", [str(parent_id[i]) for i in range(max_dom)])},'],
 	['^\s*parent_grid_ratio.*$', f' parent_grid_ratio = {str.join(", ", [str(grid_ratio[i]) for i in range(max_dom)])},'],
+	['^\s*i_parent_start.*$',    f' i_parent_start    = {str.join(", ", [str(i_parent_start[i]) for i in range(max_dom)])},'],
+	['^\s*j_parent_start.*$',    f' j_parent_start    = {str.join(", ", [str(j_parent_start[i]) for i in range(max_dom)])},'],
 	['^\s*ref_lat.*$',           f' ref_lat    = {ref_lat},'],
 	['^\s*ref_lon.*$',           f' ref_lon    = {ref_lon},'],
 	['^\s*truelat1.*$',          f' truelat1   = {truelat1},'],

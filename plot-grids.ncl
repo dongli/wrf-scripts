@@ -25,7 +25,12 @@ begin
   wks = gsn_open_wks(type,"wps_show_dom")
 
 ; read the following namelist file
-  filename = "./templates/zhejiang_d3_3km/namelist.wps"
+  if (isdefined("namelist_wps")) then
+    filename = namelist_wps
+  else
+    filename = "/models/WPS/namelist.wps"
+    print("[Notice]: Try to use " + filename + ".")
+  end if
 
 ; Set the colors to be used
   colors = (/"white","black","White","ForestGreen","DeepSkyBlue","Red","Blue"/)
