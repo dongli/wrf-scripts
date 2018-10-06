@@ -88,8 +88,10 @@ def parse_domain(config):
 		nest_north_middle = proj((nest_min_lon + nest_max_lon) * 0.5, nest_max_lat)
 		nest_x_span = nest_east_middle[0] - nest_west_middle[0]
 		nest_y_span = nest_north_middle[1] - nest_south_middle[1]
-		config['e_we'].append(round_grid_number(nest_x_span / dx[i]))
-		config['e_sn'].append(round_grid_number(nest_y_span / dy[i]))
+		n = round_grid_number(nest_x_span / dx[i])
+		config['e_we'].append(int(n / grid_ratio) * grid_ratio + 1)
+		n = round_grid_number(nest_y_span / dy[i])
+		config['e_sn'].append(int(n / grid_ratio) * grid_ratio + 1)
 		nest_ref_x, nest_ref_y = proj((nest_min_lon + nest_max_lon) * 0.5, (nest_min_lat + nest_max_lat) * 0.5)
 		config['_west_south_x'].append(nest_ref_x - nest_x_span * 0.5)
 		config['_west_south_y'].append(nest_ref_y - nest_y_span * 0.5)
