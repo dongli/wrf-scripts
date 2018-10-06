@@ -15,6 +15,7 @@ parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF
 parser.add_argument('-w', '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3)')
 parser.add_argument('-p', '--wps-root', dest='wps_root', help='WPS root directory (e.g. WPS)')
 parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
+parser.add_argument('-n', '--num-proc', dest='np', help='MPI process number to run WRF.', default=2, type=int)
 parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
 parser.add_argument('-f', '--force', help='Force to run', action='store_true')
 args = parser.parse_args()
@@ -42,25 +43,26 @@ if not os.path.isdir(args.wps_root):
 config = parse_config(args.config_json)
 common_config = config['common']
 
+# Shortcuts
+start_time = common_config['start_time']
+end_time = common_config['end_time']
+
 time_format_str = 'YYYY-MM-DD_HH:mm:ss'
 
 os.chdir(args.wrf_root + '/run')
 
-cli.notice('Run real.exe ...')
-expected_files = ['wrfinput_d{:02d}.nc'.format(i + 1) for i in range(common_config['max_dom'])]
+expected_files = ['wrfinput_d{:02d}'.format(i + 1) for i in range(common_config['max_dom'])]
+expected_files.append('wrfbdy_d01')
+if not check_files(expected_files):
+	cli.error('real.exe wasn\'t executed successfully!')
+
+expected_files = ['wrfout_d{:02d}:{}'.format(i + 1, end_time.format(time_format_str)) for i in range(common_config['max_dom'])]
 if not check_files(expected_files) or args.force:
-	run('rm -f wrfinput_*')
-	run(f'ln -s {args.wps_root}/met_em.*.nc .')
-	if args.verbose:
-		run('./real.exe')
-	else:
-		run('./real.exe &> real.out')
+	run('rm -f wrfout_*')
+	run(f'mpiexec -np {args.np} ./wrf.exe')
 	if not check_files(expected_files):
-		if args.verbose:
-			cli.error('Failed!')
-		else:
-			cli.error(f'Failed! Check output {os.path.abspath(args.wrf_root)}/run/real.out.')
+		cli.error(f'Failed! Check output {os.path.abspath(args.wrf_root)}/run/rsl.error.0000.')
 	cli.notice('Succeeded.')
 else:
-	cli.notice('File wrfinput_* already exist.')
-run(f'ls -l {args.wrf_root}/run/wrfinput_*')
+	cli.notice('File wrfout_* already exist.')
+run(f'ls -l {args.wrf_root}/run/wrfout_*')
