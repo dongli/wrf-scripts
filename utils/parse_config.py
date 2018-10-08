@@ -120,5 +120,23 @@ def parse_config(config_json):
 	common_config['start_time'] = pendulum.from_format(common_config['start_time'], 'YYYYMMDDHH')
 	common_config['end_time'] = common_config['start_time'].add(hours=common_config['forecast_hour'])
 	parse_domain(common_config)
+	# Set time step if not set yet.
+	if not 'time_step' in common_config:
+		if common_config['resolution'] >= 30000:
+ 			common_config['time_step'] = 120
+		elif 25000 <= common_config['resolution'] < 30000:
+			common_config['time_step'] = 90
+		elif 20000 <= common_config['resolution'] < 15000:
+			common_config['time_step'] = 60
+		elif 15000 <= common_config['resolution'] < 20000:
+			common_config['time_step'] = 30
+		elif 10000 <= common_config['resolution'] < 15000:
+			common_config['time_step'] = 30
+		elif 5000 <= common_config['resolution'] < 10000:
+			common_config['time_step'] = 10
+		elif 2500 <= common_config['resolution'] >= 5000:
+			common_config['time_step'] = 10
+		else:
+			common_config['time_step'] = 5
 
 	return config
