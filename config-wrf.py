@@ -69,6 +69,7 @@ truelat2 = common_config['truelat2']
 stand_lon = common_config['stand_lon']
 dx = common_config['resolution']
 dy = common_config['resolution']
+dt = common_config['time_step']
 parent_id = common_config['parent_id']
 grid_ratio = common_config['parent_grid_ratio']
 i_parent_start = common_config['i_parent_start']
@@ -124,6 +125,7 @@ edit_file('./namelist.input', [
 	['^\s*end_day.*$',     f' end_day     = {str.join(", ", [str(end_time.format("D")) for i in range(max_dom)])},'],
 	['^\s*end_hour.*$',    f' end_hour    = {str.join(", ", [str(end_time.format("H")) for i in range(max_dom)])},'],
 	['^\s*max_dom.*$',     f' max_dom     = {max_dom},'],
+	['^\s*time_step\b.*$', f' time_step   = {dt},'],
 	['^\s*dx.*$',          f' dx          = {str.join(", ", [str(dx / grid_ratio[i]) for i in range(max_dom)])},'],
 	['^\s*dy.*$',          f' dy          = {str.join(", ", [str(dy / grid_ratio[i]) for i in range(max_dom)])},'],
 	['^\s*e_we.*$',        f' e_we  = {str.join(", ", [str(e_we[i]) for i in range(max_dom)])},'],
