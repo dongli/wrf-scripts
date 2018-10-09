@@ -1,0 +1,2 @@
+- [x] Add `edit_namelist` util function to simplify namelist editing and handle potential errors. (Use `f90nml` package to parse, edit and write namelist files)
+- [ ] Add `gen-be.py` script to wrap the complicated procedures of generating background corvariance error matrix.

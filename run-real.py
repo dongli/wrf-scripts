@@ -4,12 +4,13 @@ import argparse
 from glob import glob
 import os
 import pendulum
+import f90nml
 from netCDF4 import Dataset
 import re
 from shutil import copyfile
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import cli, check_files, run, parse_config, edit_file
+from utils import cli, check_files, run, parse_config
 
 parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS)')
@@ -57,12 +58,10 @@ if not check_files(expected_files) or args.force:
 		dataset = Dataset(glob('met_em.*.nc')[0])
 	except:
 		cli.error('Failed to open one of met_em.*.nc file!')
-	num_metgrid_levels = dataset.dimensions['num_metgrid_levels'].size
-	num_metgrid_soil_levels = dataset.dimensions['num_st_layers'].size
-	edit_file('./namelist.input', [
-		['^\s*num_metgrid_levels.*$', f' num_metgrid_levels = {num_metgrid_levels},'],
-		['^\s*num_metgrid_soil_levels.*$', f' num_metgrid_soil_levels = {num_metgrid_soil_levels},'],
-	])
+	namelist_input = f90nml.read('./namelist.input')
+	namelist_input['domains']['num_metgrid_levels'] = dataset.dimensions['num_metgrid_levels'].size
+	namelist_input['domains']['num_metgrid_soil_levels'] = dataset.dimensions['num_st_layers'].size
+	namelist_input.write('./namelist.input', force=True)
 	run('./real.exe')
 	if not check_files(expected_files):
 		cli.error(f'Failed! Check output {os.path.abspath(args.wrf_root)}/run/rsl.error.0000.')

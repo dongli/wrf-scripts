@@ -8,7 +8,7 @@ import re
 from shutil import copyfile
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import cli, check_files, run, parse_config, edit_file
+from utils import cli, check_files, run, parse_config
 
 parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS)')

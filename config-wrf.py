@@ -4,13 +4,14 @@ import argparse
 from glob import glob
 import os
 import pendulum
+import f90nml
 import re
 from math import radians, cos, sin, asin, sqrt
 from shutil import copyfile
 from pprint import pprint
 import sys
 sys.path.append('./utils')
-from utils import cli, edit_file, parse_config
+from utils import cli, parse_config
 
 parser = argparse.ArgumentParser(description="Configure WRF model.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS)')
@@ -62,20 +63,6 @@ common_config = config['common']
 start_time = common_config['start_time']
 end_time = common_config['end_time']
 max_dom = common_config['max_dom']
-ref_lon = common_config['ref_lon']
-ref_lat = common_config['ref_lat']
-truelat1 = common_config['truelat1']
-truelat2 = common_config['truelat2']
-stand_lon = common_config['stand_lon']
-dx = common_config['resolution']
-dy = common_config['resolution']
-dt = common_config['time_step']
-parent_id = common_config['parent_id']
-grid_ratio = common_config['parent_grid_ratio']
-i_parent_start = common_config['i_parent_start']
-j_parent_start = common_config['j_parent_start']
-e_we = common_config['e_we']
-e_sn = common_config['e_sn']
 
 time_format_str = 'YYYY-MM-DD_HH:mm:ss'
 
@@ -83,7 +70,7 @@ os.chdir(args.wps_root)
 
 start_date_str = ''
 end_date_str = ''
-for i in range(common_config['max_dom']):
+for i in range(max_dom):
 	start_date_str += f"'{start_time.format(time_format_str)}', "
 	if i == 0:
 		end_date_str += f"'{end_time.format(time_format_str)}', "
@@ -91,50 +78,51 @@ for i in range(common_config['max_dom']):
 		end_date_str += f"'{start_time.format(time_format_str)}', "
 
 cli.notice('Edit namelist.wps for WPS.')
-edit_file('./namelist.wps', [
-	['^\s*max_dom.*$',           f' max_dom    = {max_dom},'],
-	['^\s*start_date.*$',        f' start_date = {start_date_str}'],
-	['^\s*end_date.*$',          f' end_date   = {end_date_str}'],
-	['^\s*dx.*$',                f' dx         = {dx},'],
-	['^\s*dy.*$',                f' dy         = {dy},'],
-	['^\s*e_we.*$',              f' e_we       = {str.join(", ", [str(e_we[i]) for i in range(max_dom)])},'],
-	['^\s*e_sn.*$',              f' e_sn       = {str.join(", ", [str(e_sn[i]) for i in range(max_dom)])},'],
-	['^\s*parent_id.*$',         f' parent_id         = {str.join(", ", [str(parent_id[i]) for i in range(max_dom)])},'],
-	['^\s*parent_grid_ratio.*$', f' parent_grid_ratio = {str.join(", ", [str(grid_ratio[i]) for i in range(max_dom)])},'],
-	['^\s*i_parent_start.*$',    f' i_parent_start    = {str.join(", ", [str(i_parent_start[i]) for i in range(max_dom)])},'],
-	['^\s*j_parent_start.*$',    f' j_parent_start    = {str.join(", ", [str(j_parent_start[i]) for i in range(max_dom)])},'],
-	['^\s*ref_lat.*$',           f' ref_lat    = {ref_lat},'],
-	['^\s*ref_lon.*$',           f' ref_lon    = {ref_lon},'],
-	['^\s*truelat1.*$',          f' truelat1   = {truelat1},'],
-	['^\s*truelat2.*$',          f' truelat2   = {truelat2},'],
-	['^\s*stand_lon.*$',         f' stand_lon  = {stand_lon},'],
-	['^\s*geog_data_path.*$',    f" geog_data_path = '{args.geog_root}',"]
-])
+namelist_wps = f90nml.read('./namelist.wps')
+namelist_wps['share']  ['max_dom']           = max_dom
+namelist_wps['share']  ['start_date']        = start_date_str
+namelist_wps['share']  ['end_date']          = end_date_str
+namelist_wps['geogrid']['parent_id']         = common_config['parent_id']
+namelist_wps['geogrid']['parent_grid_ratio'] = common_config['parent_grid_ratio']
+namelist_wps['geogrid']['i_parent_start']    = common_config['i_parent_start']
+namelist_wps['geogrid']['j_parent_start']    = common_config['j_parent_start']
+namelist_wps['geogrid']['e_we']              = common_config['e_we']
+namelist_wps['geogrid']['e_sn']              = common_config['e_sn']
+namelist_wps['geogrid']['dx']                = common_config['resolution']
+namelist_wps['geogrid']['dy']                = common_config['resolution']
+namelist_wps['geogrid']['ref_lat']           = common_config['ref_lat']
+namelist_wps['geogrid']['ref_lon']           = common_config['ref_lon']
+namelist_wps['geogrid']['truelat1']          = common_config['truelat1']
+namelist_wps['geogrid']['truelat2']          = common_config['truelat2']
+namelist_wps['geogrid']['stand_lon']         = common_config['stand_lon']
+namelist_wps['geogrid']['geog_data_path']    = args.geog_root
+namelist_wps.write('./namelist.wps', force=True)
 
 os.chdir(args.wrf_root + '/run')
 
 cli.notice('Edit namelist.input for WRF.')
-edit_file('./namelist.input', [
-	['^\s*run_hours.*$',   f' run_hours   = {common_config["forecast_hour"]},'],
-	['^\s*start_year.*$',  f' start_year  = {str.join(", ", [str(start_time.format("Y")) for i in range(max_dom)])},'],
-	['^\s*start_month.*$', f' start_month = {str.join(", ", [str(start_time.format("M")) for i in range(max_dom)])},'],
-	['^\s*start_day.*$',   f' start_day   = {str.join(", ", [str(start_time.format("D")) for i in range(max_dom)])},'],
-	['^\s*start_hour.*$',  f' start_hour  = {str.join(", ", [str(start_time.format("H")) for i in range(max_dom)])},'],
-	['^\s*end_year.*$',    f' end_year    = {str.join(", ", [str(end_time.format("Y")) for i in range(max_dom)])},'],
-	['^\s*end_month.*$',   f' end_month   = {str.join(", ", [str(end_time.format("M")) for i in range(max_dom)])},'],
-	['^\s*end_day.*$',     f' end_day     = {str.join(", ", [str(end_time.format("D")) for i in range(max_dom)])},'],
-	['^\s*end_hour.*$',    f' end_hour    = {str.join(", ", [str(end_time.format("H")) for i in range(max_dom)])},'],
-	['^\s*max_dom.*$',     f' max_dom     = {max_dom},'],
-	['^\s*time_step\b.*$', f' time_step   = {dt},'],
-	['^\s*dx.*$',          f' dx          = {str.join(", ", [str(dx / grid_ratio[i]) for i in range(max_dom)])},'],
-	['^\s*dy.*$',          f' dy          = {str.join(", ", [str(dy / grid_ratio[i]) for i in range(max_dom)])},'],
-	['^\s*e_we.*$',        f' e_we  = {str.join(", ", [str(e_we[i]) for i in range(max_dom)])},'],
-	['^\s*e_sn.*$',        f' e_sn  = {str.join(", ", [str(e_sn[i]) for i in range(max_dom)])},'],
-	['^\s*parent_id.*$',         f' parent_id         = {str.join(", ", [str(0 if i == 0 else parent_id[i]) for i in range(max_dom)])},'],
-	['^\s*parent_grid_ratio.*$', f' parent_grid_ratio = {str.join(", ", [str(grid_ratio[i]) for i in range(max_dom)])},'],
-	['^\s*i_parent_start.*$',    f' i_parent_start    = {str.join(", ", [str(i_parent_start[i]) for i in range(max_dom)])},'],
-	['^\s*j_parent_start.*$',    f' j_parent_start    = {str.join(", ", [str(j_parent_start[i]) for i in range(max_dom)])},'],
-	['^\s*parent_time_step_ratio.*$', f' parent_time_step_ratio = {str.join(", ", [str(grid_ratio[i]) for i in range(max_dom)])},'],
-])
+namelist_input = f90nml.read('./namelist.input')
+namelist_input['time_control']['run_hours']              = common_config['forecast_hour']
+namelist_input['time_control']['start_year']             = [str(start_time.format("Y")) for i in range(max_dom)]
+namelist_input['time_control']['start_month']            = [str(start_time.format("M")) for i in range(max_dom)]
+namelist_input['time_control']['start_day']              = [str(start_time.format("D")) for i in range(max_dom)]
+namelist_input['time_control']['start_hour']             = [str(start_time.format("H")) for i in range(max_dom)]
+namelist_input['time_control']['end_year']               = [str(end_time.format("Y")) for i in range(max_dom)]
+namelist_input['time_control']['end_month']              = [str(end_time.format("M")) for i in range(max_dom)]
+namelist_input['time_control']['end_day']                = [str(end_time.format("D")) for i in range(max_dom)]
+namelist_input['time_control']['end_hour']               = [str(end_time.format("H")) for i in range(max_dom)]
+namelist_input['domains']     ['time_step']              = common_config['time_step']
+namelist_input['domains']     ['max_dom']                = max_dom
+namelist_input['domains']     ['e_we']                   = common_config['e_we']
+namelist_input['domains']     ['e_sn']                   = common_config['e_sn']
+namelist_input['domains']     ['dx']                     = [common_config['resolution'] / common_config['parent_grid_ratio'][i] for i in range(max_dom)]
+namelist_input['domains']     ['dy']                     = [common_config['resolution'] / common_config['parent_grid_ratio'][i] for i in range(max_dom)]
+namelist_input['domains']     ['grid_id']                = [i + 1 for i in range(max_dom)]
+namelist_input['domains']     ['parent_id']              = common_config['parent_id']
+namelist_input['domains']     ['i_parent_start']         = common_config['i_parent_start']
+namelist_input['domains']     ['j_parent_start']         = common_config['j_parent_start']
+namelist_input['domains']     ['parent_grid_ratio']      = common_config['parent_grid_ratio']
+namelist_input['domains']     ['parent_time_step_ratio'] = common_config['parent_grid_ratio']
+namelist_input.write('./namelist.input', force=True)
 
 cli.notice('Succeeded.')
