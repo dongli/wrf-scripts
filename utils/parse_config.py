@@ -118,7 +118,7 @@ def parse_config(config_json):
 
 	# Transform parameters.
 	common_config['start_time'] = pendulum.from_format(common_config['start_time'], 'YYYYMMDDHH')
-	common_config['end_time'] = common_config['start_time'].add(hours=common_config['forecast_hour'])
+	common_config['end_time'] = common_config['start_time'].add(hours=common_config['forecast_hours'])
 	parse_domain(common_config)
 	# Set time step if not set yet.
 	if not 'time_step' in common_config:

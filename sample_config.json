@@ -2,7 +2,7 @@
   "tag": "test",
   "common": {
     "start_time": "2018091600",
-    "forecast_hour": 48,
+    "forecast_hours": 48,
     "min_lon": [70.0, 120],
     "max_lon": [140.0, 130],
     "min_lat": [10.0, 30],
@@ -14,6 +14,13 @@
     "max_dom": 2
   },
   "da": {
-    "cv_options": "cv3"
+    "cv_options": "cv5",
+    "nmc": {
+      "long_forecast_hours": 24,
+      "short_forecast_hours": 12,
+      "start_time": "2018090100",
+      "end_time": "2018100100",
+      "start_hours_per_day": [0, 12]
+    }
   }
 }

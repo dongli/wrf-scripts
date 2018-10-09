@@ -24,13 +24,26 @@ $ ./build-gsi.py --codes <WRF和GSI程序目录> --compiler-suite gnu [--force]
   "tag": "test",
   "common": {
     "start_time": "2018091600",
-    "forecast_hour": 48,
-    "min_lon": 70.0,
-    "max_lon": 140.0,
-    "min_lat": 10.0,
-    "max_lat": 55.0,
-    "resolution": 9000.0,
-    "max_dom": 1
+    "forecast_hours": 48,
+    "min_lon": [70.0, 120],
+    "max_lon": [140.0, 130],
+    "min_lat": [10.0, 30],
+    "max_lat": [55.0, 40],
+    "resolution": 27000.0,
+    "time_step": 90.0,
+    "parent_id": [1, 1],
+    "parent_grid_ratio": [1, 3],
+    "max_dom": 2
+  },
+  "da": {
+    "cv_options": "cv3",
+    "nmc": {
+      "long_forecast_hours": 24,
+      "short_forecast_hours": 12,
+      "start_time": "2018090100",
+      "end_time": "2018100100",
+      "start_hours_per_day": [0, 12]
+    }
   }
 }
 ```

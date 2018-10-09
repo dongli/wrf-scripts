@@ -102,7 +102,7 @@ os.chdir(args.wrf_root + '/run')
 
 cli.notice('Edit namelist.input for WRF.')
 namelist_input = f90nml.read('./namelist.input')
-namelist_input['time_control']['run_hours']              = common_config['forecast_hour']
+namelist_input['time_control']['run_hours']              = common_config['forecast_hours']
 namelist_input['time_control']['start_year']             = [str(start_time.format("Y")) for i in range(max_dom)]
 namelist_input['time_control']['start_month']            = [str(start_time.format("M")) for i in range(max_dom)]
 namelist_input['time_control']['start_day']              = [str(start_time.format("D")) for i in range(max_dom)]
