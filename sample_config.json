@@ -12,5 +12,8 @@
     "parent_id": [1, 1],
     "parent_grid_ratio": [1, 3],
     "max_dom": 2
+  },
+  "da": {
+    "cv_options": "cv3"
   }
 }
