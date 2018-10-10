@@ -13,7 +13,6 @@ parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF
 parser.add_argument('-w', '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3)')
 parser.add_argument('-p', '--wps-root', dest='wps_root', help='WPS root directory (e.g. WPS)')
 parser.add_argument('-d', '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRF for V4)')
-parser.add_argument('-v', '--wrf-major', dest='wrf_major', help='WRF major version (e.g. 3, 4)', default='4')
 parser.add_argument('-b', '--use-hyb', dest='use_hyb', help='Use hybrid vertical coordinate', action='store_true')
 parser.add_argument('-g', '--use-grib', dest='use_grib', help='Use GRIB IO capability of WRF', action='store_true')
 parser.add_argument('-s', '--compiler-suite', dest='compiler_suite', help='Compiler suite', choices=['gnu', 'pgi', 'intel'])
@@ -24,10 +23,7 @@ if not args.wrf_root:
 	if os.getenv('WRF_ROOT'):
 		args.wrf_root = os.getenv('WRF_ROOT')
 	elif args.codes:
-		if args.wrf_major == '3':
-			args.wrf_root = args.codes + '/WRFV3'
-		elif args.wrf_major == '4':
-			args.wrf_root = args.codes + '/WRF'
+		args.wrf_root = args.codes + '/WRF'
 	else:
 		cli.error('Option --wrf-root or environment variable WRF_ROOT need to be set!')
 
@@ -47,10 +43,8 @@ if not args.wrfda_root:
 	else:
 		cli.error('Option --wrfda-root or environment variable WRFDA_ROOT need to be set!')
 
-owd = os.getcwd()
-
 os.chdir(args.wrf_root)
-if args.force: run('./clean -a 1> /dev/null 2>&1')
+if args.force: run('./clean -a &> /dev/null')
 expected_exe_files = ('main/wrf.exe', 'main/real.exe', 'main/ndown.exe', 'main/tc.exe')
 if not check_files(expected_exe_files):
 	cli.notice('Configure WRF ...')
@@ -59,7 +53,7 @@ if not check_files(expected_exe_files):
 		edit_file('./arch/Config.pl', [
 			['\$I_really_want_to_output_grib2_from_WRF = "FALSE"', '$I_really_want_to_output_grib2_from_WRF = "TRUE"']
 		])
-	if args.wrf_major == '3' and args.use_hyb:
+	if args.use_hyb:
 		child = pexpect.spawn('./configure -hyb')
 	else:
 		child = pexpect.spawn('./configure')
@@ -81,7 +75,7 @@ if not check_files(expected_exe_files):
 		])
 
 	cli.notice('Compile WRF ...')
-	run('./compile em_real > compile.out 2>&1')
+	run('./compile em_real &> compile.out')
 	
 	if check_files(expected_exe_files):
 		cli.notice('Succeeded.')
@@ -90,10 +84,8 @@ if not check_files(expected_exe_files):
 else:
 	cli.notice('WRF is already built.')
 
-os.chdir(owd)
-
 os.chdir(args.wps_root)
-if args.force: run('./clean -a 1> /dev/null 2>&1')
+if args.force: run('./clean -a &> /dev/null')
 expected_exe_files = ('geogrid/src/geogrid.exe', 'metgrid/src/metgrid.exe', 'ungrib/src/ungrib.exe')
 if not check_files(expected_exe_files):
 	cli.notice('Configure WPS ...')
@@ -117,7 +109,7 @@ if not check_files(expected_exe_files):
 	run('sed -i "s/mpif90 -f90=.*/mpif90/" configure.wps')
 
 	cli.notice('Compile WPS ...')
-	run('./compile > compile.out 2>&1')
+	run('./compile &> compile.out')
 
 	if check_files(expected_exe_files):
 		cli.notice('Succeeded.')
@@ -126,10 +118,8 @@ if not check_files(expected_exe_files):
 else:
 	cli.notice('WPS is already built.')
 
-os.chdir(owd)
-
 os.chdir(args.wrfda_root)
-if args.force: run('./clean -a 1> /dev/null 2>&1')
+if args.force: run('./clean -a &> /dev/null')
 expected_exe_files = (
 	'var/build/da_advance_time.exe',
 	'var/build/da_bias_airmass.exe',
@@ -188,7 +178,7 @@ if not check_files(expected_exe_files):
 	child.wait()
 
 	cli.notice('Compile WRFDA ...')
-	run('./compile all_wrfvar > compile.wrfvar.out 2>&1')
+	run('./compile all_wrfvar &> compile.wrfvar.out')
 
 	if check_files(expected_exe_files, fatal=True):
 		cli.notice('Succeeded.')
