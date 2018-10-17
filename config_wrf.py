@@ -53,15 +53,15 @@ def config_wrf(wrf_root, wps_root, geog_root, config):
 	cli.notice('Edit namelist.input for WRF.')
 	namelist_input = f90nml.read('./namelist.input')
 	namelist_input['time_control']['run_hours']              = common_config['forecast_hours']
-	namelist_input['time_control']['start_year']             = [str(start_time.format("Y")) for i in range(max_dom)]
-	namelist_input['time_control']['start_month']            = [str(start_time.format("M")) for i in range(max_dom)]
-	namelist_input['time_control']['start_day']              = [str(start_time.format("D")) for i in range(max_dom)]
-	namelist_input['time_control']['start_hour']             = [str(start_time.format("H")) for i in range(max_dom)]
-	namelist_input['time_control']['end_year']               = [str(end_time.format("Y")) for i in range(max_dom)]
-	namelist_input['time_control']['end_month']              = [str(end_time.format("M")) for i in range(max_dom)]
-	namelist_input['time_control']['end_day']                = [str(end_time.format("D")) for i in range(max_dom)]
-	namelist_input['time_control']['end_hour']               = [str(end_time.format("H")) for i in range(max_dom)]
-	namelist_input['domains']     ['time_step']              = common_config['time_step']
+	namelist_input['time_control']['start_year']             = [int(start_time.format("Y")) for i in range(max_dom)]
+	namelist_input['time_control']['start_month']            = [int(start_time.format("M")) for i in range(max_dom)]
+	namelist_input['time_control']['start_day']              = [int(start_time.format("D")) for i in range(max_dom)]
+	namelist_input['time_control']['start_hour']             = [int(start_time.format("H")) for i in range(max_dom)]
+	namelist_input['time_control']['end_year']               = [int(end_time.format("Y")) for i in range(max_dom)]
+	namelist_input['time_control']['end_month']              = [int(end_time.format("M")) for i in range(max_dom)]
+	namelist_input['time_control']['end_day']                = [int(end_time.format("D")) for i in range(max_dom)]
+	namelist_input['time_control']['end_hour']               = [int(end_time.format("H")) for i in range(max_dom)]
+	namelist_input['domains']     ['time_step']              = int(common_config['time_step'])
 	namelist_input['domains']     ['max_dom']                = max_dom
 	namelist_input['domains']     ['e_we']                   = common_config['e_we']
 	namelist_input['domains']     ['e_sn']                   = common_config['e_sn']
