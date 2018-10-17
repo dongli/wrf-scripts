@@ -1,6 +1,10 @@
 import cli
 import os
+import subprocess
 
-def run(cmd):
+def run(cmd, bg=False):
 	print(f'{cli.blue("==>")} {cmd}')
-	os.system(cmd)
+	if bg:
+		return subprocess.Popen(cmd.split())
+	else:
+		os.system(cmd)
