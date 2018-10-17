@@ -1,7 +1,7 @@
 {
   "tag": "test",
   "common": {
-    "start_time": "2018091600",
+    "start_time": "2018100200",
     "forecast_hours": 48,
     "min_lon": [70.0, 120],
     "max_lon": [140.0, 130],

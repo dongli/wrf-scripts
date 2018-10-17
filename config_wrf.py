@@ -10,7 +10,7 @@ from math import radians, cos, sin, asin, sqrt
 from shutil import copyfile
 from pprint import pprint
 import sys
-sys.path.append('./utils')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, parse_config
 
 def config_wrf(wrf_root, wps_root, geog_root, config):
@@ -22,24 +22,16 @@ def config_wrf(wrf_root, wps_root, geog_root, config):
 	end_time = common_config['end_time']
 	max_dom = common_config['max_dom']
 	
-	time_format_str = 'YYYY-MM-DD_HH:mm:ss'
-	
-	os.chdir(args.wps_root)
-	
-	start_date_str = ''
-	end_date_str = ''
-	for i in range(max_dom):
-		start_date_str += f"'{start_time.format(time_format_str)}', "
-		if i == 0:
-			end_date_str += f"'{end_time.format(time_format_str)}', "
-		else:
-			end_date_str += f"'{start_time.format(time_format_str)}', "
-	
+	start_time_str = start_time.format('YYYY-MM-DD_HH:mm:ss')
+	end_time_str = end_time.format('YYYY-MM-DD_HH:mm:ss')
+
+	os.chdir(wps_root)
+
 	cli.notice('Edit namelist.wps for WPS.')
 	namelist_wps = f90nml.read('./namelist.wps')
 	namelist_wps['share']  ['max_dom']           = max_dom
-	namelist_wps['share']  ['start_date']        = start_date_str
-	namelist_wps['share']  ['end_date']          = end_date_str
+	namelist_wps['share']  ['start_date']        = [start_time_str for i in range(max_dom)]
+	namelist_wps['share']  ['end_date']          = [end_time_str if i == 0 else start_time_str for i in range(max_dom)]
 	namelist_wps['geogrid']['parent_id']         = common_config['parent_id']
 	namelist_wps['geogrid']['parent_grid_ratio'] = common_config['parent_grid_ratio']
 	namelist_wps['geogrid']['i_parent_start']    = common_config['i_parent_start']
@@ -53,10 +45,10 @@ def config_wrf(wrf_root, wps_root, geog_root, config):
 	namelist_wps['geogrid']['truelat1']          = common_config['truelat1']
 	namelist_wps['geogrid']['truelat2']          = common_config['truelat2']
 	namelist_wps['geogrid']['stand_lon']         = common_config['stand_lon']
-	namelist_wps['geogrid']['geog_data_path']    = args.geog_root
+	namelist_wps['geogrid']['geog_data_path']    = geog_root
 	namelist_wps.write('./namelist.wps', force=True)
 	
-	os.chdir(args.wrf_root + '/run')
+	os.chdir(wrf_root + '/run')
 	
 	cli.notice('Edit namelist.input for WRF.')
 	namelist_input = f90nml.read('./namelist.input')
@@ -96,8 +88,6 @@ if __name__ == '__main__':
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
 	args = parser.parse_args()
 	
-	script_root = os.path.dirname(os.path.realpath(__file__))
-
 	if not args.wrf_root:
 		if os.getenv('WRF_ROOT'):
 			args.wrf_root = os.getenv('WRF_ROOT')
