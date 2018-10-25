@@ -14,7 +14,7 @@
     "max_dom": 2
   },
   "da": {
-    "cv_options": "cv5",
+    "cv_options": "cv3",
     "nmc": {
       "long_forecast_hours": 24,
       "short_forecast_hours": 12,
