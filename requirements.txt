@@ -1,3 +1,6 @@
-pendulum==2.0.3
-git+https://github.com/jswhit/pyproj.git
+pendulum
+pyproj
+pexpect
+numpy
 f90nml
+netCDF4
