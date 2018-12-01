@@ -1,8 +1,9 @@
 {
   "tag": "test",
   "common": {
-    "start_time": "2018100200",
+    "start_time": "2018120100",
     "forecast_hours": 48,
+    "map_proj": 1,
     "min_lon": [70.0, 120],
     "max_lon": [140.0, 130],
     "min_lat": [10.0, 30],
@@ -13,7 +14,10 @@
     "parent_grid_ratio": [1, 3],
     "max_dom": 2
   },
-  "da": {
+  "wrfda": {
+    "obsproc": {
+      "output_format": 2
+    },
     "cv_options": "cv3",
     "nmc": {
       "long_forecast_hours": 24,
