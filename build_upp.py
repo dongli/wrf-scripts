@@ -52,6 +52,9 @@ if __name__ == '__main__':
 			args.wrf_root = args.codes + '/WRF'
 		else:
 			cli.error('Option --wrf-root or environment variable WRF_ROOT need to be set!')
+	args.wrf_root = os.path.abspath(args.wrf_root)
+	if not os.path.isdir(args.wrf_root):
+		cli.error(f'Directory {args.wrf_root} does not exist!')
 	
 	if not args.upp_root:
 		if os.getenv('UPP_ROOT'):
@@ -60,5 +63,8 @@ if __name__ == '__main__':
 			args.upp_root = args.codes + '/UPP'
 		else:
 			cli.error('Option --upp-root or environment variable UPP_ROOT need to be set!')
+	args.upp_root = os.path.abspath(args.upp_root)
+	if not os.path.isdir(args.upp_root):
+		cli.error(f'Directory {args.upp_root} does not exist!')
 
 	build_upp(args.wrf_root, args.upp_root, args)

@@ -58,6 +58,9 @@ if __name__ == '__main__':
 			args.wrf_root = args.codes + '/WRF'
 		else:
 			cli.error('Option --wrf-root or environment variable WRF_ROOT need to be set!')
+	args.wrf_root = os.path.abspath(args.wrf_root)
+	if not os.path.isdir(args.wrf_root):
+		cli.error(f'Directory {args.wrf_root} does not exist!')
 	
 	if not args.wps_root:
 		if os.getenv('WPS_ROOT'):
@@ -66,7 +69,6 @@ if __name__ == '__main__':
 			args.wps_root = args.codes + '/WPS'
 		else:
 			cli.error('Option --wps-root or environment variable WPS_ROOT need to be set!')
-	
 	args.wps_root = os.path.abspath(args.wps_root)
 	if not os.path.isdir(args.wps_root):
 		cli.error(f'Directory {args.wps_root} does not exist!')

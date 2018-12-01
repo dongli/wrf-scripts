@@ -24,7 +24,6 @@ def build_wrf(wrf_root, wps_root, wrfda_root, args):
 			child = pexpect.spawn('./configure -hyb', encoding='utf-8')
 		else:
 			child = pexpect.spawn('./configure', encoding='utf-8')
-		child.logfile = sys.stdout
 		child.expect('Enter selection.*')
 		if platform.system() == 'Darwin':
 			if args.compiler_suite == 'gnu':
@@ -179,6 +178,9 @@ if __name__ == '__main__':
 			args.wrf_root = args.codes + '/WRF'
 		else:
 			cli.error('Option --wrf-root or environment variable WRF_ROOT need to be set!')
+	args.wrf_root = os.path.abspath(args.wrf_root)
+	if not os.path.isdir(args.wrf_root):
+		cli.error(f'Directory {args.wrf_root} does not exist!')
 	
 	if not args.wps_root:
 		if os.getenv('WPS_ROOT'):
@@ -187,6 +189,9 @@ if __name__ == '__main__':
 			args.wps_root = args.codes + '/WPS'
 		else:
 			cli.error('Option --wps-root or environment variable WPS_ROOT need to be set!')
+	args.wps_root = os.path.abspath(args.wps_root)
+	if not os.path.isdir(args.wps_root):
+		cli.error(f'Directory {args.wps_root} does not exist!')
 	
 	if not args.wrfda_root:
 		if os.getenv('WRFDA_ROOT'):
@@ -195,5 +200,8 @@ if __name__ == '__main__':
 			args.wrfda_root = args.codes + '/WRFDA'
 		else:
 			cli.error('Option --wrfda-root or environment variable WRFDA_ROOT need to be set!')
+	args.wrfda_root = os.path.abspath(args.wrfda_root)
+	if not os.path.isdir(args.wrfda_root):
+		cli.error(f'Directory {args.wrfda_root} does not exist!')
 
 	build_wrf(args.wrf_root, args.wps_root, args.wrfda_root, args)

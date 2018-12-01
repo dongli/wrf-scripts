@@ -171,9 +171,10 @@ if __name__ == '__main__':
 			args.wrf_root = args.codes + '/WRF'
 		else:
 			cli.error('Option --wrf-root or environment variable WRF_ROOT need to be set!')
-	
 	args.wrf_root = os.path.abspath(args.wrf_root)
-	
+	if not os.path.isdir(args.wrf_root):
+		cli.error(f'Directory {args.wrf_root} does not exist!')
+
 	if not args.gsi_root:
 		if os.getenv('GSI_ROOT'):
 			args.gsi_root = os.getenv('GSI_ROOT')
@@ -181,8 +182,9 @@ if __name__ == '__main__':
 			args.gsi_root = args.codes + '/GSI'
 		else:
 			cli.error('Option --gsi-root or environment variable GSI_ROOT need to be set!')
-	
 	args.gsi_root = os.path.abspath(args.gsi_root)
+	if not os.path.isdir(args.gsi_root):
+		cli.error(f'Directory {args.gsi_root} does not exist!')
 
 	build_gsi(args.wrf_root, args.gsi_root, args)
 
