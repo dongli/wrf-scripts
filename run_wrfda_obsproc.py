@@ -15,18 +15,19 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 	common_config = config['common']
 
 	start_time = common_config['start_time']
-	run_root = work_root + '/OBSPROC'
-	if not os.path.exists(run_root):
-		os.mkdir(run_root)
+
+	cli.notice('Prepare work directory.')
+	if not os.path.exists(work_root):
+		os.mkdir(work_root)
 	if args.force:
-		run(f'rm -rf {run_root}/*')
+		run(f'rm -rf {work_root}/*')
 
-	run(f'cp {os.path.dirname(os.path.realpath(__file__))}/namelists/namelist.obsproc {run_root}')
+	run(f'cp {os.path.dirname(os.path.realpath(__file__))}/namelists/namelist.obsproc {work_root}')
 
-	os.chdir(run_root)
+	os.chdir(work_root)
 	run(f'ln -sf {wrfda_root}/var/obsproc/obsproc.exe .')
 	run(f'ln -sf {wrfda_root}/var/obsproc/obserr.txt .')
-	run( 'ln -sf {}/obs.{} .'.format(littler_root, start_time.format('YYYYMMDDHHmm')))
+	run(f'ln -sf {littler_root}/obs.{start_time.format("YYYYMMDDHHmm")} .')
 
 	if check_files([f'{prod_root}/wrfinput_d01']):
 		ncfile       = Dataset(f'{prod_root}/wrfinput_d01', 'r')
@@ -42,10 +43,9 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 		moad_cen_lat = common_config['ref_lat']
 		standard_lon = common_config['ref_lon']
 
-	try:
-		if config['wrfda']['obsproc']['output_format']:
-			output_format = config['wrfda']['obsproc']['output_format']
-	except:
+	if 'output_format' in config['wrfda']['obsproc']:
+		output_format = config['wrfda']['obsproc']['output_format']
+	else:
 		output_format = 1
 
 	namelist_obsproc = f90nml.read('./namelist.obsproc')
@@ -76,7 +76,7 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 			if args.verbose:
 				cli.error('Failed!')
 			else:
-				cli.error(f'Failed! Check output {run_root}/obsproc.out')
+				cli.error(f'Failed! Check output {work_root}/obsproc.out')
 		cli.notice('Succeeded.')
 	else:
 		cli.notice('File obs_gts_* already exist.')
@@ -101,7 +101,7 @@ if __name__ == '__main__':
 			args.work_root = os.getenv('WORK_ROOT')
 		else:
 			cli.error('Option --work-root or environment variable WORK_ROOT need to be set!')
-	args.work_root = os.path.abspath(args.work_root)
+	args.work_root = os.path.abspath(args.work_root) + '/OBSPROC'
 	if not os.path.isdir(args.work_root):
 		cli.error(f'Directory {args.work_root} does not exist!')
 
