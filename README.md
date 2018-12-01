@@ -2,17 +2,32 @@
 
 为了方便自动化编译和配置WRF，比如在Docker容器中编译WRF，编写这么一套Python脚本工具。
 
+## 安装依赖
+
+安装WRF依赖软件包（可以通过[STARMAN](https://github.com/dongli/starman)安装）：
+- HDF5
+- NetCDF
+- JASPER
+
+安装Python3：
+- Python >= 3.6
+
+安装Python第三方软件包：
+```
+pip3 install -r requirements.txt
+```
+
 ## 编译WRF
 
 ```
-$ ./build-wrf.py --codes <WRF程序目录> --compiler-suite gnu [--force]
+$ ./build_wrf.py --codes <WRF程序目录> --compiler-suite gnu [--force]
 ```
 其中`<WRF程序目录>`应该包含WRF、WPS、WRFDA源程序目录。
 
 ## 编译GSI
 
 ```
-$ ./build-gsi.py --codes <WRF和GSI程序目录> --compiler-suite gnu [--force]
+$ ./build_gsi.py --codes <WRF和GSI程序目录> --compiler-suite gnu [--force]
 ```
 其中`<WRF和GSI程序目录>`应该包含WRF、GSI源程序目录。
 
@@ -47,9 +62,9 @@ $ ./build-gsi.py --codes <WRF和GSI程序目录> --compiler-suite gnu [--force]
   }
 }
 ```
-然后运行`config-wrf.py`
+然后运行`config_wrf.py`
 ```
-$ ./config-wrf.py --codes <WRF程序目录> --geog-root <GEOG静态数据目录> --config-json <JSON配置文件路径> [--force]
+$ ./config_wrf.py --codes <WRF程序目录> --geog-root <GEOG静态数据目录> --config-json <JSON配置文件路径> [--force]
 [Notice]: Edit namelist.wps.
 [Notice]: Succeeded.
 ```
@@ -57,7 +72,7 @@ $ ./config-wrf.py --codes <WRF程序目录> --geog-root <GEOG静态数据目录>
 ## 运行WPS
 
 ```
-$ ./run-wps.py --codes <WRF程序目录> --config-json <JSON配置文件路径> -b <GFS驱动场根目录> [--force]
+$ ./run_wps.py --codes <WRF程序目录> --config-json <JSON配置文件路径> -b <GFS驱动场根目录> [--force]
 [Notice]: Run geogrid.exe ...
 ==> rm -f geo_em.d*.nc
 ==> ./geogrid.exe &> geogrid.out
