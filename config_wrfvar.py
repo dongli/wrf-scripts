@@ -20,11 +20,14 @@ def config_wrfvar(work_root, config, dom_id):
 	# Shortcuts
 	start_time = common_config['start_time']
 	end_time   = common_config['end_time']
-	
+
+	if not os.path.exists(work_root):
+		os.mkdir(work_root)
+
 	copyfile(f'{script_root}/namelists/namelist.wrfvar', f'{work_root}/namelist.input')
 	
 	cli.notice('Edit namelist.input for WRFVAR.')
-	time_window  = config['wrfda']['time_window'] 
+	time_window  = config['wrfda']['time_window'] if 'time_window' in config['wrfda'] else 360
 	namelist_wrfvar = f90nml.read(f'{work_root}/namelist.input')
 	for key in config['wrfda']['namelist']:
 		for sub_key in config['wrfda']['namelist'][key]:
@@ -44,7 +47,7 @@ def config_wrfvar(work_root, config, dom_id):
 	namelist_wrfvar['domains']['e_sn']             = common_config['e_sn'][dom_id-1]
 	namelist_wrfvar['domains']['dx']               = common_config['resolution']/common_config['parent_grid_ratio'][dom_id-1]
 	namelist_wrfvar['domains']['dy']               = common_config['resolution']/common_config['parent_grid_ratio'][dom_id-1]
-	namelist_wrfvar.write('./namelist.input', force=True)
+	namelist_wrfvar.write(f'{work_root}/namelist.input', force=True)
 
 	cli.notice('Succeeded.')
 
@@ -68,6 +71,10 @@ if __name__ == '__main__':
 			args.work_root = os.getenv('WORK_ROOT')
 		else:
 			cli.error('Option --work-root or enviroment variable WORK_ROOT need to be set!')
+	args.work_root = os.path.abspath(args.work_root)
+	if not os.path.isdir(args.work_root):
+		cli.error(f'Directory {args.work_root} does not exist!')
+	args.work_root = os.path.abspath(args.work_root) + '/WRFVAR'
 
 	config = parse_config(args.config_json)
 

@@ -28,7 +28,7 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 	if not os.path.exists(work_root):
 		link_obsproc_files(wrfda_root, work_root)
 	if args.force:
-		run(f'rm -rf {work_root}/*')
+		run(f'rm -rf {work_root}')
 		link_obsproc_files(wrfda_root, work_root)
 	os.chdir(work_root)
 
@@ -50,13 +50,13 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 		output_format = config['obsproc']['output_format']
 	else:
 		output_format = 2
-	time_window = config['obsproc']['time_window']
+	time_window = config['obsproc']['time_window'] if 'time_window' in config['obsproc'] else 360
 
 	namelist_obsproc = f90nml.read('./namelist.obsproc')
 	namelist_obsproc['record1']['obs_gts_filename']  = 'obs.{}'.format(start_time.format('YYYYMMDDHHmm'))
-	namelist_obsproc['record2']['time_window_min']   = start_time.subtract(minutes=args.time_window/2).format('YYYY-MM-DD_HH:mm:ss')
+	namelist_obsproc['record2']['time_window_min']   = start_time.subtract(minutes=time_window/2).format('YYYY-MM-DD_HH:mm:ss')
 	namelist_obsproc['record2']['time_analysis']     = start_time.format('YYYY-MM-DD_HH:mm:ss')
-	namelist_obsproc['record2']['time_window_max']   = start_time.add(minutes=args.time_window/2).format('YYYY-MM-DD_HH:mm:ss')
+	namelist_obsproc['record2']['time_window_max']   = start_time.add(minutes=time_window/2).format('YYYY-MM-DD_HH:mm:ss')
 	namelist_obsproc['record3']['max_number_of_obs'] = 1200000
 	namelist_obsproc['record7']['PHIC']              = phic
 	namelist_obsproc['record7']['XLONC']             = xlonc

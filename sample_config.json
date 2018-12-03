@@ -14,12 +14,13 @@
     "parent_grid_ratio": [1, 3],
     "max_dom": 2
   },
+  "obsproc": {
+    "time_window": 360,
+    "output_format": 2
+  },
   "wrfda": {
     "time_window": 360,
     "namelist": {},
-    "obsproc": {
-      "output_format": 2
-    },
     "cv_options": "cv3",
     "nmc": {
       "long_forecast_hours": 24,
