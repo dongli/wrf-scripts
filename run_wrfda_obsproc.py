@@ -8,8 +8,16 @@ import re
 import pendulum
 import f90nml
 import sys
-sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
+script_root = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(f'{script_root}/utils')
 from utils import cli, check_files, run, parse_config
+
+def link_obsproc_files(wrfda_root, work_root):
+	os.mkdir(work_root)
+	os.chdir(work_root)
+	run(f'cp {script_root}/namelists/namelist.obsproc .')
+	run(f'ln -sf {wrfda_root}/var/obsproc/obsproc.exe .')
+	run(f'ln -sf {wrfda_root}/var/obsproc/obserr.txt .')
 
 def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, args):
 	common_config = config['common']
@@ -18,16 +26,11 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 
 	cli.notice('Prepare work directory.')
 	if not os.path.exists(work_root):
-		os.mkdir(work_root)
+		link_obsproc_files(wrfda_root, work_root)
 	if args.force:
 		run(f'rm -rf {work_root}/*')
-
-	run(f'cp {os.path.dirname(os.path.realpath(__file__))}/namelists/namelist.obsproc {work_root}')
-
+		link_obsproc_files(wrfda_root, work_root)
 	os.chdir(work_root)
-	run(f'ln -sf {wrfda_root}/var/obsproc/obsproc.exe .')
-	run(f'ln -sf {wrfda_root}/var/obsproc/obserr.txt .')
-	run(f'ln -sf {littler_root}/obs.{start_time.format("YYYYMMDDHHmm")} .')
 
 	if check_files([f'{prod_root}/wrfinput_d01']):
 		ncfile       = Dataset(f'{prod_root}/wrfinput_d01', 'r')
@@ -43,10 +46,11 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 		moad_cen_lat = common_config['ref_lat']
 		standard_lon = common_config['ref_lon']
 
-	if 'output_format' in config['wrfda']['obsproc']:
-		output_format = config['wrfda']['obsproc']['output_format']
+	if 'output_format' in config['obsproc']:
+		output_format = config['obsproc']['output_format']
 	else:
-		output_format = 1
+		output_format = 2
+	time_window = config['obsproc']['time_window']
 
 	namelist_obsproc = f90nml.read('./namelist.obsproc')
 	namelist_obsproc['record1']['obs_gts_filename']  = 'obs.{}'.format(start_time.format('YYYYMMDDHHmm'))
@@ -68,6 +72,10 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 	expected_files = ['obs_gts_{}.3DVAR'.format(start_time.format('YYYY-MM-DD_HH:mm:ss'))]
 	if not check_files(expected_files) or args.force:
 		run('rm -f obs_gts_*')
+		if os.path.exists(f'{littler_root}/obs.{start_time.format("YYYYMMDDHHmm")}'):
+			run(f'ln -sf {littler_root}/obs.{start_time.format("YYYYMMDDHHmm")} {work_root}')
+		else:
+			cli.error(f'Failed! {littler_root}/obs.{start_time.format("YYYYMMDDHHmm")} Not Found.')
 		if args.verbose:
 			run('./obsproc.exe')
 		else:
@@ -91,7 +99,6 @@ if __name__ == '__main__':
 	parser.add_argument('-d', '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WPS)')	
 	parser.add_argument('-l', '--littler-root', dest='littler_root', help='Little_r data root directory')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
-	parser.add_argument('-t', '--time-window', dest='time_window', help='Time window of data assimilation (min)', default=360, type=int)
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
 	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
 	args = parser.parse_args()
@@ -101,13 +108,14 @@ if __name__ == '__main__':
 			args.work_root = os.getenv('WORK_ROOT')
 		else:
 			cli.error('Option --work-root or environment variable WORK_ROOT need to be set!')
-	args.work_root = os.path.abspath(args.work_root) + '/OBSPROC'
+	args.work_root = os.path.abspath(args.work_root)
 	if not os.path.isdir(args.work_root):
 		cli.error(f'Directory {args.work_root} does not exist!')
+	args.work_root = os.path.abspath(args.work_root) + '/OBSPROC'
 
 	if not args.prod_root:
 		if os.getenv('PROD_ROOT'):
-			args.work_root = os.getenv('PROD_ROOT')
+			args.prod_root = os.getenv('PROD_ROOT')
 		else:
 			cli.error('Option --prod-root or environment variable PROD_ROOT need to be set!')
 	args.prod_root = os.path.abspath(args.prod_root)
