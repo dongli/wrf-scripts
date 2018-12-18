@@ -5,3 +5,4 @@ numpy
 f90nml
 netCDF4
 progressbar
+jinja2
