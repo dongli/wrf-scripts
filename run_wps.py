@@ -112,15 +112,15 @@ def run_wps(work_root, wps_root, bkg_root, config, args):
 
 	# ------------------------------------------------------------------------------------------------
 	cli.notice('Run metgrid.exe ...')
-	copy(f'{wps_root}/metgrid/src/metgrid.exe', 'metgrid.exe')
+	copy(f'{wps_root}/metgrid/METGRID.TBL.ARW', 'METGRID.TBL')
 	expected_files = ['met_em.d01.{}.nc'.format(time.format('YYYY-MM-DD_HH:mm:ss')) for time in bkg_times]
 	if not check_files(expected_files) or args.force:
 		# Remove possible existing met_em files.
 		run('rm -f met_em.*')
 		if args.verbose:
-			run('./metgrid.exe')
+			run(f'{wps_root}/metgrid/src/metgrid.exe')
 		else:
-			run('./metgrid.exe > metgrid.out 2>&1')
+			run(f'{wps_root}/metgrid/src/metgrid.exe > metgrid.out 2>&1')
 		if not check_files(expected_files):
 			if args.verbose:
 				cli.error('Failed!')

@@ -50,6 +50,7 @@ def config_wrf(work_root, wrf_root, wps_root, geog_root, config):
 	namelist_wps['geogrid']['stand_lon']            = common_config['stand_lon']
 	namelist_wps['geogrid']['geog_data_path']       = geog_root
 	namelist_wps['geogrid']['opt_geogrid_tbl_path'] = wps_work_dir
+	namelist_wps['metgrid']['opt_metgrid_tbl_path'] = wps_work_dir
 	namelist_wps.write('./namelist.wps', force=True)
 
 	wrf_work_dir = work_root + '/WRF'
