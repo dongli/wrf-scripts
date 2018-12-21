@@ -2,7 +2,7 @@
   "tag": "test",
   "common": {
     "start_time": "2018112112",
-    "forecast_hours": 0,
+    "forecast_hours": 12,
     "map_proj": 1,
     "min_lon": [70.0, 120],
     "max_lon": [140.0, 130],
@@ -20,7 +20,7 @@
       "file_processes": [
         "cp {{bkg_file}} {{bkg_file_basename}}",
         "bunzip2 {{bkg_file_basename}} || rm {{bkg_file_basename}}",
-        "grib_copy -w edition=1 {{bkg_file_basename.replace('.bz2', '')}} ecmwf.{{bkg_start_time.format('YYYYMMDDHH')}}.f{{'%3.3d'|format((bkg_time-bkg_start_time).in_hours())}}.grib1",
+        "grib_copy -w edition=1,paramId!=34 {{bkg_file_basename.replace('.bz2', '')}} ecmwf.{{bkg_start_time.format('YYYYMMDDHH')}}.f{{'%3.3d'|format((bkg_time-bkg_start_time).in_hours())}}.grib1",
         "rm {{bkg_file_basename.replace('.bz2', '')}}"
       ]
     }

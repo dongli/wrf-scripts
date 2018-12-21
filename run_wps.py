@@ -79,7 +79,7 @@ def run_wps(work_root, wps_root, bkg_root, config, args):
 	bkg_time = bkg_start_time
 	while bkg_time <= common_config['end_time']:
 		if bkg_time >= common_config['start_time']:
-			bkg_times.append(bkg_times)
+			bkg_times.append(bkg_time)
 		bkg_time = bkg_time.add(seconds=interval_seconds)
 	if len(bkg_times) == 0: cli.error('Failed to set background times, check start_time and forecast_hours.')
 
