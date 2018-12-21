@@ -19,7 +19,7 @@ def run_wps(work_root, wps_root, bkg_root, config, args):
 	else:
 		bkg_type = 'gfs'
 
-	wps_work_dir = os.path.abspath(args.work_root) + '/WPS'
+	wps_work_dir = os.path.abspath(work_root) + '/WPS'
 	if not os.path.isdir(wps_work_dir): os.mkdir(wps_work_dir)
 	os.chdir(wps_work_dir)
 
