@@ -6,10 +6,30 @@ import os
 import pexpect
 import platform
 import sys
+import subprocess
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import edit_file, run, cli, check_files
 
 def build_wrf(wrf_root, wps_root, wrfda_root, args):
+	if not 'HDF5' in os.environ:
+		res = subprocess.run(['which', 'h5dump'], stdout=subprocess.PIPE)
+		if res.returncode == 0:
+			os.environ['HDF5'] = os.path.dirname(os.path.dirname(res.stdout.decode('utf-8')))
+			cli.notice(f'Set HDF5 to {os.environ["HDF5"]}')
+	if not 'HDF5' in os.environ:
+		cli.warning('HDF5 environment variable is not set')
+
+	if not 'NETCDF' in os.environ:
+		res = subprocess.run(['which', 'ncdump'], stdout=subprocess.PIPE)
+		if res.returncode == 0:
+			os.environ['NETCDF'] = os.path.dirname(os.path.dirname(res.stdout.decode('utf-8')))
+			cli.notice(f'Set NETCDF to {os.environ["NETCDF"]}')
+	if not 'NETCDF' in os.environ:
+		cli.warning('NETCDF environment variable is not set!')
+
+  if not 'JASPERINC' in os.environ or not 'JASPERLIB' in os.environ:
+		cli.error('JASPERINC and JASPERLIB environment variables are not set!')
+
 	os.chdir(wrf_root)
 	if args.force: run('./clean -a &> /dev/null')
 	expected_exe_files = ('main/wrf.exe', 'main/real.exe', 'main/ndown.exe', 'main/tc.exe')
@@ -79,6 +99,7 @@ def build_wrf(wrf_root, wps_root, wrfda_root, args):
 	
 		run('sed -i "s/mpicc -cc=.*/mpicc/" configure.wps')
 		run('sed -i "s/mpif90 -f90=.*/mpif90/" configure.wps')
+		run('sed -i "s/WRF_DIR\s*=.*/WRF_DIR = ..\/WRF/" configure.wps')
 	
 		cli.notice('Compile WPS ...')
 		run('./compile &> compile.out')

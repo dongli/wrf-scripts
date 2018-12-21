@@ -75,9 +75,13 @@ def run_wps(work_root, wps_root, bkg_root, config, args):
 	# Generate the background times.
 	bkg_dir = eval_bkg_dir(bkg_start_time)
 	interval_seconds = int(re.search('interval_seconds\s*=\s*(\d+)', open('./namelist.wps').read())[1])
-	bkg_times = [bkg_start_time]
-	while bkg_times[len(bkg_times) - 1] < common_config['end_time']:
-		bkg_times.append(bkg_times[len(bkg_times) - 1].add(seconds=interval_seconds))
+	bkg_times = []
+	bkg_time = bkg_start_time
+	while bkg_time <= common_config['end_time']:
+		if bkg_time >= common_config['start_time']:
+			bkg_times.append(bkg_times)
+		bkg_time = bkg_time.add(seconds=interval_seconds)
+	if len(bkg_times) == 0: cli.error('Failed to set background times, check start_time and forecast_hours.')
 
 	expected_files = [f'FILE:{time.format("YYYY-MM-DD_HH")}' for time in bkg_times]
 	if not check_files(expected_files) or args.force:
