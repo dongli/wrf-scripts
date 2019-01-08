@@ -46,11 +46,8 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 		moad_cen_lat = common_config['ref_lat']
 		standard_lon = common_config['ref_lon']
 
-	if 'output_format' in config['obsproc']:
-		output_format = config['obsproc']['output_format']
-	else:
-		output_format = 2
-	time_window = config['obsproc']['time_window'] if 'time_window' in config['obsproc'] else 360
+	output_format = config['obsproc']['output_format'] if 'output_format' in config['obsproc'] else 2
+	time_window   = config['obsproc']['time_window']   if 'time_window'   in config['obsproc'] else 360
 
 	namelist_obsproc = f90nml.read('./namelist.obsproc')
 	namelist_obsproc['record1']['obs_gts_filename']  = 'obs.{}'.format(start_time.format('YYYYMMDDHHmm'))
@@ -95,7 +92,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS, WRFDA)')
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
-	parser.add_argument('-p', '--prod-root', dest='prod_root', help='Produce root directory')
+	parser.add_argument('-p', '--prod-root', dest='prod_root', help='Product root directory')
 	parser.add_argument('-d', '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WPS)')	
 	parser.add_argument('-l', '--littler-root', dest='littler_root', help='Little_r data root directory')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
