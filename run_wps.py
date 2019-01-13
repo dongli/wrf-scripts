@@ -14,7 +14,7 @@ from utils import cli, check_files, run, parse_config
 def run_wps(work_root, wps_root, bkg_root, config, args):
 	common_config = config['common']
 
-	if 'type' in common_config['background']:
+	if 'background' in common_config and 'type' in common_config['background']:
 		bkg_type = common_config['background']['type']
 	else:
 		bkg_type = 'gfs'
@@ -47,18 +47,24 @@ def run_wps(work_root, wps_root, bkg_root, config, args):
 	# ------------------------------------------------------------------------------------------------
 	#                                          UNGRIB
 	cli.notice('Run ungrib.exe ...')
-	if 'vtable' in common_config['background']:
+	if 'background' in common_config and 'vtable' in common_config['background']:
 		run(f'ln -sf {common_config["background"]["vtable"]} {wps_work_dir}/Vtable')
 	else:
 		run(f'ln -sf {wps_root}/ungrib/Variable_Tables/Vtable.{bkg_type.upper()} {wps_work_dir}/Vtable')
 
 	def eval_bkg_dir(bkg_start_time):
-		return bkg_root + '/' + Template(common_config['background']['dir_pattern']).render(bkg_start_time=bkg_start_time)
+		if 'background' in common_config and 'dir_pattern' in common_config['background']:
+			return bkg_root + '/' + Template(common_config['background']['dir_pattern']).render(bkg_start_time=bkg_start_time)
+		elif bkg_type == 'gfs':
+			return bkg_root + '/gfs.' + bkg_start_time.format('YYYYMMDDHH')
 
 	# Find out suitable background data that cover forecast time period.
 	def is_bkg_exist(bkg_start_time):
 		bkg_dir = eval_bkg_dir(bkg_start_time)
-		file_name = Template(common_config['background']['file_pattern']).render(bkg_start_time=bkg_start_time)
+		if 'background' in common_config and 'file_pattern' in common_config['background']:
+			file_name = Template(common_config['background']['file_pattern']).render(bkg_start_time=bkg_start_time)
+		elif bkg_type == 'gfs':
+			file_name = 'gfs.t{:02d}z.pgrb2.*.f*'.format(bkg_start_time.hour)
 		return len(glob(f'{bkg_dir}/{file_name}')) != 0
 
 	found = False
@@ -86,7 +92,7 @@ def run_wps(work_root, wps_root, bkg_root, config, args):
 	expected_files = [f'FILE:{time.format("YYYY-MM-DD_HH")}' for time in bkg_times]
 	if not check_files(expected_files) or args.force:
 		run('rm -f GRIBFILE.* FILE:*')
-		if 'file_processes' in common_config['background']:
+		if 'background' in common_config and 'file_processes' in common_config['background']:
 			if not os.path.isdir(f'{wps_work_dir}/background'): os.mkdir(f'{wps_work_dir}/background')
 			os.chdir(f'{wps_work_dir}/background')
 			for bkg_time in bkg_times:

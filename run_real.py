@@ -43,19 +43,13 @@ def run_real(work_root, wrf_root, config, args):
 			cli.warning(f'Dimension num_st_layers is not in {dataset.filepath()}! Set num_metgrid_soil_levels to 0.')
 			namelist_input['domains']['num_metgrid_soil_levels'] = 0
 		namelist_input.write('./namelist.input', force=True)
-		if args.verbose:
-			run(f'{wrf_root}/run/real.exe')
-		else:
-			run(f'{wrf_root}/run/real.exe &> real.out')
+		run(f'{wrf_root}/run/real.exe')
 		if not check_files(expected_files):
-			if args.verbose:
-				cli.error('Failed!')
-			else:
-				cli.error(f'Failed! Check output {os.path.abspath(wrf_work_dir)}/rsl.error.0000.')
+			cli.error(f'Failed! Check output {os.path.abspath(wrf_work_dir)}/rsl.error.0000.')
 		cli.notice('Succeeded.')
 	else:
 		cli.notice('File wrfinput_* already exist.')
-	run(f'ls -l {wrf_root}/run/wrfinput_* {wrf_root}/run/wrfbdy_*')
+	run(f'ls -l {wrf_work_dir}/wrfinput_* {wrf_work_dir}/wrfbdy_*')
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
