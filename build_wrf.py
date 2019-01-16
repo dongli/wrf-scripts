@@ -27,7 +27,7 @@ def build_wrf(wrf_root, wps_root, wrfda_root, args):
 	if not 'NETCDF' in os.environ:
 		cli.warning('NETCDF environment variable is not set!')
 
-  if not 'JASPERINC' in os.environ or not 'JASPERLIB' in os.environ:
+	if not 'JASPERINC' in os.environ or not 'JASPERLIB' in os.environ:
 		cli.error('JASPERINC and JASPERLIB environment variables are not set!')
 
 	os.chdir(wrf_root)
