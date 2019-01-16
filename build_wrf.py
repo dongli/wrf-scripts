@@ -67,12 +67,18 @@ def build_wrf(wrf_root, wps_root, wrfda_root, args):
 			])
 	
 		cli.notice('Compile WRF ...')
-		run('./compile em_real &> compile.out')
+		if args.verbose:
+			run('./compile em_real')
+		else:
+			run('./compile em_real &> compile.out')
 		
 		if check_files(expected_exe_files):
 			cli.notice('Succeeded.')
 		else:
-			cli.error(f'Failed! Check {wrf_root}/compile.out')
+			if args.verbose:
+				cli.error('Failed!')
+			else:
+				cli.error(f'Failed! Check {wrf_root}/compile.out')
 	else:
 		cli.notice('WRF is already built.')
 	
@@ -102,12 +108,18 @@ def build_wrf(wrf_root, wps_root, wrfda_root, args):
 		run('sed -i "s/WRF_DIR\s*=.*/WRF_DIR = ..\/WRF/" configure.wps')
 	
 		cli.notice('Compile WPS ...')
-		run('./compile &> compile.out')
+		if args.verbose:
+			run('./compile')
+		else:
+			run('./compile &> compile.out')
 	
 		if check_files(expected_exe_files):
 			cli.notice('Succeeded.')
 		else:
-			cli.error(f'Failed! Check {wps_root}/compile.out')
+			if args.verbose:
+				cli.error('Failed!')
+			else:
+				cli.error(f'Failed! Check {wps_root}/compile.out')
 	else:
 		cli.notice('WPS is already built.')
 	
@@ -171,12 +183,18 @@ def build_wrf(wrf_root, wps_root, wrfda_root, args):
 		child.wait()
 	
 		cli.notice('Compile WRFDA ...')
-		run('./compile all_wrfvar &> compile.wrfvar.out')
+		if args.verbose:
+			run('./compile all_wrfvar')
+		else:
+			run('./compile all_wrfvar &> compile.wrfvar.out')
 	
 		if check_files(expected_exe_files, fatal=True):
 			cli.notice('Succeeded.')
 		else:
-			cli.error(f'Failed! Check {wrfda_root}/compile.out')
+			if args.verbose:
+				cli.error('Failed!')
+			else:
+				cli.error(f'Failed! Check {wrfda_root}/compile.out')
 	else:
 		cli.notice('WRFDA is already built.')
 
@@ -190,6 +208,7 @@ if __name__ == '__main__':
 	parser.add_argument('-g', '--use-grib', dest='use_grib', help='Use GRIB IO capability of WRF', action='store_true')
 	parser.add_argument('-s', '--compiler-suite', dest='compiler_suite', help='Compiler suite', choices=['gnu', 'pgi', 'intel'])
 	parser.add_argument('-f', '--force', help='Force to rebuild if already built', action='store_true')
+	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
 	args = parser.parse_args()
 	
 	if not args.wrf_root:
