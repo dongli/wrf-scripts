@@ -1,7 +1,7 @@
 {
   "tag": "test",
   "common": {
-    "start_time": "2019011218",
+    "start_time": "2019011300",
     "forecast_hours": 6,
     "map_proj": 1,
     "min_lon": [100.0],
@@ -16,17 +16,5 @@
   "obsproc": {
     "time_window": 360,
     "output_format": 2
-  },
-  "wrfda": {
-    "time_window": 360,
-    "namelist": {},
-    "cv_options": "cv3",
-    "nmc": {
-      "long_forecast_hours": 24,
-      "short_forecast_hours": 12,
-      "start_time": "2018090100",
-      "end_time": "2018100100",
-      "start_hours_per_day": [0, 12]
-    }
   }
 }

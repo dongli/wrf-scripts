@@ -12,25 +12,17 @@ script_root = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(f'{script_root}/utils')
 from utils import cli, check_files, run, parse_config
 
-def link_obsproc_files(wrfda_root, work_root):
-	os.mkdir(work_root)
-	os.chdir(work_root)
-	run(f'cp {script_root}/namelists/namelist.obsproc .')
-	run(f'ln -sf {wrfda_root}/var/obsproc/obsproc.exe .')
-	run(f'ln -sf {wrfda_root}/var/obsproc/obserr.txt .')
-
 def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, args):
 	common_config = config['common']
 
 	start_time = common_config['start_time']
 
-	cli.notice('Prepare work directory.')
-	if not os.path.exists(work_root):
-		link_obsproc_files(wrfda_root, work_root)
-	if args.force:
-		run(f'rm -rf {work_root}')
-		link_obsproc_files(wrfda_root, work_root)
-	os.chdir(work_root)
+	wrfda_work_dir = os.path.abspath(work_root) + '/WRFDA'
+	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
+	os.chdir(wrfda_work_dir)
+
+	run(f'ln -sf {wrfda_root}/var/obsproc/obsproc.exe .')
+	run(f'ln -sf {wrfda_root}/var/obsproc/obserr.txt .')
 
 	if check_files([f'{prod_root}/wrfinput_d01']):
 		ncfile       = Dataset(f'{prod_root}/wrfinput_d01', 'r')
@@ -49,7 +41,7 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 	output_format = config['obsproc']['output_format'] if 'output_format' in config['obsproc'] else 2
 	time_window   = config['obsproc']['time_window']   if 'time_window'   in config['obsproc'] else 360
 
-	namelist_obsproc = f90nml.read('./namelist.obsproc')
+	namelist_obsproc = f90nml.read(f'{wrfda_root}/var/obsproc/namelist.obsproc.3dvar.wrfvar-tut')
 	namelist_obsproc['record1']['obs_gts_filename']  = 'obs.{}'.format(start_time.format('YYYYMMDDHHmm'))
 	namelist_obsproc['record2']['time_window_min']   = start_time.subtract(minutes=time_window/2).format('YYYY-MM-DD_HH:mm:ss')
 	namelist_obsproc['record2']['time_analysis']     = start_time.format('YYYY-MM-DD_HH:mm:ss')
@@ -70,7 +62,7 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 	if not check_files(expected_files) or args.force:
 		run('rm -f obs_gts_*')
 		if os.path.exists(f'{littler_root}/obs.{start_time.format("YYYYMMDDHHmm")}'):
-			run(f'ln -sf {littler_root}/obs.{start_time.format("YYYYMMDDHHmm")} {work_root}')
+			run(f'ln -sf {littler_root}/obs.{start_time.format("YYYYMMDDHHmm")} {wrfda_work_dir}')
 		else:
 			cli.error(f'Failed! {littler_root}/obs.{start_time.format("YYYYMMDDHHmm")} Not Found.')
 		if args.verbose:
@@ -81,7 +73,7 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 			if args.verbose:
 				cli.error('Failed!')
 			else:
-				cli.error(f'Failed! Check output {work_root}/obsproc.out')
+				cli.error(f'Failed! Check output {wrfda_work_dir}/obsproc.out')
 		cli.notice('Succeeded.')
 	else:
 		cli.notice('File obs_gts_* already exist.')
@@ -93,7 +85,7 @@ if __name__ == '__main__':
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS, WRFDA)')
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
 	parser.add_argument('-p', '--prod-root', dest='prod_root', help='Product root directory')
-	parser.add_argument('-d', '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WPS)')	
+	parser.add_argument('-d', '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')	
 	parser.add_argument('-l', '--littler-root', dest='littler_root', help='Little_r data root directory')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
@@ -108,7 +100,7 @@ if __name__ == '__main__':
 	args.work_root = os.path.abspath(args.work_root)
 	if not os.path.isdir(args.work_root):
 		cli.error(f'Directory {args.work_root} does not exist!')
-	args.work_root = os.path.abspath(args.work_root) + '/OBSPROC'
+	args.work_root = os.path.abspath(args.work_root)
 
 	if not args.prod_root:
 		if os.getenv('PROD_ROOT'):
