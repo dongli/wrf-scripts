@@ -11,32 +11,24 @@ import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 import utils import cli, check_files, run, parse_config
 
-def link_update_files(wrfda_root, work_root):
-	os.mkdir(work_root)
-	os.chdir(work_root)
-	run(f'ln -sf {wrfda_root}/var/build/da_update_bc.exe ./')
-
 def run_wrfda_update_lateralbc(work_root, prod_root, wrfda_root, config, args):
 	common_config = config['common']
 
-	# Shortcuts
 	start_time = common_config['start_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
-	
-	cli.notice('Prepare work directory.')
-	if not os.path.exists(work_root):
-		link_update_files(wrfda_root, work_root)
-	if args.force:
-		run(f'rm -rf {work_root}/*')
-		link_update_files(wrfda_root, work_root)
-	os.chdir(work_root)
-	
+
+	wrfda_work_dir = os.path.abspath(work_root) + '/WRFDA'
+	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
+	os.chdir(wrfda_work_dir)
+
+	run(f'ln -sf {wrfda_root}/var/build/da_update_bc.exe ./')
+
 	expected_files.expend([f'{prod_root}/wrfbdy_d01', 'wrfinput_d01'])
 	if not check_files(expected_files):
 		cli.error('da_wrfvar.exe or real.exe wasn\'t executed successfully!')
 
 	for infile in expected_files:
-		run(f'cp {infile} ./')
+		run(f'cp {infile} .')
 
 	with open('parame.in', 'w') as f:
 		f.writelines("&control_param")
@@ -69,9 +61,8 @@ if __name__ == '__main__':
 		else:
 			cli.error('Option --work-root or enviroment variable WORK_ROOT need to be set!')
 	args.work_root = os.path.abspath(args.work_root)
-    if not os.path.isdir(args.work_root):
-        cli.error(f'Directory {args.work_root} does not exist!')
-    args.work_root = os.path.abspath(args.work_root) + 'UPDATE_LATERALBC'
+	if not os.path.isdir(args.work_root):
+		cli.error(f'Directory {args.work_root} does not exist!')
 
 	if not args.prod_root:
 		if os.getenv('PROD_ROOT'):
@@ -79,8 +70,8 @@ if __name__ == '__main__':
 		else:
 			cli.error('Option --prod-root or enviroment variable PROD_ROOT need to be set!')
 	args.prod_root = os.path.abspath(args.prod_root)
-    if not os.path.isdir(args.prod_root):
-        cli.error(f'Directory {args.prod_root} does not exist!')
+	if not os.path.isdir(args.prod_root):
+		cli.error(f'Directory {args.prod_root} does not exist!')
 
 	if not args.wrfda_root:
 		if os.getenv('WRFDA_ROOT'):
@@ -90,8 +81,8 @@ if __name__ == '__main__':
 		else:
 			cli.error('Option --wrfda-root or enviroment variable WRFDA_ROOT need to be set!')
 	args.wrfda_root = os.path.abspath(args.wrfda_root)
-    if not os.path.isdir(args.wrfda_root):
-        cli.error(f'Directory {args.wrfda_root} does not exist!')
+	if not os.path.isdir(args.wrfda_root):
+		cli.error(f'Directory {args.wrfda_root} does not exist!')
 
 	config = parse_config(args.config_json)
 

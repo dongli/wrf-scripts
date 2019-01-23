@@ -13,8 +13,10 @@
     "parent_grid_ratio": [1],
     "max_dom": 1
   },
-  "obsproc": {
-    "time_window": 360,
-    "output_format": 2
+  "wrfda": {
+    "type": "3dvar",
+    "time_window": 120,
+    "obsproc_output_format": 2,
+    "cv_options": 3
   }
 }

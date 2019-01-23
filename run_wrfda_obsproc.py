@@ -14,6 +14,14 @@ from utils import cli, check_files, run, parse_config
 
 def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, args):
 	common_config = config['common']
+	if not 'wrfda' in config:
+		cli.error('There is no wrfda in configuration file!')
+	if not 'obsproc' in config['wrfda']:
+		config['wrfda']['obsproc'] = {
+			'time_window': 120 if config['wrfda']['type'] == '3dvar' else 360,
+			'output_format': 2
+		}
+	wrfda_config = config['wrfda']
 
 	start_time = common_config['start_time']
 
@@ -38,10 +46,13 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 		moad_cen_lat = common_config['ref_lat']
 		standard_lon = common_config['ref_lon']
 
-	output_format = config['obsproc']['output_format'] if 'output_format' in config['obsproc'] else 2
-	time_window   = config['obsproc']['time_window']   if 'time_window'   in config['obsproc'] else 360
+	output_format = wrfda_config['obsproc_output_format'] if 'obsproc_output_format' in wrfda_config else 2
+	time_window   = wrfda_config['time_window']   if 'time_window'   in wrfda_config else 360
 
-	namelist_obsproc = f90nml.read(f'{wrfda_root}/var/obsproc/namelist.obsproc.3dvar.wrfvar-tut')
+	if config['wrfda']['type'] == '3dvar':
+		namelist_obsproc = f90nml.read(f'{wrfda_root}/var/obsproc/namelist.obsproc.3dvar.wrfvar-tut')
+	else:
+		cli.error('Currently, we only support 3DVar...')
 	namelist_obsproc['record1']['obs_gts_filename']  = 'obs.{}'.format(start_time.format('YYYYMMDDHHmm'))
 	namelist_obsproc['record2']['time_window_min']   = start_time.subtract(minutes=time_window/2).format('YYYY-MM-DD_HH:mm:ss')
 	namelist_obsproc['record2']['time_analysis']     = start_time.format('YYYY-MM-DD_HH:mm:ss')
@@ -58,7 +69,7 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 	namelist_obsproc.write('./namelist.obsproc', force=True)
 
 	cli.notice('Run obsproc.exe ...')
-	expected_files = ['obs_gts_{}.3DVAR'.format(start_time.format('YYYY-MM-DD_HH:mm:ss'))]
+	expected_files = [f'obs_gts_{start_time.format("YYYY-MM-DD_HH:mm:ss")}.3DVAR']
 	if not check_files(expected_files) or args.force:
 		run('rm -f obs_gts_*')
 		if os.path.exists(f'{littler_root}/obs.{start_time.format("YYYYMMDDHHmm")}'):
@@ -100,7 +111,6 @@ if __name__ == '__main__':
 	args.work_root = os.path.abspath(args.work_root)
 	if not os.path.isdir(args.work_root):
 		cli.error(f'Directory {args.work_root} does not exist!')
-	args.work_root = os.path.abspath(args.work_root)
 
 	if not args.prod_root:
 		if os.getenv('PROD_ROOT'):

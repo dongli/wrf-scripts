@@ -113,7 +113,6 @@ if __name__ == '__main__':
 			args.wrf_root = args.codes + '/WRF'
 		else:
 			cli.error('Option --wrf-root or environment variable WRF_ROOT need to be set!')
-	
 	args.wrf_root = os.path.abspath(args.wrf_root)
 	
 	if not args.wps_root:
@@ -123,7 +122,6 @@ if __name__ == '__main__':
 			args.wps_root = args.codes + '/WPS'
 		else:
 			cli.error('Option --wps-root or environment variable WPS_ROOT need to be set!')
-	
 	args.wps_root = os.path.abspath(args.wps_root)
 	
 	if not args.geog_root:
@@ -133,7 +131,6 @@ if __name__ == '__main__':
 			args.geog_root = args.codes + '/WPS_GEOG'
 		else:
 			cli.error('Option --geog-root or environment variable WPS_GEOG_ROOT need to be set!')
-	
 	args.geog_root = os.path.abspath(args.geog_root)
 	
 	config = parse_config(args.config_json)
