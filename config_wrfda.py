@@ -159,6 +159,73 @@ def config_wrfvar(wrfda_root, work_root, config, args):
 	namelist_input['wrfvar7']['var_scaling4']                 = 1.0
 	namelist_input['wrfvar7']['var_scaling5']                 = 1.0
 	namelist_input['wrfvar7']['var_scaling6']                 = 1.0
+	namelist_input['wrfvar7']['len_scaling1']                 = 1.0
+	namelist_input['wrfvar7']['len_scaling2']                 = 1.0
+	namelist_input['wrfvar7']['len_scaling3']                 = 1.0
+	namelist_input['wrfvar7']['len_scaling4']                 = 1.0
+	namelist_input['wrfvar7']['len_scaling5']                 = 1.0
+	namelist_input['wrfvar7']['len_scaling6']                 = 1.0
+	namelist_input['wrfvar7']['len_scaling7']                 = 1.0
+	namelist_input['wrfvar7']['len_scaling8']                 = 1.0
+	namelist_input['wrfvar7']['len_scaling9']                 = 1.0
+	namelist_input['wrfvar7']['len_scaling10']                = 1.0
+	namelist_input['wrfvar7']['len_scaling11']                = 1.0
+	namelist_input['wrfvar7']['je_factor']                    = 1.0
+	namelist_input['wrfvar7']['cloud_cv_options']             = 0
+	# wrfvar8
+	namelist_input['wrfvar8']                                 = {}
+	# wrfvar9
+	namelist_input['wrfvar9']['stdout']                       = 6
+	namelist_input['wrfvar9']['stderr']                       = 0
+	namelist_input['wrfvar9']['trace_unit']                   = 7
+	namelist_input['wrfvar9']['trace_pe']                     = 0
+	namelist_input['wrfvar9']['trace_repeat_head']            = 10
+	namelist_input['wrfvar9']['trace_repeat_body']            = 10
+	namelist_input['wrfvar9']['trace_max_depth']              = 30
+	namelist_input['wrfvar9']['trace_use']                    = False
+	namelist_input['wrfvar9']['trace_use_frequent']           = False
+	namelist_input['wrfvar9']['trace_use_dull']               = False
+	namelist_input['wrfvar9']['trace_use_memory']             = True
+	namelist_input['wrfvar9']['trace_all_pes']                = False
+	namelist_input['wrfvar9']['trace_csv']                    = True
+	namelist_input['wrfvar9']['use_html']                     = True
+	namelist_input['wrfvar9']['warnings_are_fatal']           = False
+	# wrfvar10
+	namelist_input['wrfvar10']['test_transforms']             = False
+	namelist_input['wrfvar10']['test_gradient']               = False
+	# wrfvar11
+	namelist_input['wrfvar11']['cv_options_hum']              = 1
+	namelist_input['wrfvar11']['check_rh']                    = 0
+	namelist_input['wrfvar11']['sfc_assi_options']            = 1
+	namelist_input['wrfvar11']['sfc_stheight_diff']           = 100.0
+	namelist_input['wrfvar11']['sfc_stheight_diff_ztd']       = 1000.0
+	namelist_input['wrfvar11']['consider_xap4ztd']            = True
+	namelist_input['wrfvar11']['obs_err_inflate']             = False
+	namelist_input['wrfvar11']['stn_ht_diff_scale']           = 200.0
+	namelist_input['wrfvar11']['psfc_from_slp']               = False
+	namelist_input['wrfvar11']['calculate_cg_cost_fn']        = False
+	namelist_input['wrfvar11']['write_detal_grad_fn']         = False
+	namelist_input['wrfvar11']['seed_array1']                 = 1
+	namelist_input['wrfvar11']['seed_array2']                 = 1
+	# wrfvar12
+	namelist_input['wrfvar12']['use_wpec']                    = False
+	namelist_input['wrfvar12']['wpec_factor']                 = 0.001
+	namelist_input['wrfvar12']['balance_type']                = 3
+	namelist_input['wrfvar12']['use_divc']                    = False
+	namelist_input['wrfvar12']['divc_factor']                 = 1000.0
+	namelist_input['wrfvar12']['use_lsac']                    = False
+	namelist_input['wrfvar12']['lsac_nh_step']                = 1
+	namelist_input['wrfvar12']['lsac_nv_step']                = 1
+	namelist_input['wrfvar12']['lsac_nv_start']               = 1
+	namelist_input['wrfvar12']['lsac_use_u']                  = True
+	namelist_input['wrfvar12']['lsac_use_v']                  = True
+	namelist_input['wrfvar12']['lsac_use_t']                  = True
+	namelist_input['wrfvar12']['lsac_use_q']                  = True
+	namelist_input['wrfvar12']['lsac_u_error']                = 2.5
+	namelist_input['wrfvar12']['lsac_v_error']                = 2.5
+	namelist_input['wrfvar12']['lsac_t_error']                = 2.0
+	namelist_input['wrfvar12']['lsac_q_error']                = 0.002
+	namelist_input['wrfvar12']['lsac_print_details']          = False
 
 	namelist_input.write(f'{wrfda_work_dir}/namelist.input', force=True)
 
