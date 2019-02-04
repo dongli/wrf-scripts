@@ -56,7 +56,12 @@ def run_wrfda_3dvar(work_root, prod_root, wrfda_root, config, args):
 
 	run('./da_wrfvar.exe')
 
-	cli.notice('Succeeded.')
+	expected_files = ['wrfvar_output', 'statistics']
+	if not check_files(expected_files):
+		cli.error('Failed!')
+	else:
+		print(open('statistics').read())
+		cli.notice('Succeeded.')
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
