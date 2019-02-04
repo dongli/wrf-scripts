@@ -10,6 +10,8 @@ import config_wrfda
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, check_files, run, parse_config
 
+scripts_root = os.path.dirname(os.path.realpath(__file__))
+
 def run_wrfda_3dvar(work_root, prod_root, wrfda_root, config, args):
 	common_config = config['common']
 	if not 'wrfda' in config:
@@ -61,6 +63,7 @@ def run_wrfda_3dvar(work_root, prod_root, wrfda_root, config, args):
 		cli.error('Failed!')
 	else:
 		print(open('statistics').read())
+		run(f'ncl -Q {scripts_root}/plots/plot_cost_grad_fn.ncl')
 		cli.notice('Succeeded.')
 
 if __name__ == '__main__':
