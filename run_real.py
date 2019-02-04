@@ -12,7 +12,7 @@ import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, check_files, run, parse_config
 
-def run_real(work_root, wrf_root, config, args):
+def run_real(work_root, prod_root, wrf_root, config, args):
 	common_config = config['common']
 
 	time_format_str = 'YYYY-MM-DD_HH:mm:ss'
@@ -50,11 +50,13 @@ def run_real(work_root, wrf_root, config, args):
 	else:
 		cli.notice('File wrfinput_* already exist.')
 	run(f'ls -l {wrf_work_dir}/wrfinput_* {wrf_work_dir}/wrfbdy_*')
+	run(f'cp wrfinput_* wrfbdy_* {prod_root}')
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS)')
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
+	parser.add_argument('-p', '--prod-root', dest='prod_root', help='Product root directory')
 	parser.add_argument('-r', '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3)')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
 	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
@@ -70,6 +72,15 @@ if __name__ == '__main__':
 	if not os.path.isdir(args.work_root):
 		cli.error(f'Directory {args.work_root} does not exist!')
 
+	if not args.prod_root:
+		if os.getenv('PROD_ROOT'):
+			args.work_root = os.getenv('PROD_ROOT')
+		else:
+			cli.error('Option --prod-root or environment variable PROD_ROOT need to be set!')
+	args.prod_root = os.path.abspath(args.prod_root)
+	if not os.path.isdir(args.prod_root):
+		cli.error(f'Directory {args.prod_root} does not exist!')
+
 	if not args.wrf_root:
 		if os.getenv('WRF_ROOT'):
 			args.wrf_root = os.getenv('WRF_ROOT')
@@ -83,5 +94,5 @@ if __name__ == '__main__':
 
 	config = parse_config(args.config_json)
 
-	run_real(args.work_root, args.wrf_root, config, args)
+	run_real(args.work_root, args.prod_root, args.wrf_root, config, args)
 

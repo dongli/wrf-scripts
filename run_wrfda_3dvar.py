@@ -6,11 +6,11 @@ import os
 import pendulum
 import re
 import sys
-import config_wrfvar
+import config_wrfda
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, check_files, run, parse_config
 
-def run_wrfda(work_root, prod_root, wrfda_root, config, args):
+def run_wrfda_3dvar(work_root, prod_root, wrfda_root, config, args):
 	common_config = config['common']
 	if not 'wrfda' in config:
 		cli.error('There is no "wrfda" in configuration file!')
@@ -23,44 +23,39 @@ def run_wrfda(work_root, prod_root, wrfda_root, config, args):
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 
-	run(f'ln -sf {wrfda_root}/var/build/da_wrfvar.exe .')
-	run(f'ln -sf {wrfda_root}/run/LANDUSE.TBL .')
+	run(f'ln -sf {wrfda_root}/var/build/da_wrfvar.exe {wrfda_work_dir}')
+	run(f'ln -sf {wrfda_root}/run/LANDUSE.TBL {wrfda_work_dir}')
 
+	# BE matrix
 	if 'cv_options' in wrfda_config:
 		if wrfda_config['cv_options'] == 5:
+			if not os.path.isdir(f'{prod_root}/be.dat.cv5'):
+				cli.error(f'BE matrix {prod_root}/be.dat.cv5 does not exist!')
 			run(f'ln -sf {prod_root}/be.dat.cv5 be.dat')
 		elif wrfda_config['cv_options'] == 6:
+			if not os.path.isdir(f'{prod_root}/be.dat.cv6'):
+				cli.error(f'BE matrix {prod_root}/be.dat.cv6 does not exist!')
 			run(f'ln -sf {prod_root}/be.dat.cv6 be.dat')
 		elif wrfda_config['cv_options'] == 7:
+			if not os.path.isdir(f'{prod_root}/be.dat.cv7'):
+				cli.error(f'BE matrix {prod_root}/be.dat.cv7 does not exist!')
 			run(f'ln -sf {prod_root}/be.dat.cv7 be.dat')
 	if not os.path.exists('./be.dat'):
 		run(f'ln -sf {wrfda_root}/var/run/be.dat.cv3 be.dat')
 
+	# First guess
 	expected_files = ['{}/wrfinput_d{:02d}'.format(prod_root, i+1) for i in range(common_config['max_dom'])]
 	if not check_files(expected_files):
 		cli.error('real.exe or da_update_bc.exe wasn\'t executed successfully!')
+	# TODO: Assume there is only one domain to be assimilated.
+	run(f'ln -sf {prod_root}/wrfinput_d01 {wrfda_work_dir}/fg')
 
+	# Observation data
 	if wrfda_config['type'] == '3dvar':
-		run(f'ln -sf obs_gts_{start_time.format(datetime_fmt}.3DVAR ob.ascii')
+		run(f'ln -sf obs_gts_{start_time.format(datetime_fmt)}.3DVAR ob.ascii')
 
-	if 'da_domain' in wrfda_config:
-		if type(wrfda_config['da_domain']) != list:
-			da_domain = [wrfda_config['da_domain']]
-	else:
-		da_domain = [i+1 for i in range(common_config['max_dom'])]
-	for i in da_domain:
-		config_wrfvar(work_root, i)
-		run(f'{}/wrfinput_d{:02d} ./fg'.format(prod_root, i))
-		if args.verbose:
-			run(f'mpiexec -np {args.np} ./da_wrfvar.exe')
-		else:
-			run(f'mpiexec -np {args.np} ./da_wrfvar.exe > da_wrfvar.out 2>&1')
-		if not check_files(['wrfvar_output']):
-			if args.verbose:
-				cli.error('Failed.')
-			else:
-				cli.error(f'Failed! Check out {work_root}/da_wrfvar.out')
-		run('mv ./wrfvar_output {}/wrfinput_{:02d}'.format(prod_root, i))
+	run('./da_wrfvar.exe')
+
 	cli.notice('Succeeded.')
 
 if __name__ == '__main__':
@@ -106,4 +101,4 @@ if __name__ == '__main__':
 
 	config = parse_config(args.config_json)
 
-	run_wrfda_obsproc(args.work_root, args.prod_root, args.wrfda_root, config, args)
+	run_wrfda_3dvar(args.work_root, args.prod_root, args.wrfda_root, config, args)

@@ -29,8 +29,8 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 
-	run(f'ln -sf {wrfda_root}/var/obsproc/obsproc.exe .')
-	run(f'ln -sf {wrfda_root}/var/obsproc/obserr.txt .')
+	run(f'ln -sf {wrfda_root}/var/obsproc/obsproc.exe {wrfda_work_dir}')
+	run(f'ln -sf {wrfda_root}/var/obsproc/obserr.txt {wrfda_work_dir}')
 
 	if check_files([f'{prod_root}/wrfinput_d01']):
 		ncfile       = Dataset(f'{prod_root}/wrfinput_d01', 'r')
