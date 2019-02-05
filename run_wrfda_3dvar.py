@@ -64,6 +64,7 @@ def run_wrfda_3dvar(work_root, prod_root, wrfda_root, config, args):
 	else:
 		print(open('statistics').read())
 		run(f'ncl -Q {scripts_root}/plots/plot_cost_grad_fn.ncl')
+		run(f'cp wrfvar_output {prod_root}')
 		cli.notice('Succeeded.')
 
 if __name__ == '__main__':

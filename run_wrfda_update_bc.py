@@ -17,19 +17,22 @@ def run_wrfda_update_bc(work_root, prod_root, wrfda_root, config, args):
 
 	run(f'ln -sf {wrfda_root}/var/build/da_update_bc.exe .')
 
-	expected_files = [f'{prod_root}/wrfbdy_d01', f'{prod_root}/wrfinput_d01']
+	expected_files = [f'{prod_root}/wrfbdy_d01']
 	if not check_files(expected_files):
 		cli.error('da_wrfvar.exe or real.exe wasn\'t executed successfully!')
 	for infile in expected_files:
 		run(f'cp {infile} .')
 
 	parame_in = f90nml.read(f'{wrfda_root}/var/test/update_bc/parame.in')
+	parame_in['control_param']['wrf_input'] = './fg'
 	parame_in.write(f'{wrfda_work_dir}/parame.in', force=True)
 
 	if args.verbose:
 		run('./da_update_bc.exe')
 	else:
 		run('./da_update_bc.exe &> da_update_bc.out')
+
+	run(f'cp wrfbdy_d01 {prod_root}')
 
 	cli.notice('Succeeded.')
 
