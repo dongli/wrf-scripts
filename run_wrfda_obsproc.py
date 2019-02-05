@@ -94,9 +94,9 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS, WRFDA)')
+	parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')	
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
 	parser.add_argument('-p', '--prod-root', dest='prod_root', help='Product root directory')
-	parser.add_argument('-d', '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')	
 	parser.add_argument('-l', '--littler-root', dest='littler_root', help='Little_r data root directory')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')

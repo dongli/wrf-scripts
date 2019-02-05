@@ -13,8 +13,7 @@ script_root = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(f'{script_root}/utils')
 from utils import cli, parse_config
 
-def config_wrfda(wrfda_root, work_root, config, args):
-	pprint(config)
+def config_wrfda(work_root, wrfda_root, config, args):
 	common_config = config['common']
 	if not 'wrfda' in config:
 		cli.error('There is no "wrfda" in configuration file!')
@@ -35,6 +34,8 @@ def config_wrfda(wrfda_root, work_root, config, args):
 	template = re.sub(r'\([^\)]*\)', '', template)
 	namelist_input = f90nml.read(StringIO(template))
 	namelist_input['wrfvar18']['analysis_date'] = start_time.format(datetime_fmt)
+	namelist_input['wrfvar21']['time_window_min'] = start_time.subtract(minutes=time_window/2).format(datetime_fmt)
+	namelist_input['wrfvar22']['time_window_max'] = start_time.add(minutes=time_window/2).format(datetime_fmt)
 	# Fix bugs
 	namelist_input['wrfvar2']['qc_rej_both'] = False
 	namelist_input['wrfvar7']['cv_options'] = wrfda_config['cv_options']
@@ -58,7 +59,7 @@ def config_wrfda(wrfda_root, work_root, config, args):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS)')
-	parser.add_argument('-d', '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')	
+	parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')	
 	parser.add_argument('-w', '--work-root', dest='work_root', help='Work root directory')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
@@ -73,6 +74,8 @@ if __name__ == '__main__':
 		else:
 			cli.error('Option --wrfda-root or environment variable WRFDA_ROOT need to be set!')
 	args.wrfda_root = os.path.abspath(args.wrfda_root)
+	if not os.path.isdir(args.wrfda_root):
+		cli.error(f'Directory {args.wrfda_root} does not exist!')
 
 	if not args.work_root:
 		if os.getenv('WORK_ROOT'):

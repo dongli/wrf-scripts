@@ -8,8 +8,12 @@ import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, check_files, run, parse_config
 
-def run_wrfda_update_bc(work_root, prod_root, wrfda_root, config, args):
+def run_wrfda_update_bc(work_root, prod_root, wrfda_root, update_lowbc, config, args):
 	common_config = config['common']
+
+	start_time = common_config['start_time']
+	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
+	start_time_str = start_time.format(datetime_fmt)
 
 	wrfda_work_dir = os.path.abspath(work_root) + '/WRFDA'
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
@@ -17,14 +21,16 @@ def run_wrfda_update_bc(work_root, prod_root, wrfda_root, config, args):
 
 	run(f'ln -sf {wrfda_root}/var/build/da_update_bc.exe .')
 
-	expected_files = [f'{prod_root}/wrfbdy_d01']
+	expected_files = [f'{prod_root}/wrfbdy_d01_{start_time_str}', 'fg']
 	if not check_files(expected_files):
 		cli.error('da_wrfvar.exe or real.exe wasn\'t executed successfully!')
-	for infile in expected_files:
-		run(f'cp {infile} .')
+	run(f'cp {prod_root}/wrfbdy_d01_{start_time_str} wrfbdy_d01')
 
 	parame_in = f90nml.read(f'{wrfda_root}/var/test/update_bc/parame.in')
 	parame_in['control_param']['wrf_input'] = './fg'
+	if update_lowbc:
+		cli.notice('Update only low boundary condition.')
+		parame_in['control_param']['low_bdy_only'] = True
 	parame_in.write(f'{wrfda_work_dir}/parame.in', force=True)
 
 	if args.verbose:
@@ -32,7 +38,10 @@ def run_wrfda_update_bc(work_root, prod_root, wrfda_root, config, args):
 	else:
 		run('./da_update_bc.exe &> da_update_bc.out')
 
-	run(f'cp wrfbdy_d01 {prod_root}')
+	if update_lowbc:
+		run(f'cp wrfbdy_d01 {prod_root}/wrfbdy_d01_{start_time_str}.low_updated')
+	else:
+		run(f'cp wrfbdy_d01 {prod_root}/wrfbdy_d01_{start_time_str}.lateral_updated')
 
 	cli.notice('Succeeded.')
 
@@ -43,6 +52,7 @@ if __name__ == '__main__':
 	parser.add_argument('-p', '--prod-root', dest='prod_root', help='Product root directory (e.g. gfs)')
 	parser.add_argument('-d', '--wrfda-root', dest='wrfda_root', help='WPS root directory (e.g. WPS)')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
+	parser.add_argument('-l', '--update-lowbc', dest='update_lowbc', help='Update low boundary condition.', action='store_true')
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
 	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
 	args = parser.parse_args()
@@ -78,4 +88,4 @@ if __name__ == '__main__':
 
 	config = parse_config(args.config_json)
 
-	run_wrfda_update_bc(args.work_root, args.prod_root, args.wrfda_root, config, args)
+	run_wrfda_update_bc(args.work_root, args.prod_root, args.wrfda_root, args.update_lowbc, config, args)

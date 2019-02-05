@@ -144,8 +144,8 @@ def run_wps(work_root, wps_root, bkg_root, config, args):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS)')
+	parser.add_argument(      '--wps-root', dest='wps_root', help='WPS root directory (e.g. WPS)')
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
-	parser.add_argument('-p', '--wps-root', dest='wps_root', help='WPS root directory (e.g. WPS)')
 	parser.add_argument('-b', '--bkg-root', dest='bkg_root', help='Background root directory')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
@@ -168,16 +168,18 @@ if __name__ == '__main__':
 			args.wps_root = args.codes + '/WPS'
 		else:
 			cli.error('Option --wps-root or environment variable WPS_ROOT need to be set!')
-	
 	args.wps_root = os.path.abspath(args.wps_root)
-	
+	if not os.path.isdir(args.wps_root):
+		cli.error(f'Directory {args.wps_root} does not exist!')
+
 	if not args.bkg_root:
 		if os.getenv('BKG_ROOT'):
 			args.bkg_root = os.getenv('BKG_ROOT')
 		else:
 			cli.error('Option --bkg-root or environment variable BKG_ROOT need to be set!')
-	
 	args.bkg_root = os.path.abspath(args.bkg_root)
+	if not os.path.isdir(args.bkg_root):
+		cli.error(f'Directory {args.bkg_root} does not exist!')
 	
 	config = parse_config(args.config_json)
 

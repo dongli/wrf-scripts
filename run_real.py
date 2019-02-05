@@ -15,7 +15,8 @@ from utils import cli, check_files, run, parse_config
 def run_real(work_root, prod_root, wrf_root, config, args):
 	common_config = config['common']
 
-	time_format_str = 'YYYY-MM-DD_HH:mm:ss'
+	start_time = common_config['start_time']
+	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 
 	wps_work_dir = os.path.abspath(work_root) + '/WPS'
 	if not os.path.isdir(wps_work_dir): os.mkdir(wps_work_dir)
@@ -49,15 +50,18 @@ def run_real(work_root, prod_root, wrf_root, config, args):
 		cli.notice('Succeeded.')
 	else:
 		cli.notice('File wrfinput_* already exist.')
-	run(f'ls -l {wrf_work_dir}/wrfinput_* {wrf_work_dir}/wrfbdy_*')
-	run(f'cp wrfinput_* wrfbdy_* {prod_root}')
+	for i in range(common_config['max_dom']):
+		run('ls -l {0}/wrfinput_d{1:02d} {0}/wrfbdy_d{1:02d}'.format(wrf_work_dir, i + 1))
+	for i in range(common_config['max_dom']):
+		run('cp wrfinput_d{1:02d} {0}/wrfinput_d{1:02d}_{2}'.format(prod_root, i + 1, start_time.format(datetime_fmt)))
+		run('cp wrfbdy_d{1:02d} {0}/wrfbdy_d{1:02d}_{2}'.format(prod_root, i + 1, start_time.format(datetime_fmt)))
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS)')
+	parser.add_argument(      '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3)')
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
 	parser.add_argument('-p', '--prod-root', dest='prod_root', help='Product root directory')
-	parser.add_argument('-r', '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3)')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
 	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')

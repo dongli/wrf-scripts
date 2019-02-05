@@ -20,13 +20,21 @@ def run_wrfda_3dvar(work_root, prod_root, wrfda_root, config, args):
 	
 	start_time = common_config['start_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
+	start_time_str = start_time.format(datetime_fmt)
 
 	wrfda_work_dir = os.path.abspath(work_root) + '/WRFDA'
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 
+	if os.path.isfile(f'{prod_root}/wrfvar_output_{start_time_str}') and not args.force:
+		cli.notice(f'{prod_root}/wrfvar_output_{start_time_str} already exists.')
+		return
+
 	run(f'ln -sf {wrfda_root}/var/build/da_wrfvar.exe {wrfda_work_dir}')
 	run(f'ln -sf {wrfda_root}/run/LANDUSE.TBL {wrfda_work_dir}')
+
+	if not os.path.isfile('namelist.input'):
+		cli.error('namelist.input has not been generated! Run config_wrfda.py.')
 
 	# BE matrix
 	if 'cv_options' in wrfda_config:
@@ -46,11 +54,11 @@ def run_wrfda_3dvar(work_root, prod_root, wrfda_root, config, args):
 		run(f'ln -sf {wrfda_root}/var/run/be.dat.cv3 be.dat')
 
 	# First guess
-	expected_files = ['{}/wrfinput_d{:02d}'.format(prod_root, i+1) for i in range(common_config['max_dom'])]
+	expected_files = ['{}/wrfinput_d{:02d}_{}'.format(prod_root, i+1, start_time_str) for i in range(common_config['max_dom'])]
 	if not check_files(expected_files):
 		cli.error('real.exe or da_update_bc.exe wasn\'t executed successfully!')
 	# TODO: Assume there is only one domain to be assimilated.
-	run(f'ln -sf {prod_root}/wrfinput_d01 {wrfda_work_dir}/fg')
+	run(f'ln -sf {prod_root}/wrfinput_d01_{start_time_str} {wrfda_work_dir}/fg')
 
 	# Observation data
 	if wrfda_config['type'] == '3dvar':
@@ -64,15 +72,15 @@ def run_wrfda_3dvar(work_root, prod_root, wrfda_root, config, args):
 	else:
 		print(open('statistics').read())
 		run(f'ncl -Q {scripts_root}/plots/plot_cost_grad_fn.ncl')
-		run(f'cp wrfvar_output {prod_root}')
+		run(f'cp wrfvar_output {prod_root}/wrfvar_output_{start_time_str}')
 		cli.notice('Succeeded.')
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS, WRFDA)')
+	parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WPS)')    
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
 	parser.add_argument('-p', '--prod-root', dest='prod_root', help='Product root directory')
-	parser.add_argument('-d', '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WPS)')    
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
 	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
@@ -86,7 +94,6 @@ if __name__ == '__main__':
 	args.work_root = os.path.abspath(args.work_root)
 	if not os.path.isdir(args.work_root):
 		cli.error(f'Directory {args.work_root} does not exist!')
-	args.work_root = os.path.abspath(args.work_root)
 
 	if not args.prod_root:
 		if os.getenv('PROD_ROOT'):
