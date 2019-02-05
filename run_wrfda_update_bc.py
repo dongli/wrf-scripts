@@ -3,45 +3,34 @@
 import argparse
 from glob import glob
 import os
-import re
-import pendulum
 import f90nml
-from progressbar import ProgressBar, Percentage, Bar
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-import utils import cli, check_files, run, parse_config
+from utils import cli, check_files, run, parse_config
 
-def run_wrfda_update_lateralbc(work_root, prod_root, wrfda_root, config, args):
+def run_wrfda_update_bc(work_root, prod_root, wrfda_root, config, args):
 	common_config = config['common']
-
-	start_time = common_config['start_time']
-	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 
 	wrfda_work_dir = os.path.abspath(work_root) + '/WRFDA'
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 
-	run(f'ln -sf {wrfda_root}/var/build/da_update_bc.exe ./')
+	run(f'ln -sf {wrfda_root}/var/build/da_update_bc.exe .')
 
-	expected_files.expend([f'{prod_root}/wrfbdy_d01', 'wrfinput_d01'])
+	expected_files = [f'{prod_root}/wrfbdy_d01', f'{prod_root}/wrfinput_d01']
 	if not check_files(expected_files):
 		cli.error('da_wrfvar.exe or real.exe wasn\'t executed successfully!')
-
 	for infile in expected_files:
 		run(f'cp {infile} .')
 
-	with open('parame.in', 'w') as f:
-		f.writelines("&control_param")
-		f.writelines("da_file            = './wrfinput_d01'")
-		f.writelines("wrf_bdy_file       = './wrfbdy_d01'")
-		f.writelines("update_lateral_bdy = .true. ")
-		f.writelines("update_low_bdy     = .false.")
-		f.writelines("/")
+	parame_in = f90nml.read(f'{wrfda_root}/var/test/update_bc/parame.in')
+	parame_in.write(f'{wrfda_work_dir}/parame.in', force=True)
+
 	if args.verbose:
 		run('./da_update_bc.exe')
 	else:
-		run('./da_update_bc.exe > da_update_bc.out 2>&1')
-	run(f'cp ./wrfbdy_d01 {}/wrfbdy_d01'.format(prod_root))
+		run('./da_update_bc.exe &> da_update_bc.out')
+
 	cli.notice('Succeeded.')
 
 if __name__ == '__main__':
@@ -86,4 +75,4 @@ if __name__ == '__main__':
 
 	config = parse_config(args.config_json)
 
-	run_wrfda_update_lateral(args.work_root, args.prod_root, args.wrfda_root, config, args)
+	run_wrfda_update_bc(args.work_root, args.prod_root, args.wrfda_root, config, args)
