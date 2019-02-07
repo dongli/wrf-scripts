@@ -5,6 +5,8 @@ import subprocess
 
 def check_files(expected_files, fatal=False):
 	result = True
+	if type(expected_files) == str:
+		expected_files = [expected_files]
 	for file in expected_files:
 		if not os.path.isfile(file):
 			if fatal: cli.error(f'File {exe} has not been generated!')

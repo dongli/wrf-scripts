@@ -10,7 +10,7 @@ import subprocess
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import edit_file, run, cli, check_files
 
-def build_wrf(wrf_root, wps_root, wrfda_root, args):
+def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 	if not 'HDF5' in os.environ:
 		res = subprocess.run(['which', 'h5dump'], stdout=subprocess.PIPE)
 		if res.returncode == 0:
@@ -59,13 +59,13 @@ def build_wrf(wrf_root, wps_root, wrfda_root, args):
 		child.sendline('1')
 		if platform.system() == 'Darwin': child.expect('This build of WRF will use NETCDF4 with HDF5 compression')
 		child.wait()
-	
+
 		if args.compiler_suite == 'pgi':
 			edit_file('./configure.wrf', [
 				['pgf90', 'pgfortran'],
 				['mpif90', 'mpifort']
 			])
-	
+
 		cli.notice('Compile WRF ...')
 		if args.verbose:
 			run('./compile em_real')
@@ -81,7 +81,7 @@ def build_wrf(wrf_root, wps_root, wrfda_root, args):
 				cli.error(f'Failed! Check {wrf_root}/compile.out')
 	else:
 		cli.notice('WRF is already built.')
-	
+
 	os.chdir(wps_root)
 	if args.force: run('./clean -a &> /dev/null')
 	expected_exe_files = ('geogrid/src/geogrid.exe', 'metgrid/src/metgrid.exe', 'ungrib/src/ungrib.exe')
@@ -96,23 +96,23 @@ def build_wrf(wrf_root, wps_root, wrfda_root, args):
 		elif args.compiler_suite == 'pgi':
 			child.sendline('7')
 		child.wait()
-	
+
 		if args.compiler_suite == 'pgi':
 			edit_file('./configure.wrf', [
 				['pgf90', 'pgfortran'],
 				['mpif90', 'mpifort']
 			])
-	
+
 		run('sed -i "s/mpicc -cc=.*/mpicc/" configure.wps')
 		run('sed -i "s/mpif90 -f90=.*/mpif90/" configure.wps')
 		run('sed -i "s/WRF_DIR\s*=.*/WRF_DIR = ..\/WRF/" configure.wps')
-	
+
 		cli.notice('Compile WPS ...')
 		if args.verbose:
 			run('./compile')
 		else:
 			run('./compile &> compile.out')
-	
+
 		if check_files(expected_exe_files):
 			cli.notice('Succeeded.')
 		else:
@@ -122,7 +122,38 @@ def build_wrf(wrf_root, wps_root, wrfda_root, args):
 				cli.error(f'Failed! Check {wps_root}/compile.out')
 	else:
 		cli.notice('WPS is already built.')
-	
+
+	os.chdir(wrfplus_root)
+	if args.force: run('./clean -a &> /dev/null')
+	expected_exe_files = ('main/wrfplus.exe')
+	if not check_files(expected_exe_files):
+		cli.notice('Configure WRFPLUS ...')
+		child = pexpect.spawn('./configure wrfplus')
+		child.expect('Enter selection.*')
+		if args.compiler_suite == 'intel':
+			child.sendline('34')
+		elif args.compiler_suite == 'gnu':
+			child.sendline('18')
+		elif args.compiler_suite == 'pgi':
+			child.sendline('28')
+		child.wait()
+
+		cli.notice('Compile WRFPLUS ...')
+		if args.verbose:
+			run('./compile wrfplus')
+		else:
+			run('./compile wrfplus &> compile.wrfvar.out')
+
+		if check_files(expected_exe_files):
+			cli.notice('Succeeded.')
+		else:
+			if args.verbose:
+				cli.error('Failed!')
+			else:
+				cli.error(f'Failed! Check {wrfplus_root}/compile.out')
+	else:
+		cli.notice('WRFPLUS is already built.')
+
 	os.chdir(wrfda_root)
 	if args.force: run('./clean -a &> /dev/null')
 	expected_exe_files = (
@@ -181,13 +212,13 @@ def build_wrf(wrf_root, wps_root, wrfda_root, args):
 		elif args.compiler_suite == 'pgi':
 			child.sendline('54')
 		child.wait()
-	
+
 		cli.notice('Compile WRFDA ...')
 		if args.verbose:
 			run('./compile all_wrfvar')
 		else:
 			run('./compile all_wrfvar &> compile.wrfvar.out')
-	
+
 		if check_files(expected_exe_files, fatal=True):
 			cli.notice('Succeeded.')
 		else:
@@ -201,16 +232,17 @@ def build_wrf(wrf_root, wps_root, wrfda_root, args):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Build WRF model and its friends.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRFV3, WPS)')
-	parser.add_argument('-w', '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3)')
-	parser.add_argument('-p', '--wps-root', dest='wps_root', help='WPS root directory (e.g. WPS)')
-	parser.add_argument('-d', '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRF for V4)')
+	parser.add_argument(      '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3 or WRF)')
+	parser.add_argument(      '--wps-root', dest='wps_root', help='WPS root directory (e.g. WPS)')
+	parser.add_argument(      '--wrfplus-root', dest='wrfplus_root', help='WRFPLUS root directory (e.g. WRFPLUS)')
+	parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')
 	parser.add_argument('-b', '--use-hyb', dest='use_hyb', help='Use hybrid vertical coordinate', action='store_true')
 	parser.add_argument('-g', '--use-grib', dest='use_grib', help='Use GRIB IO capability of WRF', action='store_true')
 	parser.add_argument('-s', '--compiler-suite', dest='compiler_suite', help='Compiler suite', choices=['gnu', 'pgi', 'intel'])
 	parser.add_argument('-f', '--force', help='Force to rebuild if already built', action='store_true')
 	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
 	args = parser.parse_args()
-	
+
 	if not args.wrf_root:
 		if os.getenv('WRF_ROOT'):
 			args.wrf_root = os.getenv('WRF_ROOT')
@@ -221,7 +253,7 @@ if __name__ == '__main__':
 	args.wrf_root = os.path.abspath(args.wrf_root)
 	if not os.path.isdir(args.wrf_root):
 		cli.error(f'Directory {args.wrf_root} does not exist!')
-	
+
 	if not args.wps_root:
 		if os.getenv('WPS_ROOT'):
 			args.wps_root = os.getenv('WPS_ROOT')
@@ -232,7 +264,18 @@ if __name__ == '__main__':
 	args.wps_root = os.path.abspath(args.wps_root)
 	if not os.path.isdir(args.wps_root):
 		cli.error(f'Directory {args.wps_root} does not exist!')
-	
+
+	if not args.wrfplus_root:
+		if os.getenv('WRFDA_ROOT'):
+			args.wrfplus_root = os.getenv('WRFPLUS_ROOT')
+		elif args.codes:
+			args.wrfplus_root = args.codes + '/WRFPLUS'
+		else:
+			cli.error('Option --wrfplus-root or environment variable WRFDA_ROOT need to be set!')
+	args.wrfplus_root = os.path.abspath(args.wrfplus_root)
+	if not os.path.isdir(args.wrfplus_root):
+		cli.error(f'Directory {args.wrfplus_root} does not exist!')
+
 	if not args.wrfda_root:
 		if os.getenv('WRFDA_ROOT'):
 			args.wrfda_root = os.getenv('WRFDA_ROOT')
@@ -244,4 +287,4 @@ if __name__ == '__main__':
 	if not os.path.isdir(args.wrfda_root):
 		cli.error(f'Directory {args.wrfda_root} does not exist!')
 
-	build_wrf(args.wrf_root, args.wps_root, args.wrfda_root, args)
+	build_wrf(args.wrf_root, args.wps_root, args.wrfplus_root, args.wrfda_root, args)
