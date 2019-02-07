@@ -1,3 +1,4 @@
+from config_wps import config_wps
 from config_wrf import config_wrf
 from config_wrfda import config_wrfda
 from run_wps import run_wps

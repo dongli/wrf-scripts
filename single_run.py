@@ -105,7 +105,8 @@ if not os.path.isdir(args.littler_root):
 
 config = parse_config(args.config_json)
 
-wrf.config_wrf(args.work_root, args.wrf_root, args.wps_root, args.geog_root, config, args)
+wrf.config_wps(args.work_root, args.wps_root, args.geog_root, config, args)
+wrf.config_wrf(args.work_root, args.wrf_root, config, args)
 wrf.run_wps(args.work_root, args.wps_root, args.bkg_root, config, args)
 wrf.run_real(args.work_root, args.prod_root, args.wrf_root, config, args)
 wrf.config_wrfda(args.work_root, args.wrfda_root, config, args)
