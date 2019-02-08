@@ -17,13 +17,13 @@ def convert_gdas(gdas_root, littler_root, time, args):
 		cli.error(f'Executable {cmd} has not been built!')
 	obs_files = []
 	for obs_type in ('synop', 'metar', 'raob', 'amdar', 'profiler', 'ship'):
-		obs_file = f'/tmp/obs.{obs_type}.{time.format("YYYYMMDDHH")}'
+		obs_file = f'/tmp/obs.{obs_type}.{time.format("YYYYMMDDHHmm")}'
 		if args.verbose:
 			run(f'{cmd} -r {obs_type}_prepbufr -w littler -i {gdas_file_path} -o {obs_file}')
 		else:
 			run(f'{cmd} -r {obs_type}_prepbufr -w littler -i {gdas_file_path} -o {obs_file} &> /dev/null')
 		obs_files.append(obs_file)
-	run(f'cat {" ".join(obs_files)} > {littler_root}/obs.{time.format("YYYYMMDDHH")}')
+	run(f'cat {" ".join(obs_files)} > {littler_root}/obs.{time.format("YYYYMMDDHHmm")}')
 	run(f'rm -f {" ".join(obs_files)}')
 
 if __name__ == '__main__':
