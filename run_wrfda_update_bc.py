@@ -33,15 +33,18 @@ def run_wrfda_update_bc(work_root, prod_root, wrfda_root, update_lowbc, config, 
 		parame_in['control_param']['low_bdy_only'] = True
 	parame_in.write(f'{wrfda_work_dir}/parame.in', force=True)
 
-	if args.verbose:
-		run('./da_update_bc.exe')
-	else:
-		run('./da_update_bc.exe &> da_update_bc.out')
-
 	if update_lowbc:
-		run(f'cp wrfbdy_d01 {prod_root}/wrfbdy_d01_{start_time_str}.low_updated')
+		expected_file = f'{prod_root}/wrfbdy_d01_{start_time_str}.low_updated'
 	else:
-		run(f'cp wrfbdy_d01 {prod_root}/wrfbdy_d01_{start_time_str}.lateral_updated')
+		expected_file = f'{prod_root}/wrfbdy_d01_{start_time_str}.lateral_updated'
+	if not check_files(expected_file):
+		if args.verbose:
+			run('./da_update_bc.exe')
+		else:
+			run('./da_update_bc.exe &> da_update_bc.out')
+		run(f'cp wrfbdy_d01 {expected_file}')
+	else:
+		run(f'ls -l {expected_file}')
 
 	cli.notice('Succeeded.')
 

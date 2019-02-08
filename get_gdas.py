@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-root_url = 'http://www.ftp.ncep.noaa.gov/data/nccf/com/gfs/prod'
+root_url = 'https://ftp.ncep.noaa.gov/data/nccf/com/gfs/prod'
 
 import subprocess
 import argparse
@@ -20,7 +20,7 @@ def get_gdas(output_root, start_time, end_time, args):
 	def download_gdas(time):
 		dir_name = f'gdas.{time.format("YYYYMMDD")}'
 		res = requests.head(f'{root_url}/{dir_name}/')
-		if res.status_code != 200:
+		if res.status_code != 200 and res.status_code != 302:
 			cli.error(f'Remote GDAS data at {time} do not exist!')
 		file_name = 'gdas.t{:02d}z.prepbufr.nr'.format(time.hour)
 		url = f'{root_url}/{dir_name}/{file_name}'
@@ -28,7 +28,7 @@ def get_gdas(output_root, start_time, end_time, args):
 			os.makedirs(f'{output_root}/{dir_name}')
 			cli.notice(f'Create directory {output_root}/{dir_name}.')
 		cli.notice(f'Downloading {url}.')
-		local_file_path = f'{output_root}/{dir_name}/{file_name}'
+		local_file_path = f'{output_root}/{time.format("YYYYMMDD")}/{file_name}'
 		if is_downloading(local_file_path):
 			cli.warning(f'Skip downloading {local_file_path}.')
 			return
@@ -42,17 +42,17 @@ def get_gdas(output_root, start_time, end_time, args):
 		try:
 			subprocess.call(['curl', '-C', '-', '-o', local_file_path, url])
 		except Exception as e:
-			cli.error('Encounter exception {e}!')
+			cli.error(f'Encounter exception {e}!')
 		if not check_file_size(url, local_file_path):
 			os.remove(local_file_path)
-			cli.error('Failed to download f{file_name}!')
+			cli.error(f'Failed to download {file_name}!')
 
 	for time in pendulum.period(start_time, end_time).range('hours', 6):
 		download_gdas(time)
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description="Run WRF model and its friends.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
-	parser.add_argument('-o', '--output-root', dest='output_root', default='.', help='Root directory to store GFS data.')
+	parser = argparse.ArgumentParser(description="Get GDAS observation data.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018-2019 All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
+	parser.add_argument('-o', '--output-root', dest='output_root', default='.', help='Root directory to store GDAS data.')
 	parser.add_argument('-s', '--start-time', dest='start_time', help='Download GDAS data start in this date time (YYYYMMDDHH).', type=parse_time)
 	parser.add_argument('-e', '--end-time', dest='end_time', help='Download GDAS data end in this date time (YYYYMMDDHH).', type=parse_time)
 	args = parser.parse_args()
@@ -63,5 +63,10 @@ if __name__ == '__main__':
 		else:
 			cli.error('Option --output-root or environment variable RAWDATA_ROOT need to be set!')
 	args.output_root = os.path.abspath(args.output_root)
+	if not os.path.isdir(args.output_root):
+		cli.error(f'Directory {args.output_root} does not exist!')
+
+	if not args.end_time:
+		args.end_time = args.start_time
 
 	get_gdas(args.output_root, args.start_time, args.end_time, args)

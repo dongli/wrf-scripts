@@ -1,3 +1,5 @@
+from get_gfs import get_gfs
+from get_gdas import get_gdas
 from config_wps import config_wps
 from config_wrf import config_wrf
 from config_wrfda import config_wrfda

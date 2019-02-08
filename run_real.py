@@ -24,8 +24,6 @@ def run_real(work_root, prod_root, wrf_root, config, args):
 	if not os.path.isdir(wrf_work_dir): os.mkdir(wrf_work_dir)
 	os.chdir(wrf_work_dir)
 
-	# ------------------------------------------------------------------------------------------------
-	#                                           REAL
 	cli.notice('Run real.exe ...')
 	expected_files = ['wrfinput_d{:02d}'.format(i + 1) for i in range(common_config['max_dom'])]
 	expected_files.append('wrfbdy_d01')

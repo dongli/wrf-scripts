@@ -1,0 +1,3 @@
+[submodule "lib/data-translators"]
+	path = lib/data-translators
+	url = https://github.com/LongRunWeather/data-translators
