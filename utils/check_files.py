@@ -9,7 +9,7 @@ def check_files(expected_files, fatal=False):
 		expected_files = [expected_files]
 	for file in expected_files:
 		if not os.path.isfile(file):
-			if fatal: cli.error(f'File {exe} has not been generated!')
+			if fatal: cli.error(f'File {file} has not been generated!')
 			result = False
 			break
 	return result

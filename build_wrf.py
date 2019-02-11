@@ -68,9 +68,9 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 
 		cli.notice('Compile WRF ...')
 		if args.verbose:
-			run('./compile em_real')
+			run(f'./compile -j {args.jobs} em_real')
 		else:
-			run('./compile em_real &> compile.out')
+			run(f'./compile -j {args.jobs} em_real &> compile.out')
 		
 		if check_files(expected_exe_files):
 			cli.notice('Succeeded.')
@@ -128,6 +128,11 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 	expected_exe_files = ('main/wrfplus.exe')
 	if not check_files(expected_exe_files):
 		cli.notice('Configure WRFPLUS ...')
+		if args.use_grib:
+			cli.notice('Set GRIB2 flag.')
+			edit_file('./arch/Config.pl', [
+				['\$I_really_want_to_output_grib2_from_WRF = "FALSE"', '$I_really_want_to_output_grib2_from_WRF = "TRUE"']
+			])
 		child = pexpect.spawn('./configure wrfplus')
 		child.expect('Enter selection.*')
 		if args.compiler_suite == 'intel':
@@ -140,9 +145,9 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 
 		cli.notice('Compile WRFPLUS ...')
 		if args.verbose:
-			run('./compile wrfplus')
+			run(f'./compile -j {args.jobs} wrfplus')
 		else:
-			run('./compile wrfplus &> compile.wrfvar.out')
+			run(f'./compile -j {args.jobs} wrfplus &> compile.out')
 
 		if check_files(expected_exe_files):
 			cli.notice('Succeeded.')
@@ -155,8 +160,9 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		cli.notice('WRFPLUS is already built.')
 
 	os.chdir(wrfda_root)
+	os.environ['WRFPLUS_DIR'] = wrfplus_root
 	if args.force: run('./clean -a &> /dev/null')
-	expected_exe_files = (
+	expected_exe_files = [
 		'var/build/da_advance_time.exe',
 		'var/build/da_bias_airmass.exe',
 		'var/build/da_bias_scan.exe',
@@ -200,24 +206,29 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		'var/build/gen_be_stage4_regional.exe',
 		'var/build/gen_be_vertloc.exe',
 		'var/build/gen_mbe_stage2.exe',
-		'var/obsproc/src/obsproc.exe')
+		'var/obsproc/src/obsproc.exe']
 	if not check_files(expected_exe_files):
 		cli.notice('Configure WRFDA ...')
-		child = pexpect.spawn('./configure wrfda')
+		if args.use_grib:
+			cli.notice('Set GRIB2 flag.')
+			edit_file('./arch/Config.pl', [
+				['\$I_really_want_to_output_grib2_from_WRF = "FALSE"', '$I_really_want_to_output_grib2_from_WRF = "TRUE"']
+			])
+		child = pexpect.spawn('./configure 4dvar')
 		child.expect('Enter selection.*')
 		if args.compiler_suite == 'intel':
-			child.sendline('15')
+			child.sendline('8')
 		elif args.compiler_suite == 'gnu':
-			child.sendline('34')
+			child.sendline('18')
 		elif args.compiler_suite == 'pgi':
-			child.sendline('54')
+			child.sendline('28')
 		child.wait()
 
 		cli.notice('Compile WRFDA ...')
 		if args.verbose:
-			run('./compile all_wrfvar')
+			run(f'./compile -j {args.jobs} all_wrfvar')
 		else:
-			run('./compile all_wrfvar &> compile.wrfvar.out')
+			run(f'./compile -j {args.jobs} all_wrfvar &> compile.out')
 
 		if check_files(expected_exe_files, fatal=True):
 			cli.notice('Succeeded.')
@@ -238,6 +249,7 @@ if __name__ == '__main__':
 	parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')
 	parser.add_argument('-b', '--use-hyb', dest='use_hyb', help='Use hybrid vertical coordinate', action='store_true')
 	parser.add_argument('-g', '--use-grib', dest='use_grib', help='Use GRIB IO capability of WRF', action='store_true')
+	parser.add_argument('-j', '--jobs', help='Set job size to compile.', type=int)
 	parser.add_argument('-s', '--compiler-suite', dest='compiler_suite', help='Compiler suite', choices=['gnu', 'pgi', 'intel'])
 	parser.add_argument('-f', '--force', help='Force to rebuild if already built', action='store_true')
 	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
