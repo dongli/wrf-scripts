@@ -12,14 +12,13 @@ import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, check_files, run, parse_config
 
-def run_real(work_root, prod_root, wrf_root, config, args):
+def run_real(work_root, wps_work_dir, prod_root, wrf_root, config, args):
 	common_config = config['common']
 
 	start_time = common_config['start_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 
-	wps_work_dir = os.path.abspath(work_root) + '/WPS'
-	if not os.path.isdir(wps_work_dir): os.mkdir(wps_work_dir)
+	if not os.path.isdir(wps_work_dir): cli.error(f'WPS work directory {wps_work_dir} does not exist!')
 	wrf_work_dir = os.path.abspath(work_root) + '/WRF'
 	if not os.path.isdir(wrf_work_dir): os.mkdir(wrf_work_dir)
 	os.chdir(wrf_work_dir)
@@ -59,8 +58,9 @@ if __name__ == '__main__':
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS)')
 	parser.add_argument(      '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3)')
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
+	parser.add_argument(      '--wps-work-dir',  dest='wps_work_dir', help='Work root directory of WPS')
 	parser.add_argument('-p', '--prod-root', dest='prod_root', help='Product root directory')
-	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
+	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file')
 	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
 	args = parser.parse_args()
@@ -73,6 +73,12 @@ if __name__ == '__main__':
 	args.work_root = os.path.abspath(args.work_root)
 	if not os.path.isdir(args.work_root):
 		cli.error(f'Directory {args.work_root} does not exist!')
+
+	if not args.wps_work_dir:
+		args.wps_work_dir = args.work_root + '/WPS'
+	if not os.path.isdir(args.wps_work_dir):
+		cli.error(f'Directory {args.wps_work_dir} does not exist!')
+	args.wps_work_dir = os.path.abspath(args.wps_work_dir)
 
 	if not args.prod_root:
 		if os.getenv('PROD_ROOT'):
@@ -96,5 +102,5 @@ if __name__ == '__main__':
 
 	config = parse_config(args.config_json)
 
-	run_real(args.work_root, args.prod_root, args.wrf_root, config, args)
+	run_real(args.work_root, args.wps_work_dir, args.prod_root, args.wrf_root, config, args)
 

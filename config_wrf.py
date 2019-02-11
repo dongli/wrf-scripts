@@ -16,6 +16,7 @@ from utils import cli, parse_config
 def config_wrf(work_root, wrf_root, config, args):
 	pprint(config)
 	common_config = config['common']
+	phys_config = config['physics'] if 'physics' in config else {}
 
 	start_time = common_config['start_time']
 	end_time = common_config['end_time']
@@ -52,6 +53,16 @@ def config_wrf(work_root, wrf_root, config, args):
 	namelist_input['domains']     ['j_parent_start']         = common_config['j_parent_start']
 	namelist_input['domains']     ['parent_grid_ratio']      = common_config['parent_grid_ratio']
 	namelist_input['domains']     ['parent_time_step_ratio'] = common_config['parent_grid_ratio']
+	namelist_input['physics']     ['mp_physics']             = phys_config['mp']         if 'mp'         in phys_config else 8
+	namelist_input['physics']     ['ra_lw_physics']          = phys_config['ra_lw']      if 'ra_lw'      in phys_config else 4
+	namelist_input['physics']     ['ra_sw_physics']          = phys_config['ra_sw']      if 'ra_sw'      in phys_config else 4
+	namelist_input['physics']     ['radt']                   = phys_config['radt']       if 'radt'       in phys_config else common_config['resolution'] / 1000
+	namelist_input['physics']     ['sf_sfclay_physics']      = phys_config['sf_sfclay']  if 'sf_sfclay'  in phys_config else 1
+	namelist_input['physics']     ['sf_surface_physics']     = phys_config['sf_surface'] if 'sf_surface' in phys_config else 2
+	namelist_input['physics']     ['bl_pbl_physics']         = phys_config['bl_pbl']     if 'bl_pbl'     in phys_config else 1
+	namelist_input['physics']     ['bldt']                   = phys_config['bldt']       if 'bldt'       in phys_config else 0
+	namelist_input['physics']     ['cu_physics']             = phys_config['cu']         if 'cu'         in phys_config else 3
+	namelist_input['physics']     ['cudt']                   = phys_config['cudt']       if 'cudt'       in phys_config else 0
 	namelist_input.write('./namelist.input', force=True)
 	
 	cli.notice('Succeeded.')

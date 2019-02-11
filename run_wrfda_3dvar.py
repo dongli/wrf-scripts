@@ -78,7 +78,7 @@ def run_wrfda_3dvar(work_root, prod_root, wrfda_root, config, args):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS, WRFDA)')
-	parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WPS)')    
+	parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')    
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
 	parser.add_argument('-p', '--prod-root', dest='prod_root', help='Product root directory')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')

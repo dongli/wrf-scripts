@@ -111,19 +111,22 @@ if not os.path.isdir(args.work_root + '/fa'):
 	os.mkdir(args.work_root + '/fa')
 
 # Get verfication state xt at valid time.
-wrf.get_gfs(args.bkg_root, config['common']['end_time'], 0, '0p25', args)
+# wrf.get_gfs(args.bkg_root, config['common']['end_time'], 0, '0p25', args)
 
 # Run forecast with xb as initial condition.
 wrf.config_wps(args.work_root, args.wps_root, args.geog_root, config, args)
 wrf.run_wps(args.work_root, args.wps_root, args.bkg_root, config, args)
-wrf.run_real(args.work_root, args.prod_root, args.wrf_root, config, args)
 wrf.config_wrf(args.work_root + '/fb', args.wrf_root, config, args)
+wrf.run_real(args.work_root + '/fb', args.work_root + '/WPS', args.prod_root, args.wrf_root, config, args)
 wrf.run_wrf(args.work_root + '/fb', args.prod_root, args.wrf_root, config, args)
 
 # Run forecast with xa as initial condition.
-wrf.config_wrfda(args.work_root, args.wrfda_root, config, args)
-wrf.run_wrfda_obsproc(args.work_root, args.prod_root, args.wrfda_root, args.littler_root, config, args)
-wrf.run_wrfda_3dvar(args.work_root, args.prod_root, args.wrfda_root, config, args)
-wrf.run_wrfda_update_bc(args.work_root, args.prod_root, args.wrfda_root, False, config, args)
+wrf.config_wrfda(args.work_root + '/fa', args.wrfda_root, config, args)
+wrf.run_wrfda_obsproc(args.work_root + '/fa', args.prod_root, args.wrfda_root, args.littler_root, config, args)
+wrf.run_wrfda_3dvar(args.work_root + '/fa', args.prod_root, args.wrfda_root, config, args)
+wrf.run_wrfda_update_bc(args.work_root + '/fa', args.prod_root, args.wrfda_root, False, config, args)
 wrf.config_wrf(args.work_root + '/fa', args.wrf_root, config, args)
 wrf.run_wrf(args.work_root + '/fa', args.prod_root, args.wrf_root, config, args)
+
+# Calculate forecast error measures.
+
