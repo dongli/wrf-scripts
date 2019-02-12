@@ -249,7 +249,7 @@ if __name__ == '__main__':
 	parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')
 	parser.add_argument('-b', '--use-hyb', dest='use_hyb', help='Use hybrid vertical coordinate', action='store_true')
 	parser.add_argument('-g', '--use-grib', dest='use_grib', help='Use GRIB IO capability of WRF', action='store_true')
-	parser.add_argument('-j', '--jobs', help='Set job size to compile.', type=int)
+	parser.add_argument('-j', '--jobs', help='Set job size to compile.', type=int, default=2)
 	parser.add_argument('-s', '--compiler-suite', dest='compiler_suite', help='Compiler suite', choices=['gnu', 'pgi', 'intel'])
 	parser.add_argument('-f', '--force', help='Force to rebuild if already built', action='store_true')
 	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
