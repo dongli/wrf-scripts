@@ -12,7 +12,7 @@ from utils import cli, check_files, run, parse_config
 
 scripts_root = os.path.dirname(os.path.realpath(__file__))
 
-def run_wrfda_3dvar(work_root, prod_root, wrfda_root, config, args):
+def run_wrfda_3dvar(work_root, wrfda_root, config, args):
 	common_config = config['common']
 	if not 'wrfda' in config:
 		cli.error('There is no "wrfda" in configuration file!')
@@ -22,11 +22,21 @@ def run_wrfda_3dvar(work_root, prod_root, wrfda_root, config, args):
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
 
+	wrf_work_dir = os.path.abspath(work_root) + '/wrf'
+	if not os.path.isdir(wrf_work_dir):
+		cli.error('real.exe has not been run?')
+
+	be_work_dir = os.path.abspath(work_root) + '/be'
+
 	wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 
-	run(f'ln -sf {wrfda_root}/var/build/da_wrfvar.exe {wrfda_work_dir}')
+	if os.path.isfile(f'wrfvar_output_{start_time_str}'):
+		run(f'ls -l wrfvar_output_{start_time_str}')
+		cli.notice(f'wrfvar_output_{start_time_str} already exist.')
+		return
+
 	run(f'ln -sf {wrfda_root}/run/LANDUSE.TBL {wrfda_work_dir}')
 
 	if not os.path.isfile('namelist.input'):
@@ -35,44 +45,44 @@ def run_wrfda_3dvar(work_root, prod_root, wrfda_root, config, args):
 	# BE matrix
 	if 'cv_options' in wrfda_config:
 		if wrfda_config['cv_options'] == 5:
-			if not os.path.isdir(f'{prod_root}/be.dat.cv5'):
-				cli.error(f'BE matrix {prod_root}/be.dat.cv5 does not exist!')
-			run(f'ln -sf {prod_root}/be.dat.cv5 be.dat')
+			if not os.path.isdir(f'{be_work_dir}/be.dat.cv5'):
+				cli.error(f'BE matrix {be_work_dir}/be.dat.cv5 does not exist!')
+			run(f'ln -sf {be_work_dir}/be.dat.cv5 be.dat')
 		elif wrfda_config['cv_options'] == 6:
-			if not os.path.isdir(f'{prod_root}/be.dat.cv6'):
-				cli.error(f'BE matrix {prod_root}/be.dat.cv6 does not exist!')
-			run(f'ln -sf {prod_root}/be.dat.cv6 be.dat')
+			if not os.path.isdir(f'{be_work_dir}/be.dat.cv6'):
+				cli.error(f'BE matrix {be_work_dir}/be.dat.cv6 does not exist!')
+			run(f'ln -sf {be_work_dir}/be.dat.cv6 be.dat')
 		elif wrfda_config['cv_options'] == 7:
-			if not os.path.isdir(f'{prod_root}/be.dat.cv7'):
-				cli.error(f'BE matrix {prod_root}/be.dat.cv7 does not exist!')
-			run(f'ln -sf {prod_root}/be.dat.cv7 be.dat')
+			if not os.path.isdir(f'{be_work_dir}/be.dat.cv7'):
+				cli.error(f'BE matrix {be_work_dir}/be.dat.cv7 does not exist!')
+			run(f'ln -sf {be_work_dir}/be.dat.cv7 be.dat')
 	if not os.path.exists('./be.dat'):
 		run(f'ln -sf {wrfda_root}/var/run/be.dat.cv3 be.dat')
 
 	# First guess
-	expected_files = ['{}/wrfinput_d{:02d}_{}'.format(prod_root, i+1, start_time_str) for i in range(common_config['max_dom'])]
+	expected_files = ['{}/wrfinput_d{:02d}_{}'.format(wrf_work_dir, i + 1, start_time_str) for i in range(common_config['max_dom'])]
 	if not check_files(expected_files):
 		cli.error('real.exe or da_update_bc.exe wasn\'t executed successfully!')
 	# TODO: Assume there is only one domain to be assimilated.
-	run(f'ln -sf {prod_root}/wrfinput_d01_{start_time_str} {wrfda_work_dir}/fg')
+	run(f'ln -sf {wrf_work_dir}/wrfinput_d01_{start_time_str} {wrfda_work_dir}/fg')
 
 	# Observation data
 	if wrfda_config['type'] == '3dvar':
 		run(f'ln -sf obs_gts_{start_time.format(datetime_fmt)}.3DVAR ob.ascii')
 
-	if os.path.isfile(f'{prod_root}/wrfvar_output_{start_time_str}') and not args.force:
-		cli.notice(f'{prod_root}/wrfvar_output_{start_time_str} already exists.')
+	if os.path.isfile(f'{wrfda_work_dir}/wrfvar_output_{start_time_str}') and not args.force:
+		cli.notice(f'{wrfda_work_dir}/wrfvar_output_{start_time_str} already exists.')
 		return
 
-	run('./da_wrfvar.exe')
+	run(f'{wrfda_root}/var/build/da_wrfvar.exe')
 
-	expected_files = ['wrfvar_output', 'statistics']
+	expected_files = [f'wrfvar_output', 'statistics']
 	if not check_files(expected_files):
 		cli.error('Failed!')
 	else:
 		print(open('statistics').read())
 		run(f'ncl -Q {scripts_root}/plots/plot_cost_grad_fn.ncl')
-		run(f'cp wrfvar_output {prod_root}/wrfvar_output_{start_time_str}')
+		run(f'cp wrfvar_output wrfvar_output_{start_time_str}')
 		cli.notice('Succeeded.')
 
 if __name__ == '__main__':
@@ -80,7 +90,6 @@ if __name__ == '__main__':
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS, WRFDA)')
 	parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')    
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
-	parser.add_argument('-p', '--prod-root', dest='prod_root', help='Product root directory')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
 	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
@@ -95,15 +104,6 @@ if __name__ == '__main__':
 	if not os.path.isdir(args.work_root):
 		cli.error(f'Directory {args.work_root} does not exist!')
 
-	if not args.prod_root:
-		if os.getenv('PROD_ROOT'):
-			args.work_root = os.getenv('PROD_ROOT')
-		else:
-			cli.error('Option --prod-root or environment variable PROD_ROOT need to be set!')
-	args.prod_root = os.path.abspath(args.prod_root)
-	if not os.path.isdir(args.prod_root):
-		cli.error(f'Directory {args.prod_root} does not exist!')
-
 	if not args.wrfda_root:
 		if os.getenv('WRFDA_ROOT'):
 			args.wrfda_root = os.getenv('WRFDA_ROOT')
@@ -117,4 +117,4 @@ if __name__ == '__main__':
 
 	config = parse_config(args.config_json)
 
-	run_wrfda_3dvar(args.work_root, args.prod_root, args.wrfda_root, config, args)
+	run_wrfda_3dvar(args.work_root, args.wrfda_root, config, args)

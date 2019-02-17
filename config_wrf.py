@@ -8,13 +8,11 @@ import f90nml
 import re
 from math import radians, cos, sin, asin, sqrt
 from shutil import copy
-from pprint import pprint
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, parse_config
 
 def config_wrf(work_root, wrf_root, wrfda_root, config, args):
-	pprint(config)
 	common_config = config['common']
 	phys_config = config['physics'] if 'physics' in config else {}
 

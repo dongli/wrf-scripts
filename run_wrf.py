@@ -19,13 +19,16 @@ def check_wrfout_times(expected_files, end_time):
 		wrfout = Dataset(expected_file)
 		try:
 			if wrfout.variables['Times'][-1].tobytes().decode('utf-8') != end_time.format('YYYY-MM-DD_HH:mm:ss'):
+				wrfout.close()
 				return False
 		except Exception as e:
 			print(e)
+			wrfout.close()
 			return False
+		wrfout.close()
 	return True
 
-def run_wrf(work_root, prod_root, wrf_root, config, args):
+def run_wrf(work_root, wrf_root, config, args):
 	common_config = config['common']
 
 	start_time = common_config['start_time']
@@ -33,19 +36,27 @@ def run_wrf(work_root, prod_root, wrf_root, config, args):
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
 
+	wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
+
 	wrf_work_dir = os.path.abspath(work_root) + '/wrf'
 	if not os.path.isdir(wrf_work_dir): os.mkdir(wrf_work_dir)
 	os.chdir(wrf_work_dir)
 
-	if os.path.isfile(f'{prod_root}/wrfvar_output_{start_time_str}'):
+	if os.path.isfile(f'{wrfda_work_dir}/wrfvar_output_{start_time_str}'):
 		cli.notice('Use assimilated input for domain 01.')
-		run(f'cp {prod_root}/wrfvar_output_{start_time_str} {wrf_work_dir}/wrfinput_d01')
-		run(f'cp {prod_root}/wrfbdy_d01_{start_time_str}.lateral_updated {wrf_work_dir}/wrfbdy_d01')
-
-	expected_files = ['wrfinput_d{:02d}'.format(i + 1) for i in range(common_config['max_dom'])]
-	expected_files.append('wrfbdy_d01')
-	if not check_files(expected_files):
-		cli.error('real.exe wasn\'t executed successfully!')
+		expected_files = [f'{wrfda_work_dir}/wrfvar_output_{start_time_str}', f'{wrfda_work_dir}/wrfbdy_d01_{start_time_str}.lateral_updated']
+		if not check_files(expected_files):
+			cli.error('da_wrfvar.exe wasn\'t executed successfully!')
+		run(f'cp {wrfda_work_dir}/wrfvar_output_{start_time_str} wrfinput_d01')
+		run(f'cp {wrfda_work_dir}/wrfbdy_d01_{start_time_str}.lateral_updated wrfbdy_d01')
+	else:
+		expected_files = ['wrfinput_d{:02d}_{}'.format(i + 1, start_time_str) for i in range(common_config['max_dom'])]
+		expected_files.append(f'wrfbdy_d01_{start_time_str}')
+		if not check_files(expected_files):
+			cli.error('real.exe wasn\'t executed successfully!')
+		for i in range(common_config['max_dom']):
+			run('cp wrfinput_d{0:02d}_{1} wrfinput_d{0:02d}'.format(i + 1, start_time_str))
+		run(f'cp wrfbdy_d01_{start_time_str} wrfbdy_d01')
 
 	expected_files = ['wrfout_d{:02d}_{}'.format(i + 1, start_time_str) for i in range(common_config['max_dom'])]
 	if not check_files(expected_files) or not check_wrfout_times(expected_files, end_time) or args.force:
@@ -82,14 +93,12 @@ def run_wrf(work_root, prod_root, wrf_root, config, args):
 	else:
 		cli.notice('File wrfout_* already exist.')
 	run(f'ls -l {wrf_work_dir}/wrfout_*')
-	run(f'cp {wrf_work_dir}/wrfout_* {prod_root}')
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Run WRF model.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018-2019 All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS)')
 	parser.add_argument(      '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3)')
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
-	parser.add_argument('-p', '--prod-root', dest='prod_root', help='Product root directory')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
 	parser.add_argument('-n', '--num-proc', dest='np', help='MPI process number to run WRF.', default=2, type=int)
 	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
@@ -105,15 +114,6 @@ if __name__ == '__main__':
 	if not os.path.isdir(args.work_root):
 		cli.error(f'Directory {args.work_root} does not exist!')
 
-	if not args.prod_root:
-		if os.getenv('PROD_ROOT'):
-			args.work_root = os.getenv('PROD_ROOT')
-		else:
-			cli.error('Option --prod-root or environment variable PROD_ROOT need to be set!')
-	args.prod_root = os.path.abspath(args.prod_root)
-	if not os.path.isdir(args.prod_root):
-		cli.error(f'Directory {args.prod_root} does not exist!')
-
 	if not args.wrf_root:
 		if os.getenv('WRF_ROOT'):
 			args.wrf_root = os.getenv('WRF_ROOT')
@@ -126,4 +126,4 @@ if __name__ == '__main__':
 	
 	config = parse_config(args.config_json)
 
-	run_wrf(args.work_root, args.prod_root, args.wrf_root, config, args)
+	run_wrf(args.work_root, args.wrf_root, config, args)

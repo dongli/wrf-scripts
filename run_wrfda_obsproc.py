@@ -12,7 +12,7 @@ script_root = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(f'{script_root}/utils')
 from utils import cli, check_files, run, parse_config
 
-def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, args):
+def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
 	common_config = config['common']
 	if not 'wrfda' in config:
 		cli.error('There is no wrfda in configuration file!')
@@ -24,21 +24,25 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 	wrfda_config = config['wrfda']
 
 	start_time = common_config['start_time']
+	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
+	start_time_str = start_time.format(datetime_fmt)
+
+	wrf_work_dir = os.path.abspath(work_root) + '/wrf'
 
 	wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 
-	run(f'ln -sf {wrfda_root}/var/obsproc/obsproc.exe {wrfda_work_dir}')
 	run(f'ln -sf {wrfda_root}/var/obsproc/obserr.txt {wrfda_work_dir}')
 
-	if check_files([f'{prod_root}/wrfinput_d01']):
-		ncfile       = Dataset(f'{prod_root}/wrfinput_d01', 'r')
+	if check_files([f'{wrf_work_dir}/wrfinput_d01_{start_time_str}']):
+		ncfile       = Dataset(f'{wrf_work_dir}/wrfinput_d01_{start_time_str}', 'r')
 		iproj        = ncfile.getncattr('MAP_PROJ')
 		phic         = ncfile.getncattr('CEN_LAT')
 		xlonc        = ncfile.getncattr('CEN_LON')
 		moad_cen_lat = ncfile.getncattr('MOAD_CEN_LAT')
 		standard_lon = ncfile.getncattr('STAND_LON')
+		ncfile.close()
 	else:
 		iproj        = common_config['map_proj']
 		phic         = common_config['ref_lat']
@@ -77,9 +81,9 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 		else:
 			cli.error(f'Failed! {littler_root}/obs.{start_time.format("YYYYMMDDHHmm")} Not Found.')
 		if args.verbose:
-			run('./obsproc.exe')
+			run(f'{wrfda_root}/var/obsproc/obsproc.exe')
 		else:
-			run('./obsproc.exe > obsproc.out 2>&1')
+			run(f'{wrfda_root}/var/obsproc/obsproc.exe > obsproc.out 2>&1')
 		if not check_files(expected_files):
 			if args.verbose:
 				cli.error('Failed!')
@@ -89,14 +93,12 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 	else:
 		cli.notice('File obs_gts_* already exist.')
 	run('ls -l obs_gts_*')
-	run(f'cp obs_gts_* {prod_root}')
-	
+
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Run WRFDA obsproc tool.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018-2019 All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS, WRFDA)')
 	parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')	
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
-	parser.add_argument('-p', '--prod-root', dest='prod_root', help='Product root directory')
 	parser.add_argument('-l', '--littler-root', dest='littler_root', help='Little_r data root directory')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
@@ -112,15 +114,6 @@ if __name__ == '__main__':
 	if not os.path.isdir(args.work_root):
 		cli.error(f'Directory {args.work_root} does not exist!')
 
-	if not args.prod_root:
-		if os.getenv('PROD_ROOT'):
-			args.prod_root = os.getenv('PROD_ROOT')
-		else:
-			cli.error('Option --prod-root or environment variable PROD_ROOT need to be set!')
-	args.prod_root = os.path.abspath(args.prod_root)
-	if not os.path.isdir(args.prod_root):
-		cli.error(f'Directory {args.prod_root} does not exist!')
-
 	if not args.wrfda_root:
 		if os.getenv('WRFDA_ROOT'):
 			args.wrfda_root = os.getenv('WRFDA_ROOT')
@@ -131,7 +124,7 @@ if __name__ == '__main__':
 	args.wrfda_root = os.path.abspath(args.wrfda_root)
 	if not os.path.isdir(args.wrfda_root):
 		cli.error(f'Directory {args.wrfda_root} does not exist!')
-	
+
 	if not args.littler_root:
 		if os.getenv('LITTLER_ROOT'):
 			args.littler_root = os.getenv('LITTLER_ROOT')
@@ -143,4 +136,4 @@ if __name__ == '__main__':
 
 	config = parse_config(args.config_json)
 
-	run_wrfda_obsproc(args.work_root, args.prod_root, args.wrfda_root, args.littler_root, config, args)
+	run_wrfda_obsproc(args.work_root, args.wrfda_root, args.littler_root, config, args)

@@ -12,11 +12,12 @@ import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, check_files, run, parse_config
 
-def run_real(work_root, wps_work_dir, prod_root, wrf_root, config, args):
+def run_real(work_root, wps_work_dir, wrf_root, config, args):
 	common_config = config['common']
 
 	start_time = common_config['start_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
+	start_time_str = start_time.format(datetime_fmt)
 
 	if not os.path.isdir(wps_work_dir): cli.error(f'WPS work directory {wps_work_dir} does not exist!')
 	wrf_work_dir = os.path.abspath(work_root) + '/wrf'
@@ -24,8 +25,7 @@ def run_real(work_root, wps_work_dir, prod_root, wrf_root, config, args):
 	os.chdir(wrf_work_dir)
 
 	cli.notice('Run real.exe ...')
-	expected_files = ['wrfinput_d{:02d}'.format(i + 1) for i in range(common_config['max_dom'])]
-	expected_files.append('wrfbdy_d01')
+	expected_files = ['wrfinput_d{:02d}_{}'.format(i + 1, start_time_str) for i in range(common_config['max_dom'])]
 	if not check_files(expected_files) or args.force:
 		run('rm -f wrfinput_* met_em.*.nc')
 		run(f'ln -s {wps_work_dir}/met_em.*.nc .')
@@ -40,18 +40,17 @@ def run_real(work_root, wps_work_dir, prod_root, wrf_root, config, args):
 		else:
 			cli.warning(f'Dimension num_st_layers is not in {dataset.filepath()}! Set num_metgrid_soil_levels to 0.')
 			namelist_input['domains']['num_metgrid_soil_levels'] = 0
+		dataset.close()
 		namelist_input.write('./namelist.input', force=True)
 		run(f'{wrf_root}/run/real.exe')
-		if not check_files(expected_files):
-			cli.error(f'Failed! Check output {os.path.abspath(wrf_work_dir)}/rsl.error.0000.')
+		for i in range(common_config['max_dom']):
+			run('mv wrfinput_d{0:02d} wrfinput_d{0:02d}_{1}'.format(i + 1, start_time_str))
+		if os.path.isdir('wrfbdy_d01'):
+			run('mv wrfbdy_d01 wrfbdy_d01_{1}'.format(i + 1, start_time_str))
 		cli.notice('Succeeded.')
 	else:
+		run('ls -l wrfinput_* wrfbdy_* 2> /dev/null')
 		cli.notice('File wrfinput_* already exist.')
-	for i in range(common_config['max_dom']):
-		run('ls -l {0}/wrfinput_d{1:02d} {0}/wrfbdy_d{1:02d}'.format(wrf_work_dir, i + 1))
-	for i in range(common_config['max_dom']):
-		run('cp wrfinput_d{1:02d} {0}/wrfinput_d{1:02d}_{2}'.format(prod_root, i + 1, start_time.format(datetime_fmt)))
-		run('cp wrfbdy_d{1:02d} {0}/wrfbdy_d{1:02d}_{2}'.format(prod_root, i + 1, start_time.format(datetime_fmt)))
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
@@ -59,7 +58,6 @@ if __name__ == '__main__':
 	parser.add_argument(      '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3)')
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
 	parser.add_argument(      '--wps-work-dir',  dest='wps_work_dir', help='Work root directory of WPS')
-	parser.add_argument('-p', '--prod-root', dest='prod_root', help='Product root directory')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file')
 	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
@@ -80,15 +78,6 @@ if __name__ == '__main__':
 		cli.error(f'Directory {args.wps_work_dir} does not exist!')
 	args.wps_work_dir = os.path.abspath(args.wps_work_dir)
 
-	if not args.prod_root:
-		if os.getenv('PROD_ROOT'):
-			args.work_root = os.getenv('PROD_ROOT')
-		else:
-			cli.error('Option --prod-root or environment variable PROD_ROOT need to be set!')
-	args.prod_root = os.path.abspath(args.prod_root)
-	if not os.path.isdir(args.prod_root):
-		cli.error(f'Directory {args.prod_root} does not exist!')
-
 	if not args.wrf_root:
 		if os.getenv('WRF_ROOT'):
 			args.wrf_root = os.getenv('WRF_ROOT')
@@ -102,5 +91,5 @@ if __name__ == '__main__':
 
 	config = parse_config(args.config_json)
 
-	run_real(args.work_root, args.wps_work_dir, args.prod_root, args.wrf_root, config, args)
+	run_real(args.work_root, args.wps_work_dir, args.wrf_root, config, args)
 

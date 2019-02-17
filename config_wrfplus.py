@@ -27,7 +27,7 @@ def config_wrfplus(work_root, wrfplus_root, wrfda_root, config, args):
 	os.chdir(wrfplus_work_dir)
 
 	cli.notice('Edit namelist.input for WRF.')
-	copy(f'{wrfplus_root}/run/namelist.input', 'namelist.input')
+	copy(f'{wrfplus_root}/test/em_real/namelist.input', 'namelist.input')
 	namelist_input = f90nml.read('namelist.input')
 	namelist_input['time_control']['run_hours']              = common_config['forecast_hours']
 	namelist_input['time_control']['start_year']             = [int(start_time.format("Y")) for i in range(max_dom)]
@@ -44,6 +44,7 @@ def config_wrfplus(work_root, wrfplus_root, wrfda_root, config, args):
 	namelist_input['time_control']['auxinput6_end_h']        = common_config['forecast_hours']
 	namelist_input['time_control']['auxinput6_inname']       = f'traj_d01_{start_time_str}'
 	namelist_input['time_control']['io_form_auxinput6']      = 2
+	namelist_input['time_control']['io_form_auxhist7']       = 2
 	namelist_input['time_control']['iofields_filename']      = f'{wrfda_root}/var/run/plus.io_config'
 	namelist_input['time_control']['ignore_iofields_warning']= True
 
@@ -65,6 +66,7 @@ def config_wrfplus(work_root, wrfplus_root, wrfda_root, config, args):
 	namelist_input['physics']     ['sf_sfclay_physics']      = 0
 	namelist_input['physics']     ['bl_pbl_physics']         = 98
 	namelist_input['physics']     ['cu_physics']             = 0
+	namelist_input['dynamics']    ['dyn_opt']                = 302
 	namelist_input.write('./namelist.input', force=True)
 	
 	cli.notice('Succeeded.')
