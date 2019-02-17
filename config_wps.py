@@ -24,7 +24,7 @@ def config_wps(work_root, wps_root, geog_root, config, args):
 	start_time_str = start_time.format('YYYY-MM-DD_HH:mm:ss')
 	end_time_str = end_time.format('YYYY-MM-DD_HH:mm:ss')
 
-	wps_work_dir = work_root + '/WPS'
+	wps_work_dir = work_root + '/wps'
 	if not os.path.isdir(wps_work_dir): os.mkdir(wps_work_dir)
 	os.chdir(wps_work_dir)
 

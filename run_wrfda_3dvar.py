@@ -22,13 +22,9 @@ def run_wrfda_3dvar(work_root, prod_root, wrfda_root, config, args):
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
 
-	wrfda_work_dir = os.path.abspath(work_root) + '/WRFDA'
+	wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
-
-	if os.path.isfile(f'{prod_root}/wrfvar_output_{start_time_str}') and not args.force:
-		cli.notice(f'{prod_root}/wrfvar_output_{start_time_str} already exists.')
-		return
 
 	run(f'ln -sf {wrfda_root}/var/build/da_wrfvar.exe {wrfda_work_dir}')
 	run(f'ln -sf {wrfda_root}/run/LANDUSE.TBL {wrfda_work_dir}')
@@ -64,6 +60,10 @@ def run_wrfda_3dvar(work_root, prod_root, wrfda_root, config, args):
 	if wrfda_config['type'] == '3dvar':
 		run(f'ln -sf obs_gts_{start_time.format(datetime_fmt)}.3DVAR ob.ascii')
 
+	if os.path.isfile(f'{prod_root}/wrfvar_output_{start_time_str}') and not args.force:
+		cli.notice(f'{prod_root}/wrfvar_output_{start_time_str} already exists.')
+		return
+
 	run('./da_wrfvar.exe')
 
 	expected_files = ['wrfvar_output', 'statistics']
@@ -76,7 +76,7 @@ def run_wrfda_3dvar(work_root, prod_root, wrfda_root, config, args):
 		cli.notice('Succeeded.')
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
+	parser = argparse.ArgumentParser(description="Run WRFDA 3DVar system.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018-2019 All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS, WRFDA)')
 	parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')    
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')

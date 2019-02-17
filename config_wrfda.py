@@ -22,7 +22,7 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	start_time = common_config['start_time']
 	datetime_fmt  = 'YYYY-MM-DD_HH:mm:ss.0000'	
 
-	wrfda_work_dir = os.path.abspath(work_root) + '/WRFDA'
+	wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 
@@ -59,7 +59,7 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	cli.notice('Succeeded.')
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
+	parser = argparse.ArgumentParser(description="Run WRFDA system.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018-2019 All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS)')
 	parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')	
 	parser.add_argument('-w', '--work-root', dest='work_root', help='Work root directory')

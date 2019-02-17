@@ -19,7 +19,7 @@ def run_real(work_root, wps_work_dir, prod_root, wrf_root, config, args):
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 
 	if not os.path.isdir(wps_work_dir): cli.error(f'WPS work directory {wps_work_dir} does not exist!')
-	wrf_work_dir = os.path.abspath(work_root) + '/WRF'
+	wrf_work_dir = os.path.abspath(work_root) + '/wrf'
 	if not os.path.isdir(wrf_work_dir): os.mkdir(wrf_work_dir)
 	os.chdir(wrf_work_dir)
 
@@ -75,7 +75,7 @@ if __name__ == '__main__':
 		cli.error(f'Directory {args.work_root} does not exist!')
 
 	if not args.wps_work_dir:
-		args.wps_work_dir = args.work_root + '/WPS'
+		args.wps_work_dir = args.work_root + '/wps'
 	if not os.path.isdir(args.wps_work_dir):
 		cli.error(f'Directory {args.wps_work_dir} does not exist!')
 	args.wps_work_dir = os.path.abspath(args.wps_work_dir)

@@ -15,7 +15,7 @@ def run_wrfda_update_bc(work_root, prod_root, wrfda_root, update_lowbc, config, 
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
 
-	wrfda_work_dir = os.path.abspath(work_root) + '/WRFDA'
+	wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 
@@ -23,6 +23,7 @@ def run_wrfda_update_bc(work_root, prod_root, wrfda_root, update_lowbc, config, 
 
 	expected_files = [f'{prod_root}/wrfbdy_d01_{start_time_str}', 'fg']
 	if not check_files(expected_files):
+		print(f'{prod_root}/wrfbdy_d01_{start_time_str}')
 		cli.error('da_wrfvar.exe or real.exe wasn\'t executed successfully!')
 	run(f'cp {prod_root}/wrfbdy_d01_{start_time_str} wrfbdy_d01')
 
@@ -49,11 +50,11 @@ def run_wrfda_update_bc(work_root, prod_root, wrfda_root, update_lowbc, config, 
 	cli.notice('Succeeded.')
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
+	parser = argparse.ArgumentParser(description="Run WRFDA update_bc tool.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018-2019 All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS)')
+	parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')
 	parser.add_argument('-w', '--work-root', dest='work_root', help='Work root directory')	
 	parser.add_argument('-p', '--prod-root', dest='prod_root', help='Product root directory (e.g. gfs)')
-	parser.add_argument('-d', '--wrfda-root', dest='wrfda_root', help='WPS root directory (e.g. WPS)')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
 	parser.add_argument('-l', '--update-lowbc', dest='update_lowbc', help='Update low boundary condition.', action='store_true')
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')

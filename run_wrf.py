@@ -33,7 +33,7 @@ def run_wrf(work_root, prod_root, wrf_root, config, args):
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
 
-	wrf_work_dir = os.path.abspath(work_root) + '/WRF'
+	wrf_work_dir = os.path.abspath(work_root) + '/wrf'
 	if not os.path.isdir(wrf_work_dir): os.mkdir(wrf_work_dir)
 	os.chdir(wrf_work_dir)
 
@@ -85,7 +85,7 @@ def run_wrf(work_root, prod_root, wrf_root, config, args):
 	run(f'cp {wrf_work_dir}/wrfout_* {prod_root}')
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
+	parser = argparse.ArgumentParser(description="Run WRF model.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018-2019 All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS)')
 	parser.add_argument(      '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3)')
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')

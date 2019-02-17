@@ -25,7 +25,7 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 
 	start_time = common_config['start_time']
 
-	wrfda_work_dir = os.path.abspath(work_root) + '/WRFDA'
+	wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 
@@ -92,7 +92,7 @@ def run_wrfda_obsproc(work_root, prod_root, wrfda_root, littler_root, config, ar
 	run(f'cp obs_gts_* {prod_root}')
 	
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
+	parser = argparse.ArgumentParser(description="Run WRFDA obsproc tool.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018-2019 All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS, WRFDA)')
 	parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')	
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')

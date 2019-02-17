@@ -19,7 +19,7 @@ def run_wps(work_root, wps_root, bkg_root, config, args):
 	else:
 		bkg_type = 'gfs'
 
-	wps_work_dir = os.path.abspath(work_root) + '/WPS'
+	wps_work_dir = os.path.abspath(work_root) + '/wps'
 	if not os.path.isdir(wps_work_dir): os.mkdir(wps_work_dir)
 	os.chdir(wps_work_dir)
 
@@ -45,7 +45,7 @@ def run_wps(work_root, wps_root, bkg_root, config, args):
 	run(f'ls -l {wps_work_dir}/geo_em.*.nc')
 
 	# ------------------------------------------------------------------------------------------------
-	#                                          UNGRIB
+	#                                           UNGRIB
 	cli.notice('Run ungrib.exe ...')
 	if 'background' in common_config and 'vtable' in common_config['background']:
 		run(f'ln -sf {common_config["background"]["vtable"]} {wps_work_dir}/Vtable')
@@ -121,6 +121,7 @@ def run_wps(work_root, wps_root, bkg_root, config, args):
 	run('ls -l FILE:*')
 
 	# ------------------------------------------------------------------------------------------------
+	#                                            METGRID
 	cli.notice('Run metgrid.exe ...')
 	copy(f'{wps_root}/metgrid/METGRID.TBL.ARW', 'METGRID.TBL')
 	expected_files = ['met_em.d01.{}.nc'.format(time.format('YYYY-MM-DD_HH:mm:ss')) for time in bkg_times]
@@ -142,7 +143,7 @@ def run_wps(work_root, wps_root, bkg_root, config, args):
 	run('ls -l met_em.*')
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description="Run WRF model by hiding operation details.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
+	parser = argparse.ArgumentParser(description="Run WPS system.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018-2019 All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS)')
 	parser.add_argument(      '--wps-root', dest='wps_root', help='WPS root directory (e.g. WPS)')
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
