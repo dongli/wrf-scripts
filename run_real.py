@@ -45,8 +45,8 @@ def run_real(work_root, wps_work_dir, wrf_root, config, args):
 		run(f'{wrf_root}/run/real.exe')
 		for i in range(common_config['max_dom']):
 			run('mv wrfinput_d{0:02d} wrfinput_d{0:02d}_{1}'.format(i + 1, start_time_str))
-		if os.path.isdir('wrfbdy_d01'):
-			run('mv wrfbdy_d01 wrfbdy_d01_{1}'.format(i + 1, start_time_str))
+		if os.path.isfile('wrfbdy_d01'):
+			run(f'mv wrfbdy_d01 wrfbdy_d01_{start_time_str}')
 		cli.notice('Succeeded.')
 	else:
 		run('ls -l wrfinput_* wrfbdy_* 2> /dev/null')

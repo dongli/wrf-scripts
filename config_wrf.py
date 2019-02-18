@@ -39,15 +39,6 @@ def config_wrf(work_root, wrf_root, wrfda_root, config, args):
 	namelist_input['time_control']['end_month']              = [int(end_time.format("M")) for i in range(max_dom)]
 	namelist_input['time_control']['end_day']                = [int(end_time.format("D")) for i in range(max_dom)]
 	namelist_input['time_control']['end_hour']               = [int(end_time.format("H")) for i in range(max_dom)]
-
-	# For FSO only?
-	namelist_input['time_control']['auxhist6_interval_h']    = 1
-	namelist_input['time_control']['auxhist6_end_h']         = common_config['forecast_hours']
-	namelist_input['time_control']['auxhist6_outname']       = f'traj_d01_{start_time_str}'
-	namelist_input['time_control']['io_form_auxhist6']       = 2
-	namelist_input['time_control']['iofields_filename']      = f'{wrfda_root}/var/run/plus.io_config'
-	namelist_input['time_control']['ignore_iofields_warning']= True
-
 	namelist_input['domains']     ['time_step']              = int(common_config['time_step'])
 	namelist_input['domains']     ['max_dom']                = max_dom
 	namelist_input['domains']     ['e_we']                   = common_config['e_we']

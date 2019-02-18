@@ -44,3 +44,9 @@ def warning(message):
 def error(message):
 	print(f'[{red("Error")}]: {message}')
 	exit(1)
+
+def banner(message):
+	print()
+	print('===================================================================================')
+	print(message)
+	print()

@@ -6,14 +6,15 @@ from netCDF4 import Dataset
 import os
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import cli, parse_config, run
+from utils import cli, parse_config, run, copy_netcdf_file
 import wrf_operators as wrf
 
 parser = argparse.ArgumentParser(description="Run WRF FSO.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018-2019 All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS)')
 parser.add_argument(      '--wps-root', dest='wps_root', help='WPS root directory (e.g. WPS)')
-parser.add_argument(      '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3)')
-parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WPS)')    
+parser.add_argument(      '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3 or WRF)')
+parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')
+parser.add_argument(      '--wrfplus-root', dest='wrfplus_root', help='WRFPLUS root directory (e.g. WRFPLUS)')    
 parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
 parser.add_argument('-p', '--prod-root', dest='prod_root', help='Product root directory')
 parser.add_argument('-g', '--geog-root', dest='geog_root', help='GEOG data root directory (e.g. WPS_GEOG)')
@@ -76,6 +77,17 @@ args.wrfda_root = os.path.abspath(args.wrfda_root)
 if not os.path.isdir(args.wrfda_root):
 	cli.error(f'Directory {args.wrfda_root} does not exist!')
 
+if not args.wrfplus_root:
+	if os.getenv('WRFPLUS_ROOT'):
+		args.wrfplus_root = os.getenv('WRFPLUS_ROOT')
+	elif args.codes:
+		args.wrfplus_root = args.codes + '/WRFPLUS'
+	else:
+		cli.error('Option --wrfplus-root or environment variable WRFPLUS_ROOT need to be set!')
+args.wrfplus_root = os.path.abspath(args.wrfplus_root)
+if not os.path.isdir(args.wrfplus_root):
+	cli.error(f'Directory {args.wrfplus_root} does not exist!')
+
 if not args.geog_root:
 	if os.getenv('WPS_GEOG_ROOT'):
 		args.geog_root = os.getenv('WPS_GEOG_ROOT')
@@ -113,14 +125,12 @@ datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 start_time_str = start_time.format(datetime_fmt)
 end_time_str = end_time.format(datetime_fmt)
 
-if not os.path.isdir(args.work_root + '/fb'):
-	os.mkdir(args.work_root + '/fb')
-if not os.path.isdir(args.work_root + '/fa'):
-	os.mkdir(args.work_root + '/fa')
-if not os.path.isdir(args.work_root + '/ref'):
-	os.mkdir(args.work_root + '/ref')
+if not os.path.isdir(args.work_root + '/fb'):  os.mkdir(args.work_root + '/fb')
+if not os.path.isdir(args.work_root + '/fa'):  os.mkdir(args.work_root + '/fa')
+if not os.path.isdir(args.work_root + '/ref'): os.mkdir(args.work_root + '/ref')
 
 # Run forecast with xb as initial condition.
+cli.banner('                   Run forecast with xb as initial condition')
 wrf.config_wps(args.work_root, args.wps_root, args.geog_root, config, args)
 wrf.run_wps(args.work_root, args.wps_root, args.bkg_root, config, args)
 wrf.config_wrf(args.work_root + '/fb', args.wrf_root, args.wrfda_root, config, args)
@@ -128,10 +138,10 @@ wrf.run_real(args.work_root + '/fb', args.work_root + '/wps', args.wrf_root, con
 wrf.run_wrf(args.work_root + '/fb', args.wrf_root, config, args)
 
 # Run forecast with xa as initial condition.
+cli.banner('                   Run forecast with xa as initial condition')
 wrf.config_wrfda(args.work_root + '/fa', args.wrfda_root, config, args)
 wrf.run_wrfda_obsproc(args.work_root + '/fa', args.wrfda_root, args.littler_root, config, args)
-if not os.path.isdir(args.work_root + '/fa/wrf'):
-	os.mkdir(args.work_root + '/fa/wrf')
+if not os.path.isdir(args.work_root + '/fa/wrf'): os.mkdir(args.work_root + '/fa/wrf')
 run(f'cp {args.work_root}/fb/wrf/wrfinput_d*_{start_time_str} {args.work_root}/fa/wrf')
 run(f'cp {args.work_root}/fb/wrf/wrfbdy_d01_{start_time_str} {args.work_root}/fa/wrf')
 wrf.run_wrfda_3dvar(args.work_root + '/fa', args.wrfda_root, config, args)
@@ -140,6 +150,7 @@ wrf.config_wrf(args.work_root + '/fa', args.wrf_root, args.wrfda_root, config, a
 wrf.run_wrf(args.work_root + '/fa', args.wrf_root, config, args)
 
 # Interpolate reference at valid time.
+cli.banner('                   Interpolate reference at valid time')
 ref_config = copy.deepcopy(config)
 ref_config['common']['start_time'] = config['common']['end_time']
 wrf.config_wps(args.work_root + '/ref', args.wps_root, args.geog_root, ref_config, args)
@@ -148,27 +159,44 @@ wrf.config_wrf(args.work_root + '/ref', args.wrf_root, args.wrfda_root, ref_conf
 wrf.run_real(args.work_root + '/ref', args.work_root + '/ref/wps', args.wrf_root, ref_config, args)
  
 # Calculate forecast error measures.
-fa  = Dataset(f'{args.work_root}/fa/wrf/wrfout_d01_{start_time_str}', 'r+')
-fb  = Dataset(f'{args.work_root}/fb/wrf/wrfout_d01_{start_time_str}', 'r+')
+cli.banner('                   Calculate forecast error measures')
+if not os.path.isdir(args.work_root + '/fa/wrfplus'): os.mkdir(args.work_root + '/fa/wrfplus')
+if not os.path.isdir(args.work_root + '/fb/wrfplus'): os.mkdir(args.work_root + '/fb/wrfplus')
+
 ref = Dataset(f'{args.work_root}/ref/wrf/wrfinput_d01_{end_time_str}', 'r')
 
-for var_name in ('U', 'V', 'T', 'P'):
-	var_fa = fa.variables[var_name]
-	var_fb = fb.variables[var_name]
-	var_ref = ref.variables[var_name]
-	if not f'A_{var_name}' in fa.variables: fa.createVariable(f'A_{var_name}', var_fa.dtype, var_fa.dimensions)
-	if not f'A_{var_name}' in fb.variables: fb.createVariable(f'A_{var_name}', var_fb.dtype, var_fb.dimensions)
-	var_fa_ref = fa.variables[f'A_{var_name}']
-	var_fa_ref[:] = 0.0
-	var_fa_ref[:] = var_fa[:] - var_ref[:]
-	var_fb_ref = fb.variables[f'A_{var_name}']
-	var_fb_ref[:] = 0.0
-	var_fb_ref[:] = var_fb[:] - var_ref[:]
-	if var_name == 'T':
-		var_fa_ref[:] = var_fa_ref[:] * (9.8 / 3)**2
-		var_fb_ref[:] = var_fb_ref[:] * (9.8 / 3)**2
-	elif var_name == 'P':
-		var_fa_ref[:] = var_fa_ref[:] * (1.0 / 300.0)**2
-		var_fb_ref[:] = var_fb_ref[:] * (1.0 / 300.0)**2
+def calc_final_sens(a, b):
+	for var_name in ('U', 'V', 'T', 'P'):
+		xa = a.variables[var_name]
+		xb = b.variables[var_name]
+		if not f'A_{var_name}' in a.variables: a.createVariable(f'A_{var_name}', xa.dtype, xa.dimensions)
+		xc = a.variables[f'A_{var_name}']
+		xc[:] = 0.0
+		xc[:] = xa[:] - xb[:]
+		if var_name == 'T':
+			xc[:] = xc[:] * (9.8 / 3)**2
+		elif var_name == 'P':
+			xc[:] = xc[:] * (1.0 / 300.0)**2
 
-# Run adjoint with 
+if not os.path.isfile(f'{args.work_root}/fa/wrfplus/final_sens_d01'):
+	cli.notice(f'Calculate final sensitivity {args.work_root}/fa/wrfplus/final_sens_d01.')
+	fa  = copy_netcdf_file(f'{args.work_root}/fa/wrf/wrfout_d01_{start_time_str}', f'{args.work_root}/fa/wrfplus/final_sens_d01', time_index='last')
+	calc_final_sens(fa, ref)
+	fa.close()
+else:
+	run(f'ls -l {args.work_root}/fa/wrfplus/final_sens_d01')
+
+if not os.path.isfile(f'{args.work_root}/fb/wrfplus/final_sens_d01'):
+	cli.notice(f'Calculate final sensitivity {args.work_root}/fb/wrfplus/final_sens_d01.')
+	fb  = copy_netcdf_file(f'{args.work_root}/fb/wrf/wrfout_d01_{start_time_str}', f'{args.work_root}/fb/wrfplus/final_sens_d01', time_index='last')
+	calc_final_sens(fb, ref)
+	fb.close()
+else:
+	run(f'ls -l {args.work_root}/fb/wrfplus/final_sens_d01')
+
+# Run adjoint model with forecast error.
+cli.banner('                   Run adjoint for forecast from background')
+wrf.config_wrfplus(args.work_root + '/fb', args.wrfplus_root, args.wrfda_root, config, args)
+wrf.run_wrfplus_ad(args.work_root + '/fb', args.wrfplus_root, config, args)
+wrf.config_wrfplus(args.work_root + '/fa', args.wrfplus_root, args.wrfda_root, config, args)
+wrf.run_wrfplus_ad(args.work_root + '/fa', args.wrfplus_root, config, args)

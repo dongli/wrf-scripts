@@ -8,7 +8,7 @@
     "max_lon": [115.0],
     "min_lat": [30.0],
     "max_lat": [40.0],
-    "resolution": 9000.0,
+    "resolution": 18000.0,
     "parent_id": [1],
     "parent_grid_ratio": [1],
     "max_dom": 1
