@@ -171,6 +171,7 @@ def calc_final_sens(a, b):
 		xb = b.variables[var_name]
 		if not f'A_{var_name}' in a.variables: a.createVariable(f'A_{var_name}', xa.dtype, xa.dimensions)
 		xc = a.variables[f'A_{var_name}']
+		xc.setncatts(xa.__dict__)
 		xc[:] = 0.0
 		xc[:] = xa[:] - xb[:]
 		if var_name == 'T':

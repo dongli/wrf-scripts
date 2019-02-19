@@ -52,9 +52,6 @@ def config_wrf(work_root, wrf_root, wrfda_root, config, args):
 	namelist_input['domains']     ['j_parent_start']         = common_config['j_parent_start']
 	namelist_input['domains']     ['parent_grid_ratio']      = common_config['parent_grid_ratio']
 	namelist_input['domains']     ['parent_time_step_ratio'] = common_config['parent_grid_ratio']
-	# Delete some parameters.
-	for key in ('eta_levels'):
-		if key in namelist_input['domains']: namelist_input['domains'].pop(key, None)
 	namelist_input['physics']     ['mp_physics']             = phys_config['mp']         if 'mp'         in phys_config else 8
 	namelist_input['physics']     ['ra_lw_physics']          = phys_config['ra_lw']      if 'ra_lw'      in phys_config else 4
 	namelist_input['physics']     ['ra_sw_physics']          = phys_config['ra_sw']      if 'ra_sw'      in phys_config else 4

@@ -42,18 +42,15 @@ def config_wrfplus(work_root, wrfplus_root, config, args):
 	namelist_input['time_control']['end_month']              = [int(end_time.format("M")) for i in range(max_dom)]
 	namelist_input['time_control']['end_day']                = [int(end_time.format("D")) for i in range(max_dom)]
 	namelist_input['time_control']['end_hour']               = [int(end_time.format("H")) for i in range(max_dom)]
+	namelist_input['time_control']['interval_seconds']       = wrf_namelist_input['time_control']['interval_seconds']
+	namelist_input['time_control']['history_interval']       = wrf_namelist_input['time_control']['history_interval']
 	namelist_input['time_control']['frames_per_outfile']     = 1
 	namelist_input['time_control']['io_form_auxinput7']      = 2
 	namelist_input['time_control']['iofields_filename']      = f'{wrfplus_root}/var/run/plus.io_config'
 	namelist_input['time_control']['ignore_iofields_warning']= True
-	namelist_input['domains']     ['time_step']              = int(common_config['time_step'])
-	namelist_input['domains']     ['max_dom']                = max_dom
-	namelist_input['domains']     ['e_we']                   = common_config['e_we']
-	namelist_input['domains']     ['e_sn']                   = common_config['e_sn']
-	namelist_input['domains']     ['e_vert']                 = wrf_namelist_input['domains']['e_vert']
-	namelist_input['domains']     ['p_top_requested']        = wrf_namelist_input['domains']['p_top_requested']
-	namelist_input['domains']     ['dx']                     = [common_config['resolution'] / common_config['parent_grid_ratio'][i] for i in range(max_dom)]
-	namelist_input['domains']     ['dy']                     = [common_config['resolution'] / common_config['parent_grid_ratio'][i] for i in range(max_dom)]
+	for key in ('time_step', 'max_dom', 'e_we', 'e_sn', 'e_vert', 'p_top_requested', 'num_metgrid_levels', 'num_metgrid_soil_levels', 'dx', 'dy'):
+		if key in wrf_namelist_input['domains']:
+			namelist_input['domains'][key] = wrf_namelist_input['domains'][key]
 	namelist_input['domains']     ['grid_id']                = [i + 1 for i in range(max_dom)]
 	namelist_input['domains']     ['parent_id']              = common_config['parent_id']
 	namelist_input['domains']     ['i_parent_start']         = common_config['i_parent_start']
@@ -64,15 +61,14 @@ def config_wrfplus(work_root, wrfplus_root, config, args):
 	namelist_input['physics']     ['ra_lw_physics']          = 0
 	namelist_input['physics']     ['ra_sw_physics']          = 0
 	namelist_input['physics']     ['sf_sfclay_physics']      = 0
+	namelist_input['physics']     ['sf_surface_physics']     = wrf_namelist_input['physics']['sf_surface_physics']
 	namelist_input['physics']     ['bl_pbl_physics']         = 98
 	namelist_input['physics']     ['cu_physics']             = 0
 	namelist_input['physics']     ['num_land_cat']           = wrf_namelist_input['physics']['num_land_cat']
 	namelist_input['dynamics']    ['dyn_opt']                = 302
 	# Delete some parameters.
-	for key in ('eta_levels'):
-		if key in namelist_input['domains']: namelist_input['domains'].pop(key, None)
-	for key in ('iso_temp'):
-		if key in namelist_input['dynamics']: namelist_input['dynamics'].pop(key, None)
+	del namelist_input['domains']['eta_levels']
+	del namelist_input['dynamics']['iso_temp']
 	namelist_input.write('./namelist.input', force=True)
 	
 	cli.notice('Succeeded.')
