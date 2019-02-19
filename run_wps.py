@@ -114,7 +114,7 @@ def run_wps(work_root, wps_root, bkg_root, config, args):
 			if args.verbose:
 				cli.error('Failed!')
 			else:
-				cli.error(f'Failed! Check output {wps_root}/ungrib.out.')
+				cli.error(f'Failed! Check output {wps_work_dir}/ungrib.out.')
 		cli.notice('Succeeded.')
 	else:
 		cli.notice('File FILE:* already exist.')

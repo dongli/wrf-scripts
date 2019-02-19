@@ -5,9 +5,9 @@ import os
 import pendulum
 import f90nml
 import re
+from netCDF4 import Dataset
 from io import StringIO
 from shutil import copyfile
-from pprint import pprint
 import sys
 script_root = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(f'{script_root}/utils')
@@ -18,13 +18,21 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	if not 'wrfda' in config:
 		cli.error('There is no "wrfda" in configuration file!')
 	wrfda_config = config['wrfda']
+	phys_config = config['physics'] if 'physics' in config else {}
 
 	start_time = common_config['start_time']
-	datetime_fmt  = 'YYYY-MM-DD_HH:mm:ss.0000'	
+	datetime_fmt  = 'YYYY-MM-DD_HH:mm:ss'
+	start_time_str = start_time.format(datetime_fmt)
+
+	wrf_work_dir = work_root + '/wrf'
+	if not os.path.isdir(wrf_work_dir): cli.error(f'{wrf_work_dir} does not exist!')
 
 	wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
+
+	wrfinput = Dataset(f'{wrf_work_dir}/wrfinput_d01_{start_time_str}')
+	e_vert = wrfinput.dimensions['bottom_top_stag'].size
 
 	time_window  = config['wrfda']['time_window'] if 'time_window' in config['wrfda'] else 360
 	# Read in namelist template (not exact Fortran namelist format, we need to change it).
@@ -35,7 +43,7 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	namelist_input = f90nml.read(StringIO(template))
 	namelist_input['wrfvar1']['var4d_lbc'] = False
 	namelist_input['wrfvar6']['orthonorm_gradient'] = True
-	namelist_input['wrfvar18']['analysis_date'] = start_time.format(datetime_fmt)
+	namelist_input['wrfvar18']['analysis_date'] = start_time_str
 	namelist_input['wrfvar21']['time_window_min'] = start_time.subtract(minutes=time_window/2).format(datetime_fmt)
 	namelist_input['wrfvar22']['time_window_max'] = start_time.add(minutes=time_window/2).format(datetime_fmt)
 	# Fix bugs
@@ -51,9 +59,21 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	namelist_input['domains']['e_we'] = common_config['e_we']
 	namelist_input['domains']['e_sn'] = common_config['e_sn']
 	# TODO: Set vertical levels somewhere?
-	namelist_input['domains']['e_vert'] = 33
+	namelist_input['domains']['e_vert'] = e_vert
 	namelist_input['domains']['dx'] = common_config['resolution']
 	namelist_input['domains']['dy'] = common_config['resolution']
+	# Sync physics parameters.
+	namelist_input['physics']['mp_physics']             = phys_config['mp']         if 'mp'         in phys_config else 8
+	namelist_input['physics']['ra_lw_physics']          = phys_config['ra_lw']      if 'ra_lw'      in phys_config else 4
+	namelist_input['physics']['ra_sw_physics']          = phys_config['ra_sw']      if 'ra_sw'      in phys_config else 4
+	namelist_input['physics']['radt']                   = phys_config['radt']       if 'radt'       in phys_config else common_config['resolution'] / 1000
+	namelist_input['physics']['sf_sfclay_physics']      = phys_config['sf_sfclay']  if 'sf_sfclay'  in phys_config else 1
+	namelist_input['physics']['sf_surface_physics']     = phys_config['sf_surface'] if 'sf_surface' in phys_config else 2
+	namelist_input['physics']['bl_pbl_physics']         = phys_config['bl_pbl']     if 'bl_pbl'     in phys_config else 1
+	namelist_input['physics']['bldt']                   = phys_config['bldt']       if 'bldt'       in phys_config else 0
+	namelist_input['physics']['cu_physics']             = phys_config['cu']         if 'cu'         in phys_config else 3
+	namelist_input['physics']['cudt']                   = phys_config['cudt']       if 'cudt'       in phys_config else 0
+
 	namelist_input.write(f'{wrfda_work_dir}/namelist.input', force=True)
 
 	cli.notice('Succeeded.')

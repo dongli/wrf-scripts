@@ -12,7 +12,7 @@ from shutil import copyfile
 from netCDF4 import Dataset
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import cli, check_files, run, parse_config
+from utils import cli, check_files, run, parse_config, wrf_version, Version
 
 def run_wrfplus_ad(work_root, wrfplus_root, config, args):
 	common_config = config['common']
@@ -37,6 +37,8 @@ def run_wrfplus_ad(work_root, wrfplus_root, config, args):
 	if not os.path.isfile('final_sens_d01'):
 		cli.error('There is no final_sens_d01 file!')
 
+	version = wrf_version(wrfplus_root)
+
 	expected_files = ['wrfout_d{:02d}_{}'.format(i + 1, start_time_str) for i in range(common_config['max_dom'])]
 	expected_files.append(f'init_sens_d01_{start_time_str}')
 	if not check_files(expected_files) or args.force:
@@ -48,7 +50,10 @@ def run_wrfplus_ad(work_root, wrfplus_root, config, args):
 			run(f'ln -sf {wrfplus_root}/run/GENPARM.TBL .')
 			run(f'ln -sf {wrfplus_root}/run/RRTM_DATA_DBL RRTM_DATA')
 			run(f'ln -sf {wrfplus_root}/run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA')
-			proc = run(f'mpiexec -np {args.np} {wrfplus_root}/run/wrfplus.exe', bg=True)
+			if version >= Version('4.0'):
+				proc = run(f'mpiexec -np {args.np} {wrfplus_root}/run/wrfplus.exe', bg=True)
+			else:
+				proc = run(f'mpiexec -np {args.np} {wrfplus_root}/run/wrf.exe', bg=True)
 			bar = ProgressBar(max_value=100, widgets=[Percentage(), Bar(), Timer()])
 			while proc.poll() == None:
 				sleep(10)

@@ -8,7 +8,7 @@ import platform
 import sys
 import subprocess
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import edit_file, run, cli, check_files
+from utils import wrf_version, Version, edit_file, run, cli, check_files
 
 def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 	if not 'HDF5' in os.environ:
@@ -31,6 +31,10 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		cli.error('JASPERINC and JASPERLIB environment variables are not set!')
 
 	os.chdir(wrf_root)
+	version = wrf_version(wrf_root)
+	# Fix possible code bugs.
+	if version == Version('3.8.1'):
+		edit_file('phys/module_cu_g3.F', ['integer,  dimension \(12\) :: seed', 'integer,  dimension (33) :: seed'])
 	if args.force: run('./clean -a &> /dev/null')
 	expected_exe_files = ('main/wrf.exe', 'main/real.exe', 'main/ndown.exe', 'main/tc.exe')
 	if not check_files(expected_exe_files):
@@ -125,7 +129,12 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 
 	os.chdir(wrfplus_root)
 	if args.force: run('./clean -a &> /dev/null')
-	expected_exe_files = ('main/wrfplus.exe')
+	if version == Version('3.8.1'):
+		edit_file('phys/module_cu_g3.F', [['integer,  dimension \(12\) :: seed', 'integer,  dimension (33) :: seed']])
+	if version >= Version('4.0'):
+		expected_exe_files = ('main/wrfplus.exe')
+	else:
+		expected_exe_files = ('main/wrf.exe')
 	if not check_files(expected_exe_files):
 		cli.notice('Configure WRFPLUS ...')
 		if args.use_grib:
@@ -144,10 +153,14 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		child.wait()
 
 		cli.notice('Compile WRFPLUS ...')
-		if args.verbose:
-			run(f'./compile -j {args.jobs} wrfplus')
+		if version >= Version('4.0'):
+			build_target = 'wrfplus'
 		else:
-			run(f'./compile -j {args.jobs} wrfplus &> compile.out')
+			build_target = 'wrf'
+		if args.verbose:
+			run(f'./compile -j {args.jobs} {build_target}')
+		else:
+			run(f'./compile -j {args.jobs} {build_target} &> compile.out')
 
 		if check_files(expected_exe_files):
 			cli.notice('Succeeded.')

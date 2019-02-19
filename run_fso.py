@@ -139,11 +139,11 @@ wrf.run_wrf(args.work_root + '/fb', args.wrf_root, config, args)
 
 # Run forecast with xa as initial condition.
 cli.banner('                   Run forecast with xa as initial condition')
-wrf.config_wrfda(args.work_root + '/fa', args.wrfda_root, config, args)
-wrf.run_wrfda_obsproc(args.work_root + '/fa', args.wrfda_root, args.littler_root, config, args)
 if not os.path.isdir(args.work_root + '/fa/wrf'): os.mkdir(args.work_root + '/fa/wrf')
 run(f'cp {args.work_root}/fb/wrf/wrfinput_d*_{start_time_str} {args.work_root}/fa/wrf')
 run(f'cp {args.work_root}/fb/wrf/wrfbdy_d01_{start_time_str} {args.work_root}/fa/wrf')
+wrf.config_wrfda(args.work_root + '/fa', args.wrfda_root, config, args)
+wrf.run_wrfda_obsproc(args.work_root + '/fa', args.wrfda_root, args.littler_root, config, args)
 wrf.run_wrfda_3dvar(args.work_root + '/fa', args.wrfda_root, config, args)
 wrf.run_wrfda_update_bc(args.work_root + '/fa', args.wrfda_root, False, config, args)
 wrf.config_wrf(args.work_root + '/fa', args.wrf_root, args.wrfda_root, config, args)
@@ -169,8 +169,8 @@ def calc_final_sens(a, b):
 	for var_name in ('U', 'V', 'T', 'P'):
 		xa = a.variables[var_name]
 		xb = b.variables[var_name]
-		if not f'G_{var_name}' in a.variables: a.createVariable(f'G_{var_name}', xa.dtype, xa.dimensions)
-		xc = a.variables[f'G_{var_name}']
+		if not f'A_{var_name}' in a.variables: a.createVariable(f'A_{var_name}', xa.dtype, xa.dimensions)
+		xc = a.variables[f'A_{var_name}']
 		xc[:] = 0.0
 		xc[:] = xa[:] - xb[:]
 		if var_name == 'T':
@@ -196,7 +196,7 @@ else:
 
 # # Run adjoint model with forecast error.
 # cli.banner('                   Run adjoint for forecast from background')
-# wrf.config_wrfplus(args.work_root + '/fb', args.wrfplus_root, args.wrfda_root, config, args)
+# wrf.config_wrfplus(args.work_root + '/fb', args.wrfplus_root, config, args)
 # wrf.run_wrfplus_ad(args.work_root + '/fb', args.wrfplus_root, config, args)
-# wrf.config_wrfplus(args.work_root + '/fa', args.wrfplus_root, args.wrfda_root, config, args)
+# wrf.config_wrfplus(args.work_root + '/fa', args.wrfplus_root, config, args)
 # wrf.run_wrfplus_ad(args.work_root + '/fa', args.wrfplus_root, config, args)

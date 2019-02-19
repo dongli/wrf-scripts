@@ -5,13 +5,12 @@ import os
 import pendulum
 import f90nml
 import re
-from math import radians, cos, sin, asin, sqrt
 from shutil import copy
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, parse_config
 
-def config_wrfplus(work_root, wrfplus_root, wrfda_root, config, args):
+def config_wrfplus(work_root, wrfplus_root, config, args):
 	common_config = config['common']
 	phys_config = config['physics'] if 'physics' in config else {}
 
@@ -22,9 +21,14 @@ def config_wrfplus(work_root, wrfplus_root, wrfda_root, config, args):
 	start_time_str = start_time.format('YYYY-MM-DD_HH:mm:ss')
 	end_time_str = end_time.format('YYYY-MM-DD_HH:mm:ss')
 
+	wrf_work_dir = work_root + '/wrf'
+	if not os.path.isdir(wrf_work_dir): cli.error(f'{wrf_work_dir} does not exist!')
+
 	wrfplus_work_dir = work_root + '/wrfplus'
 	if not os.path.isdir(wrfplus_work_dir): os.mkdir(wrfplus_work_dir)
 	os.chdir(wrfplus_work_dir)
+
+	wrf_namelist_input = f90nml.read(f'{wrf_work_dir}/namelist.input')
 
 	cli.notice('Edit namelist.input for WRF.')
 	copy(f'{wrfplus_root}/test/em_real/namelist.input', 'namelist.input')
@@ -40,12 +44,14 @@ def config_wrfplus(work_root, wrfplus_root, wrfda_root, config, args):
 	namelist_input['time_control']['end_hour']               = [int(end_time.format("H")) for i in range(max_dom)]
 	namelist_input['time_control']['frames_per_outfile']     = 1
 	namelist_input['time_control']['io_form_auxinput7']      = 2
-	namelist_input['time_control']['iofields_filename']      = f'{wrfda_root}/var/run/fso.io_config'
+	namelist_input['time_control']['iofields_filename']      = f'{wrfplus_root}/var/run/plus.io_config'
 	namelist_input['time_control']['ignore_iofields_warning']= True
 	namelist_input['domains']     ['time_step']              = int(common_config['time_step'])
 	namelist_input['domains']     ['max_dom']                = max_dom
 	namelist_input['domains']     ['e_we']                   = common_config['e_we']
 	namelist_input['domains']     ['e_sn']                   = common_config['e_sn']
+	namelist_input['domains']     ['e_vert']                 = wrf_namelist_input['domains']['e_vert']
+	namelist_input['domains']     ['p_top_requested']        = wrf_namelist_input['domains']['p_top_requested']
 	namelist_input['domains']     ['dx']                     = [common_config['resolution'] / common_config['parent_grid_ratio'][i] for i in range(max_dom)]
 	namelist_input['domains']     ['dy']                     = [common_config['resolution'] / common_config['parent_grid_ratio'][i] for i in range(max_dom)]
 	namelist_input['domains']     ['grid_id']                = [i + 1 for i in range(max_dom)]
@@ -60,7 +66,13 @@ def config_wrfplus(work_root, wrfplus_root, wrfda_root, config, args):
 	namelist_input['physics']     ['sf_sfclay_physics']      = 0
 	namelist_input['physics']     ['bl_pbl_physics']         = 98
 	namelist_input['physics']     ['cu_physics']             = 0
+	namelist_input['physics']     ['num_land_cat']           = wrf_namelist_input['physics']['num_land_cat']
 	namelist_input['dynamics']    ['dyn_opt']                = 302
+	# Delete some parameters.
+	for key in ('eta_levels'):
+		if key in namelist_input['domains']: namelist_input['domains'].pop(key, None)
+	for key in ('iso_temp'):
+		if key in namelist_input['dynamics']: namelist_input['dynamics'].pop(key, None)
 	namelist_input.write('./namelist.input', force=True)
 	
 	cli.notice('Succeeded.')
@@ -69,7 +81,6 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Configure WRFPLUS model.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018-2019 All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS)')
 	parser.add_argument(      '--wrfplus-root', dest='wrfplus_root', help='WRFPLUS root directory (e.g. WRFPLUS)')
-	parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
@@ -95,17 +106,6 @@ if __name__ == '__main__':
 	if not os.path.isdir(args.wrfplus_root):
 		cli.error(f'Directory {args.wrfplus_root} does not exist!')
 
-	if not args.wrfda_root:
-		if os.getenv('WRFDA_ROOT'):
-			args.wrfda_root = os.getenv('WRFDA_ROOT')
-		elif args.codes:
-			args.wrfda_root = args.codes + '/WRFDA'
-		else:
-			cli.error('Option --wrf-root or environment variable WRFDA_ROOT need to be set!')
-	args.wrfda_root = os.path.abspath(args.wrfda_root)
-	if not os.path.isdir(args.wrfda_root):
-		cli.error(f'Directory {args.wrfda_root} does not exist!')
-
 	config = parse_config(args.config_json)
 
-	config_wrfplus(args.work_root, args.wrfplus_root, args.wrfda_root, config, args)
+	config_wrfplus(args.work_root, args.wrfplus_root, config, args)
