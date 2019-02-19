@@ -14,21 +14,6 @@ import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, check_files, run, parse_config
 
-def check_wrfout_times(wrfout_file_paths, start_time):
-	for wrfout_file_path in wrfout_file_paths:
-		if wrfout_file_path[0:6] != 'wrfout': continue
-		wrfout = Dataset(wrfout_file_path)
-		try:
-			if wrfout.variables['Times'][0].tobytes().decode('utf-8') != start_time.format('YYYY-MM-DD_HH:mm:ss') or wrfout.variables['Times'][-1].tobytes().decode('utf-8') != start_time.format('YYYY-MM-DD_HH:mm:ss') or wrfout.variables['Times'].shape[0] <= 1:
-				wrfout.close()
-				return False
-		except Exception as e:
-			print(e)
-			wrfout.close()
-			return False
-		wrfout.close()
-	return True
-
 def run_wrfplus_ad(work_root, wrfplus_root, config, args):
 	common_config = config['common']
 
@@ -54,7 +39,7 @@ def run_wrfplus_ad(work_root, wrfplus_root, config, args):
 
 	expected_files = ['wrfout_d{:02d}_{}'.format(i + 1, start_time_str) for i in range(common_config['max_dom'])]
 	expected_files.append(f'init_sens_d01_{start_time_str}')
-	if not check_files(expected_files) or not check_wrfout_times(expected_files, start_time) or args.force:
+	if not check_files(expected_files) or args.force:
 		run('rm -f wrfout_*')
 		try:
 			run(f'ln -sf {wrfplus_root}/run/LANDUSE.TBL .')
@@ -81,7 +66,7 @@ def run_wrfplus_ad(work_root, wrfplus_root, config, args):
 			sys.exit()
 		if os.path.isfile(f'gradient_wrfplus_d01_{start_time_str}'):
 			run(f'mv gradient_wrfplus_d01_{start_time_str} init_sens_d01_{start_time_str}')
-		if not check_files(expected_files) or not check_wrfout_times(expected_files, start_time):
+		if not check_files(expected_files):
 			cli.error(f'Failed! Check output {os.path.abspath(wrfplus_work_dir)}/rsl.error.0000.')
 		cli.notice('Succeeded.')
 	else:

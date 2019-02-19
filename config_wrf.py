@@ -39,6 +39,7 @@ def config_wrf(work_root, wrf_root, wrfda_root, config, args):
 	namelist_input['time_control']['end_month']              = [int(end_time.format("M")) for i in range(max_dom)]
 	namelist_input['time_control']['end_day']                = [int(end_time.format("D")) for i in range(max_dom)]
 	namelist_input['time_control']['end_hour']               = [int(end_time.format("H")) for i in range(max_dom)]
+	namelist_input['time_control']['frames_per_outfile']     = 1
 	namelist_input['domains']     ['time_step']              = int(common_config['time_step'])
 	namelist_input['domains']     ['max_dom']                = max_dom
 	namelist_input['domains']     ['e_we']                   = common_config['e_we']

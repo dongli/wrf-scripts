@@ -169,8 +169,8 @@ def calc_final_sens(a, b):
 	for var_name in ('U', 'V', 'T', 'P'):
 		xa = a.variables[var_name]
 		xb = b.variables[var_name]
-		if not f'A_{var_name}' in a.variables: a.createVariable(f'A_{var_name}', xa.dtype, xa.dimensions)
-		xc = a.variables[f'A_{var_name}']
+		if not f'G_{var_name}' in a.variables: a.createVariable(f'G_{var_name}', xa.dtype, xa.dimensions)
+		xc = a.variables[f'G_{var_name}']
 		xc[:] = 0.0
 		xc[:] = xa[:] - xb[:]
 		if var_name == 'T':
@@ -180,7 +180,7 @@ def calc_final_sens(a, b):
 
 if not os.path.isfile(f'{args.work_root}/fa/wrfplus/final_sens_d01'):
 	cli.notice(f'Calculate final sensitivity {args.work_root}/fa/wrfplus/final_sens_d01.')
-	fa  = copy_netcdf_file(f'{args.work_root}/fa/wrf/wrfout_d01_{start_time_str}', f'{args.work_root}/fa/wrfplus/final_sens_d01', time_index='last')
+	fa  = copy_netcdf_file(f'{args.work_root}/fa/wrf/wrfout_d01_{end_time_str}', f'{args.work_root}/fa/wrfplus/final_sens_d01')
 	calc_final_sens(fa, ref)
 	fa.close()
 else:
@@ -188,15 +188,15 @@ else:
 
 if not os.path.isfile(f'{args.work_root}/fb/wrfplus/final_sens_d01'):
 	cli.notice(f'Calculate final sensitivity {args.work_root}/fb/wrfplus/final_sens_d01.')
-	fb  = copy_netcdf_file(f'{args.work_root}/fb/wrf/wrfout_d01_{start_time_str}', f'{args.work_root}/fb/wrfplus/final_sens_d01', time_index='last')
+	fb  = copy_netcdf_file(f'{args.work_root}/fb/wrf/wrfout_d01_{end_time_str}', f'{args.work_root}/fb/wrfplus/final_sens_d01')
 	calc_final_sens(fb, ref)
 	fb.close()
 else:
 	run(f'ls -l {args.work_root}/fb/wrfplus/final_sens_d01')
 
-# Run adjoint model with forecast error.
-cli.banner('                   Run adjoint for forecast from background')
-wrf.config_wrfplus(args.work_root + '/fb', args.wrfplus_root, args.wrfda_root, config, args)
-wrf.run_wrfplus_ad(args.work_root + '/fb', args.wrfplus_root, config, args)
-wrf.config_wrfplus(args.work_root + '/fa', args.wrfplus_root, args.wrfda_root, config, args)
-wrf.run_wrfplus_ad(args.work_root + '/fa', args.wrfplus_root, config, args)
+# # Run adjoint model with forecast error.
+# cli.banner('                   Run adjoint for forecast from background')
+# wrf.config_wrfplus(args.work_root + '/fb', args.wrfplus_root, args.wrfda_root, config, args)
+# wrf.run_wrfplus_ad(args.work_root + '/fb', args.wrfplus_root, config, args)
+# wrf.config_wrfplus(args.work_root + '/fa', args.wrfplus_root, args.wrfda_root, config, args)
+# wrf.run_wrfplus_ad(args.work_root + '/fa', args.wrfplus_root, config, args)

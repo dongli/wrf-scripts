@@ -14,20 +14,6 @@ import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, check_files, run, parse_config
 
-def check_wrfout_times(expected_files, end_time):
-	for expected_file in expected_files:
-		wrfout = Dataset(expected_file)
-		try:
-			if wrfout.variables['Times'][-1].tobytes().decode('utf-8') != end_time.format('YYYY-MM-DD_HH:mm:ss'):
-				wrfout.close()
-				return False
-		except Exception as e:
-			print(e)
-			wrfout.close()
-			return False
-		wrfout.close()
-	return True
-
 def run_wrf(work_root, wrf_root, config, args):
 	common_config = config['common']
 
@@ -35,6 +21,7 @@ def run_wrf(work_root, wrf_root, config, args):
 	end_time = common_config['end_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
+	end_time_str = end_time.format(datetime_fmt)
 
 	wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
 
@@ -47,19 +34,19 @@ def run_wrf(work_root, wrf_root, config, args):
 		expected_files = [f'{wrfda_work_dir}/wrfvar_output_{start_time_str}', f'{wrfda_work_dir}/wrfbdy_d01_{start_time_str}.lateral_updated']
 		if not check_files(expected_files):
 			cli.error('da_wrfvar.exe wasn\'t executed successfully!')
-		run(f'cp {wrfda_work_dir}/wrfvar_output_{start_time_str} wrfinput_d01')
-		run(f'cp {wrfda_work_dir}/wrfbdy_d01_{start_time_str}.lateral_updated wrfbdy_d01')
+		run(f'ln -sf {wrfda_work_dir}/wrfvar_output_{start_time_str} wrfinput_d01')
+		run(f'ln -sf {wrfda_work_dir}/wrfbdy_d01_{start_time_str}.lateral_updated wrfbdy_d01')
 	else:
 		expected_files = ['wrfinput_d{:02d}_{}'.format(i + 1, start_time_str) for i in range(common_config['max_dom'])]
 		expected_files.append(f'wrfbdy_d01_{start_time_str}')
 		if not check_files(expected_files):
 			cli.error('real.exe wasn\'t executed successfully!')
 		for i in range(common_config['max_dom']):
-			run('cp wrfinput_d{0:02d}_{1} wrfinput_d{0:02d}'.format(i + 1, start_time_str))
-		run(f'cp wrfbdy_d01_{start_time_str} wrfbdy_d01')
+			run('ln -sf wrfinput_d{0:02d}_{1} wrfinput_d{0:02d}'.format(i + 1, start_time_str))
+		run(f'ln -sf wrfbdy_d01_{start_time_str} wrfbdy_d01')
 
-	expected_files = ['wrfout_d{:02d}_{}'.format(i + 1, start_time_str) for i in range(common_config['max_dom'])]
-	if not check_files(expected_files) or not check_wrfout_times(expected_files, end_time) or args.force:
+	expected_files = ['wrfout_d{:02d}_{}'.format(i + 1, end_time_str) for i in range(common_config['max_dom'])]
+	if not check_files(expected_files) or args.force:
 		run('rm -f wrfout_*')
 		try:
 			run(f'ln -sf {wrf_root}/run/LANDUSE.TBL .')
@@ -87,7 +74,7 @@ def run_wrf(work_root, wrf_root, config, args):
 			cli.warning('Ended by user!')
 			proc.kill()
 			sys.exit()
-		if not check_files(expected_files) or not check_wrfout_times(expected_files, end_time):
+		if not check_files(expected_files):
 			cli.error(f'Failed! Check output {os.path.abspath(wrf_work_dir)}/rsl.error.0000.')
 		cli.notice('Succeeded.')
 	else:
