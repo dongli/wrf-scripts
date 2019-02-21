@@ -8,3 +8,4 @@ netCDF4
 progressbar2
 jinja2
 requests
+packaging
