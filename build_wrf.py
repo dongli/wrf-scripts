@@ -158,9 +158,9 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		else:
 			build_target = 'wrf'
 		if args.verbose:
-			run(f'./compile -j {args.jobs} {build_target}')
+			run(f'./compile {build_target}')
 		else:
-			run(f'./compile -j {args.jobs} {build_target} &> compile.out')
+			run(f'./compile {build_target} &> compile.out')
 
 		if check_files(expected_exe_files):
 			cli.notice('Succeeded.')
