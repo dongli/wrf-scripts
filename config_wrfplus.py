@@ -67,8 +67,8 @@ def config_wrfplus(work_root, wrfplus_root, config, args):
 	namelist_input['physics']     ['num_land_cat']           = wrf_namelist_input['physics']['num_land_cat']
 	namelist_input['dynamics']    ['dyn_opt']                = 302
 	# Delete some parameters.
-	del namelist_input['domains']['eta_levels']
-	del namelist_input['dynamics']['iso_temp']
+	if 'eta_levels' in namelist_input['domains']:  del namelist_input['domains']['eta_levels']
+	if 'iso_temp'   in namelist_input['dynamics']: del namelist_input['dynamics']['iso_temp']
 	namelist_input.write('./namelist.input', force=True)
 	
 	cli.notice('Succeeded.')

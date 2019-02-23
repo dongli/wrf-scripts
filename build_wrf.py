@@ -34,7 +34,7 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 	version = wrf_version(wrf_root)
 	# Fix possible code bugs.
 	if version == Version('3.8.1'):
-		edit_file('phys/module_cu_g3.F', ['integer,  dimension \(12\) :: seed', 'integer,  dimension (33) :: seed'])
+		edit_file('phys/module_cu_g3.F', [['integer,  dimension \(12\) :: seed', 'integer,  dimension (33) :: seed']])
 	if args.force: run('./clean -a &> /dev/null')
 	expected_exe_files = ('main/wrf.exe', 'main/real.exe', 'main/ndown.exe', 'main/tc.exe')
 	if not check_files(expected_exe_files):

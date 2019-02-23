@@ -6,7 +6,7 @@ from netCDF4 import Dataset
 import os
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import cli, parse_config, run, copy_netcdf_file
+from utils import cli, parse_config, run, copy_netcdf_file, wrf_version, Version
 import wrf_operators as wrf
 
 parser = argparse.ArgumentParser(description="Run WRF FSO.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018-2019 All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
@@ -117,6 +117,12 @@ args.littler_root = os.path.abspath(args.littler_root)
 if not os.path.isdir(args.littler_root):
 	cli.error(f'Directory {args.littler_root} does not exist!')
 
+version = wrf_version(args.wrf_root)
+if version >= Version('4.0'):
+	cli.error('WRFPLUS 4.0 does not pass tangient and adjoint tests!')
+if version != Version('3.8.1'):
+	cli.error('Only WRF 3.8.1 has been tested for FSO application!')
+
 config = parse_config(args.config_json)
 
 start_time = config['common']['start_time']
@@ -195,9 +201,9 @@ if not os.path.isfile(f'{args.work_root}/fb/wrfplus/final_sens_d01'):
 else:
 	run(f'ls -l {args.work_root}/fb/wrfplus/final_sens_d01')
 
-# # Run adjoint model with forecast error.
-# cli.banner('                   Run adjoint for forecast from background')
-# wrf.config_wrfplus(args.work_root + '/fb', args.wrfplus_root, config, args)
-# wrf.run_wrfplus_ad(args.work_root + '/fb', args.wrfplus_root, config, args)
-# wrf.config_wrfplus(args.work_root + '/fa', args.wrfplus_root, config, args)
-# wrf.run_wrfplus_ad(args.work_root + '/fa', args.wrfplus_root, config, args)
+# Run adjoint model with forecast error.
+cli.banner('                   Run adjoint for forecast from background')
+wrf.config_wrfplus(args.work_root + '/fb', args.wrfplus_root, config, args)
+wrf.run_wrfplus_ad(args.work_root + '/fb', args.wrfplus_root, config, args)
+wrf.config_wrfplus(args.work_root + '/fa', args.wrfplus_root, config, args)
+wrf.run_wrfplus_ad(args.work_root + '/fa', args.wrfplus_root, config, args)
