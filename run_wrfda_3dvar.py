@@ -12,7 +12,7 @@ from utils import cli, check_files, run, parse_config
 
 scripts_root = os.path.dirname(os.path.realpath(__file__))
 
-def run_wrfda_3dvar(work_root, wrfda_root, config, args):
+def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None):
 	common_config = config['common']
 	if not 'wrfda' in config:
 		cli.error('There is no "wrfda" in configuration file!')
@@ -22,9 +22,8 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args):
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
 
-	wrf_work_dir = os.path.abspath(work_root) + '/wrf'
-	if not os.path.isdir(wrf_work_dir):
-		cli.error('real.exe has not been run?')
+	if not wrf_work_dir: wrf_work_dir = os.path.abspath(work_root) + '/wrf'
+	if not os.path.isdir(wrf_work_dir): cli.error(f'{wrf_work_dir} does not exist!')
 
 	be_work_dir = os.path.abspath(work_root) + '/be'
 
@@ -67,8 +66,9 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args):
 	run(f'ln -sf {wrf_work_dir}/wrfinput_d01_{start_time_str} {wrfda_work_dir}/fg')
 
 	# Observation data
-	if wrfda_config['type'] == '3dvar':
+	if wrfda_config['type'] == '3dvar' and os.path.isfile(f'obs_gts_{start_time.format(datetime_fmt)}.3DVAR'):
 		run(f'ln -sf obs_gts_{start_time.format(datetime_fmt)}.3DVAR ob.ascii')
+	if not os.path.isfile('ob.ascii'): cli.error('ob.ascii does not exist!')
 
 	if os.path.isfile(f'{wrfda_work_dir}/wrfvar_output_{start_time_str}') and not args.force:
 		cli.notice(f'{wrfda_work_dir}/wrfvar_output_{start_time_str} already exists.')
@@ -90,6 +90,7 @@ if __name__ == '__main__':
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS, WRFDA)')
 	parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')    
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
+	parser.add_argument(      '--wrf-work-dir', dest='wrf_work_dir', help='Work directory of WRF')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
 	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
@@ -115,6 +116,8 @@ if __name__ == '__main__':
 	if not os.path.isdir(args.wrfda_root):
 		cli.error(f'Directory {args.wrfda_root} does not exist!')
 
+	if args.wrf_work_dir: args.wrf_work_dir = os.path.abspath(args.wrf_work_dir)
+
 	config = parse_config(args.config_json)
 
-	run_wrfda_3dvar(args.work_root, args.wrfda_root, config, args)
+	run_wrfda_3dvar(args.work_root, args.wrfda_root, config, args, args.wrf_work_dir)

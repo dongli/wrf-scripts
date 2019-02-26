@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-root_url = 'http://www.ftp.ncep.noaa.gov/data/nccf/com/gfs/prod'
+root_url = 'https://www.ftp.ncep.noaa.gov/data/nccf/com/gfs/prod'
 
 import subprocess
 import argparse

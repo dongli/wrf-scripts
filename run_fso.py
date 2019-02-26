@@ -169,14 +169,16 @@ cli.banner('                   Calculate forecast error measures')
 if not os.path.isdir(args.work_root + '/fa/wrfplus'): os.mkdir(args.work_root + '/fa/wrfplus')
 if not os.path.isdir(args.work_root + '/fb/wrfplus'): os.mkdir(args.work_root + '/fb/wrfplus')
 
-ref = Dataset(f'{args.work_root}/ref/wrf/wrfinput_d01_{end_time_str}', 'r')
+xt  = Dataset(f'{args.work_root}/ref/wrf/wrfinput_d01_{end_time_str}', 'r')
+xaf = Dataset(f'{args.work_root}/fa/wrf/wrfout_d01_{end_time_str}',    'r')
+xbf = Dataset(f'{args.work_root}/fb/wrf/wrfout_d01_{end_time_str}',    'r')
 
-def calc_final_sens(a, b):
+def calc_final_sens(a, b, c):
 	for var_name in ('U', 'V', 'T', 'P'):
 		xa = a.variables[var_name]
 		xb = b.variables[var_name]
-		if not f'A_{var_name}' in a.variables: a.createVariable(f'A_{var_name}', xa.dtype, xa.dimensions)
-		xc = a.variables[f'A_{var_name}']
+		if not f'A_{var_name}' in c.variables: c.createVariable(f'A_{var_name}', xa.dtype, xa.dimensions)
+		xc = c.variables[f'A_{var_name}']
 		xc.setncatts(xa.__dict__)
 		xc[:] = 0.0
 		xc[:] = xa[:] - xb[:]
@@ -187,17 +189,19 @@ def calc_final_sens(a, b):
 
 if not os.path.isfile(f'{args.work_root}/fa/wrfplus/final_sens_d01'):
 	cli.notice(f'Calculate final sensitivity {args.work_root}/fa/wrfplus/final_sens_d01.')
-	fa  = copy_netcdf_file(f'{args.work_root}/fa/wrf/wrfout_d01_{end_time_str}', f'{args.work_root}/fa/wrfplus/final_sens_d01')
-	calc_final_sens(fa, ref)
-	fa.close()
+	run(f'cp {args.work_root}/fa/wrf/wrfout_d01_{end_time_str} {args.work_root}/fa/wrfplus/final_sens_d01')
+	saf = Dataset(f'{args.work_root}/fa/wrfplus/final_sens_d01', 'r+')
+	calc_final_sens(xaf, xt, saf)
+	saf.close()
 else:
 	run(f'ls -l {args.work_root}/fa/wrfplus/final_sens_d01')
 
 if not os.path.isfile(f'{args.work_root}/fb/wrfplus/final_sens_d01'):
 	cli.notice(f'Calculate final sensitivity {args.work_root}/fb/wrfplus/final_sens_d01.')
-	fb  = copy_netcdf_file(f'{args.work_root}/fb/wrf/wrfout_d01_{end_time_str}', f'{args.work_root}/fb/wrfplus/final_sens_d01')
-	calc_final_sens(fb, ref)
-	fb.close()
+	run(f'cp {args.work_root}/fb/wrf/wrfout_d01_{end_time_str} {args.work_root}/fb/wrfplus/final_sens_d01')
+	sbf = Dataset(f'{args.work_root}/fb/wrfplus/final_sens_d01', 'r+')
+	calc_final_sens(xbf, xt, sbf)
+	sbf.close()
 else:
 	run(f'ls -l {args.work_root}/fb/wrfplus/final_sens_d01')
 
@@ -207,3 +211,32 @@ wrf.config_wrfplus(args.work_root + '/fb', args.wrfplus_root, config, args)
 wrf.run_wrfplus_ad(args.work_root + '/fb', args.wrfplus_root, config, args)
 wrf.config_wrfplus(args.work_root + '/fa', args.wrfplus_root, config, args)
 wrf.run_wrfplus_ad(args.work_root + '/fa', args.wrfplus_root, config, args)
+
+# Calculate forecast sensitivity.
+cli.banner('                   Calculate forecast sensitivity')
+
+if not os.path.isdir(f'{args.work_root}/sens'): os.mkdir(args.work_root + '/sens')
+
+wrf.config_wrfda_sens(args.work_root + '/sens', args.wrfda_root, config, args, args.work_root + '/fa/wrf')
+
+cli.notice('Add two init_sens_d01 data.')
+os.chdir(args.work_root + '/sens/wrfda')
+
+def add_init_sens(a, b, c):
+	for var_name in ('A_U', 'A_V', 'A_T', 'A_W', 'A_PH', 'A_MU'):
+		xa = a.variables[var_name]
+		xb = b.variables[var_name]
+		xc = c.variables[var_name]
+		xc[:] = xa[:] + xb[:]
+
+run(f'cp {args.work_root}/fa/wrfplus/init_sens_d01_{start_time_str} ad_d01_{start_time_str}')
+sa = Dataset(f'{args.work_root}/fa/wrfplus/init_sens_d01_{start_time_str}')
+sb = Dataset(f'{args.work_root}/fb/wrfplus/init_sens_d01_{start_time_str}')
+ad = Dataset(f'ad_d01_{start_time_str}', 'r+')
+add_init_sens(sa, sb, ad)
+run(f'ln -sf ad_d01_{start_time_str} gr01')
+run(f'ln -sf {args.work_root}/fa/wrfda/ob.ascii .')
+
+run(f'ln -sf {args.work_root}/fa/lanczos_eigenpairs.* ..')
+
+wrf.run_wrfda_3dvar(args.work_root + '/sens', args.wrfda_root, config, args, args.work_root + '/fa/wrf')

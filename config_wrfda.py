@@ -43,6 +43,8 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	namelist_input = f90nml.read(StringIO(template))
 	namelist_input['wrfvar1']['var4d_lbc'] = False
 	namelist_input['wrfvar6']['orthonorm_gradient'] = True
+	namelist_input['wrfvar6']['use_lanczos'] = True
+	namelist_input['wrfvar6']['write_lanczos'] = True
 	namelist_input['wrfvar18']['analysis_date'] = start_time_str
 	namelist_input['wrfvar21']['time_window_min'] = start_time.subtract(minutes=time_window/2).format(datetime_fmt)
 	namelist_input['wrfvar22']['time_window_max'] = start_time.add(minutes=time_window/2).format(datetime_fmt)
@@ -110,4 +112,4 @@ if __name__ == '__main__':
 
 	config = parse_config(args.config_json)
 
-	config_wrfda(args.wrfda_root, args.work_root, config, args)
+	config_wrfda(args.work_root, args.wrfda_root, config, args)

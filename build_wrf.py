@@ -238,6 +238,9 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		child.wait()
 
 		cli.notice('Compile WRFDA ...')
+		# edit_file('configure.wrf', [
+		# 	['FCFLAGS         =    \$\(FCOPTIM\) \$\(FCBASEOPTS\)', 'FCFLAGS         =  -O0  -g -fbacktrace $(FCBASEOPTS)']
+		# ])
 		if args.verbose:
 			run(f'./compile all_wrfvar')
 		else:

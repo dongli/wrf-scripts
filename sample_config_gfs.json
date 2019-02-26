@@ -1,7 +1,7 @@
 {
   "tag": "test",
   "common": {
-    "start_time": "2019020700",
+    "start_time": "2019022000",
     "forecast_hours": 6,
     "map_proj": 1,
     "min_lon": [100.0],
