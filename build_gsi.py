@@ -6,7 +6,7 @@ import os
 import pexpect
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import edit_file, run, cli, check_files
+from utils import gsi_version, Version, edit_file, run, cli, check_files
 
 def build_gsi(wrf_root, gsi_root, args):
 	if args.compiler_suite == 'gnu':
@@ -26,6 +26,8 @@ def build_gsi(wrf_root, gsi_root, args):
 		cli.error('WRF has not been built! Build it first.')
 	
 	os.chdir(args.gsi_root)
+	version = gsi_version(args.gsi_root)
+
 	if args.force: run('rm -rf build')
 	if not os.path.isdir('build'): os.mkdir('build')
 	os.chdir('build')
