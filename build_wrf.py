@@ -175,6 +175,18 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 	os.chdir(wrfda_root)
 	os.environ['WRFPLUS_DIR'] = wrfplus_root
 	if args.force: run('./clean -a &> /dev/null')
+	if version == Version('3.8.1'):
+		edit_file('var/da/da_define_structures/da_zero_y.inc', [
+			[', value \)', ', value_ )'],
+			[':: value$', ':: value_\nreal value'],
+			['if \(.not.\(present\(value\)\)\) value = 0.0', '''
+   if (.not.(present(value_))) then
+      value = 0.0
+   else
+      value = value_
+   end if
+''']
+		])
 	expected_exe_files = [
 		'var/build/da_advance_time.exe',
 		'var/build/da_bias_airmass.exe',

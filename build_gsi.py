@@ -67,6 +67,8 @@ def build_gsi(wrf_root, gsi_root, args):
 		cli.notice('Configure GSI ...')
 		if args.compiler_suite == 'gnu':
 			run(f'CC=gcc CXX=g++ FC=gfortran cmake .. -DBUILD_CORELIBS=ON -DWRFPATH={args.wrf_root} &> cmake.out')
+		else if args.compiler_suite == 'intel':
+			run(f'CC=icc CXX=icpc FC=gfortran cmake .. -DBUILD_CORELIBS=ON -DWRFPATH={args.wrf_root} &> cmake.out')
 	
 		cli.notice('Compile GSI ...')
 		if args.verbose:
