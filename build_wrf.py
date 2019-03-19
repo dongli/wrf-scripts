@@ -64,7 +64,12 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		if platform.system() == 'Darwin': child.expect('This build of WRF will use NETCDF4 with HDF5 compression')
 		child.wait()
 
-		if args.compiler_suite == 'pgi':
+		if args.compiler_suite == 'intel':
+			edit_file('./configure.wrf', [
+				['mpif90', 'mpiifort'],
+				['mpicc', 'mpiicc']
+			])
+		elif args.compiler_suite == 'pgi':
 			edit_file('./configure.wrf', [
 				['pgf90', 'pgfortran'],
 				['mpif90', 'mpifort']
@@ -72,9 +77,9 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 
 		cli.notice('Compile WRF ...')
 		if args.verbose:
-			run(f'./compile -j {args.jobs} em_real')
+			run(f'./compile em_real')
 		else:
-			run(f'./compile -j {args.jobs} em_real &> compile.out')
+			run(f'./compile em_real &> compile.out')
 		
 		if check_files(expected_exe_files):
 			cli.notice('Succeeded.')
@@ -101,14 +106,20 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 			child.sendline('7')
 		child.wait()
 
-		if args.compiler_suite == 'pgi':
-			edit_file('./configure.wrf', [
+		if args.compiler_suite == 'intel':
+			edit_file('./configure.wps', [
+				['mpif90', 'mpiifort'],
+				['mpicc', 'mpiicc']
+			])
+		elif args.compiler_suite == 'pgi':
+			edit_file('./configure.wps', [
 				['pgf90', 'pgfortran'],
 				['mpif90', 'mpifort']
 			])
+		else:
+			run('sed -i "s/mpicc -cc=.*/mpicc/" configure.wps')
+			run('sed -i "s/mpif90 -f90=.*/mpif90/" configure.wps')
 
-		run('sed -i "s/mpicc -cc=.*/mpicc/" configure.wps')
-		run('sed -i "s/mpif90 -f90=.*/mpif90/" configure.wps')
 		run('sed -i "s/WRF_DIR\s*=.*/WRF_DIR = ..\/WRF/" configure.wps')
 
 		cli.notice('Compile WPS ...')
@@ -151,6 +162,12 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		elif args.compiler_suite == 'pgi':
 			child.sendline('28')
 		child.wait()
+
+		if args.compiler_suite == 'intel':
+			edit_file('./configure.wrf', [
+				['mpif90', 'mpiifort'],
+				['mpicc', 'mpiicc']
+			])
 
 		cli.notice('Compile WRFPLUS ...')
 		if version >= Version('4.0'):
@@ -248,6 +265,12 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		elif args.compiler_suite == 'pgi':
 			child.sendline('28')
 		child.wait()
+
+		if args.compiler_suite == 'intel':
+			edit_file('./configure.wrf', [
+				['mpif90', 'mpiifort'],
+				['mpicc', 'mpiicc']
+			])
 
 		cli.notice('Compile WRFDA ...')
 		# edit_file('configure.wrf', [

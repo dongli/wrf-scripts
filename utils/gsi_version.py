@@ -9,7 +9,8 @@ def gsi_version(gsi_root):
 		f.readline()
 		line = f.readline()
 	else:
-		cli.error('Could not find GSI version!')
+		cli.warning('Could not find GSI version! Assume 3.6.')
+		return parse('3.6')
 	# Community GSIv3.7_EnKFv1.3
 	match = re.search('GSIv(\d+\.\d+)', line)[1]
 	return parse(match)

@@ -17,7 +17,7 @@ def build_gsi(wrf_root, gsi_root, args):
 	# Check environment.
 	if not os.getenv('NETCDF'):
 		cli.error('Shell variable NETCDF is not set!')
-	if not os.getenv('LAPACK_PATH'):
+	if not os.getenv('LAPACK_PATH') and args.compiler_suite != 'intel':
 		cli.error('Shell variable LAPACK_PATH is not set!')
 	
 	os.chdir(args.wrf_root)
@@ -31,46 +31,75 @@ def build_gsi(wrf_root, gsi_root, args):
 	if args.force: run('rm -rf build')
 	if not os.path.isdir('build'): os.mkdir('build')
 	os.chdir('build')
-	expected_exe_files = (
-		'bin/enkf_gfs.x',
-		'bin/gsi.x',
-		'lib/libbacio_v2.0.1.a',
-		'lib/libbufr_v10.2.5.a',
-		'lib/libcrtm_v2.2.3.a',
-		'lib/libenkfdeplib.a',
-		'lib/libenkflib.a',
-		'lib/libgsilib_shrd.a',
-		'lib/libgsilib_wrf.a',
-		'lib/libnemsio_v2.2.1.a',
-		'lib/libsfcio_v1.1.0.a',
-		'lib/libsigio_v2.0.1.a',
-		'lib/libsp_v2.0.2.a',
-		'lib/libw3emc_v2.2.0.a',
-		'lib/libw3nco_v2.0.6.a'
-	)
+	if version == Version('3.6'):
+		expected_exe_files = (
+			'bin/gsi.x',
+			'lib/libbacio_v2.0.1.a',
+			'lib/libbufr_v10.2.5.a',
+			'lib/libcrtm_v2.2.3.a',
+			'lib/libenkfdeplib.a',
+			'lib/libenkflib.a',
+			'lib/libgsilib_shrd.a',
+			'lib/libgsilib_wrf.a',
+			'lib/libnemsio_v2.2.1.a',
+			'lib/libsfcio_v1.1.0.a',
+			'lib/libsigio_v2.0.1.a',
+			'lib/libsp_v2.0.2.a',
+			'lib/libw3emc_v2.2.0.a',
+			'lib/libw3nco_v2.0.6.a'
+		)
+	elif version == Version('3.7'):
+		expected_exe_files = (
+			'bin/enkf_wrf.x',
+			'bin/gsi.x',
+			'lib/libbacio_v2.0.1.a',
+			'lib/libbufr_v10.2.5.a',
+			'lib/libcrtm_v2.2.3.a',
+			'lib/libenkfdeplib.a',
+			'lib/libenkflib.a',
+			'lib/libgsilib_shrd.a',
+			'lib/libgsilib_wrf.a',
+			'lib/libnemsio_v2.2.1.a',
+			'lib/libsfcio_v1.1.0.a',
+			'lib/libsigio_v2.0.1.a',
+			'lib/libsp_v2.0.2.a',
+			'lib/libw3emc_v2.2.0.a',
+			'lib/libw3nco_v2.0.6.a'
+		)
 	if not check_files(expected_exe_files):
-		cli.notice('Fix GSI 3.6!')
-		edit_file('../cmake/Modules/FindCORELIBS.cmake', [
-			['\${CMAKE_SOURCE_DIR}/libsrc', '${CMAKE_SOURCE_DIR}/lib/libsrc']
-		])
-		edit_file('../cmake/Modules/setCompilerFlags.cmake', [
-			['set\(BACIO_Fortran_FLAGS " -O3 -fconvert=big-endian -ffree-form', 'set(BACIO_Fortran_FLAGS " -O3 -fconvert=big-endian']
-		])
-		edit_file('../core-libs/sigio/CMakeLists.txt', [
-			['\*\.f\)', '*.f90)']
-		])
-		edit_file('../src/hybrid_ensemble_isotropic.F90', [
-			['stop\(123\)', 'stop 123']
-		])
-		edit_file('../src/setupoz.f90', [
-			['my_head%ij\(1\),my_head%wij\(1\)\)', 'my_head%ij,my_head%wij)']
-		])
-	
+		cmake_args = f'-DBUILD_CORELIBS=ON -DBUILD_WRF=ON -DWRFPATH={args.wrf_root}'
+		if version == Version('3.6'):
+			cli.notice('Fix GSI 3.6!')
+			edit_file('../cmake/Modules/FindCORELIBS.cmake', [
+				['\${CMAKE_SOURCE_DIR}/libsrc', '${CMAKE_SOURCE_DIR}/lib/libsrc']
+			])
+			if args.compiler_suite == 'gnu':
+				edit_file('../cmake/Modules/setCompilerFlags.cmake', [
+					['set\(BACIO_Fortran_FLAGS " -O3 -fconvert=big-endian -ffree-form', 'set(BACIO_Fortran_FLAGS " -O3 -fconvert=big-endian']
+				])
+			elif args.compiler_suite == 'intel':
+				edit_file('../cmake/Modules/setCompilerFlags.cmake', [
+					['set \(BACIO_Fortran_FLAGS "-O3 -free -assume nocc_omp', 'set(BACIO_Fortran_FLAGS " -O3 -assume nocc_omp']
+				])
+			edit_file('../core-libs/sigio/CMakeLists.txt', [
+				['\*\.f\)', '*.f90)']
+			])
+			edit_file('../src/hybrid_ensemble_isotropic.F90', [
+				['stop\(123\)', 'stop 123']
+			])
+			edit_file('../src/setupoz.f90', [
+				['my_head%ij\(1\),my_head%wij\(1\)\)', 'my_head%ij,my_head%wij)']
+			])
+		if version == Version('3.7'):
+			cli.warning('GSI 3.7 has bug when rerun cmake, so clean all build files.')
+			run('rm -rf ../build/*')
+			cmake_args += '-DBUILD_UTIL_COM=ON'
+
 		cli.notice('Configure GSI ...')
 		if args.compiler_suite == 'gnu':
-			run(f'CC=gcc CXX=g++ FC=gfortran cmake .. -DBUILD_CORELIBS=ON -DWRFPATH={args.wrf_root} &> cmake.out')
-		else if args.compiler_suite == 'intel':
-			run(f'CC=icc CXX=icpc FC=gfortran cmake .. -DBUILD_CORELIBS=ON -DWRFPATH={args.wrf_root} &> cmake.out')
+			run(f'CC=gcc CXX=g++ FC=gfortran cmake .. {cmake_args} &> cmake.out')
+		elif args.compiler_suite == 'intel':
+			run(f'CC=mpiicc CXX=mpiicpc FC=mpiifort cmake .. {cmake_args} &> cmake.out')
 	
 		cli.notice('Compile GSI ...')
 		if args.verbose:
@@ -87,82 +116,83 @@ def build_gsi(wrf_root, gsi_root, args):
 				cli.error(f'Failed! Check {args.gsi_root}/build/make.out')
 	else:
 		cli.notice('GSI has already been built.')
-	
-	os.chdir(f'{args.gsi_root}/util/bufr_tools')
-	if args.force: run('make clean')
-	expected_exe_files = (
-		'bufr_append_sample.exe',
-		'bufr_decode_radiance.exe',
-		'bufr_decode_sample.exe',
-		'bufr_encode_sample.exe',
-		'prepbufr_append_retrieve.exe',
-		'prepbufr_append_surface.exe',
-		'prepbufr_append_upperair.exe',
-		'prepbufr_decode_all.exe',
-		'prepbufr_encode_surface.exe',
-		'prepbufr_encode_upperair.exe',
-		'prepbufr_inventory.exe'
-	)
-	if not check_files(expected_exe_files):
-		edit_file('makefile', [
-			['^\s*FC\s*=.*$', f'FC = {fc}'],
-			['-I\.\./\.\./dtc', '-I../../build'],
-			['-L\.\./\.\./dtc', '-L../../build'],
-			['-lbufr_i4r8', '-lbufr_v10.2.5']
-		])
-	
-		cli.notice('Compile bufr_tools ...')
-		if args.verbose:
-			run('make')
-		else:
-			run('make &> make.out')
-	
-		if check_files(expected_exe_files):
-			cli.notice('Succeeded.')
-		else:
+
+	if version == Version('3.6'):
+		os.chdir(f'{args.gsi_root}/util/bufr_tools')
+		if args.force: run('make clean')
+		expected_exe_files = (
+			'bufr_append_sample.exe',
+			'bufr_decode_radiance.exe',
+			'bufr_decode_sample.exe',
+			'bufr_encode_sample.exe',
+			'prepbufr_append_retrieve.exe',
+			'prepbufr_append_surface.exe',
+			'prepbufr_append_upperair.exe',
+			'prepbufr_decode_all.exe',
+			'prepbufr_encode_surface.exe',
+			'prepbufr_encode_upperair.exe',
+			'prepbufr_inventory.exe'
+		)
+		if not check_files(expected_exe_files):
+			edit_file('makefile', [
+				['^\s*FC\s*=.*$', f'FC = {fc}'],
+				['-I\.\./\.\./dtc', '-I../../build'],
+				['-L\.\./\.\./dtc', '-L../../build'],
+				['-lbufr_i4r8', '-lbufr_v10.2.5']
+			])
+		
+			cli.notice('Compile bufr_tools ...')
 			if args.verbose:
-				cli.error('Failed!')
+				run('make')
 			else:
-				cli.error(f'Failed! Check {args.gsi_root}/util/bufr_tools/make.out')
-	else:
-		cli.notice('GSI bufr_tools has been built.')
-	
-	os.chdir(f'{args.gsi_root}/util/Analysis_Utilities/read_diag/')
-	expected_exe_files = (
-		'read_diag_conv.exe',
-		'read_diag_conv_ens.exe',
-		'read_diag_rad.exe'
-	)
-	if not check_files(expected_exe_files):
-		edit_file('makefile', [
-			['include \.\./\.\./\.\./dtc/configure.gsi', ''],
-			['\$\(SFC\)', fc],
-			['-I\.\./\.\./\.\./dtc', '-I../../../build'],
-			['-L\.\./\.\./\.\./src -lgsi', '-L../../../build/lib -lgsilib_shrd'],
-			['FLAGS= \$\(FFLAGS_DEFAULT\)', 'FLAGS = -fconvert=big-endian']
-		])
-	
-		cli.notice('Compile read_diag ...')
-		if args.verbose:
-			run('make')
+				run('make &> make.out')
+		
+			if check_files(expected_exe_files):
+				cli.notice('Succeeded.')
+			else:
+				if args.verbose:
+					cli.error('Failed!')
+				else:
+					cli.error(f'Failed! Check {args.gsi_root}/util/bufr_tools/make.out')
 		else:
-			run('make &> make.out')
-	
-		if check_files(expected_exe_files):
-			cli.notice('Succeeded.')
-		else:
+			cli.notice('GSI bufr_tools has been built.')
+		
+		os.chdir(f'{args.gsi_root}/util/Analysis_Utilities/read_diag/')
+		expected_exe_files = (
+			'read_diag_conv.exe',
+			'read_diag_conv_ens.exe',
+			'read_diag_rad.exe'
+		)
+		if not check_files(expected_exe_files):
+			edit_file('makefile', [
+				['include \.\./\.\./\.\./dtc/configure.gsi', ''],
+				['\$\(SFC\)', fc],
+				['-I\.\./\.\./\.\./dtc', '-I../../../build'],
+				['-L\.\./\.\./\.\./src -lgsi', '-L../../../build/lib -lgsilib_shrd'],
+				['FLAGS= \$\(FFLAGS_DEFAULT\)', 'FLAGS = -fconvert=big-endian']
+			])
+		
+			cli.notice('Compile read_diag ...')
 			if args.verbose:
-				cli.error('Failed')
+				run('make')
 			else:
-				cli.error(f'Failed! Check {args.gsi_root}/util/Analysis_Utilities/read_diag/make.out')
-	else:
-		cli.notice('GSI read_diag has been built.')
+				run('make &> make.out')
+		
+			if check_files(expected_exe_files):
+				cli.notice('Succeeded.')
+			else:
+				if args.verbose:
+					cli.error('Failed')
+				else:
+					cli.error(f'Failed! Check {args.gsi_root}/util/Analysis_Utilities/read_diag/make.out')
+		else:
+			cli.notice('GSI read_diag has been built.')
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Build WRF model and its friends.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, GSI)')
-	parser.add_argument('-w', '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRF)')
-	parser.add_argument('-g', '--gsi-root', dest='gsi_root', help='GSI root directory (e.g. GSI)')
+	parser.add_argument(      '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRF)')
+	parser.add_argument(      '--gsi-root', dest='gsi_root', help='GSI root directory (e.g. GSI)')
 	parser.add_argument('-s', '--compiler-suite', dest='compiler_suite', help='Compiler suite', choices=['gnu', 'pgi', 'intel'])
 	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
 	parser.add_argument('-f', '--force', help='Force to rebuild if already built', action='store_true')
