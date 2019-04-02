@@ -40,7 +40,6 @@ def parse_domain(config):
 		config['truelat2'] = 60.0
 
 	# Create proj object.
-	p = Proj('+proj=lcc +lon_0=105.0 +lat_0=32.5 +lat_1=30.0 +lat_2=60.0')
 	proj = Proj(f'''
 		+proj=lcc
 		+lon_0={config["ref_lon"]}

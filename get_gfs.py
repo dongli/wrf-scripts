@@ -42,7 +42,7 @@ def get_gfs(output_root, start_time, forecast_hours, resolution, args):
 			cli.error('Encounter exception {e}!')
 		if not check_file_size(url, local_file_path):
 			os.remove(local_file_path)
-			cli.error('Failed to download f{file_name}!')
+			cli.error(f'Failed to download {file_name}!')
 
 	res = requests.head(f'{root_url}/gfs.{start_time.format("YYYYMMDDHH")}/')
 	if res.status_code != 200:
