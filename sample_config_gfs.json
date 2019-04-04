@@ -1,13 +1,13 @@
 {
   "tag": "test",
   "common": {
-    "start_time": "2019022000",
-    "forecast_hours": 6,
+    "start_time": "2019040200",
+    "forecast_hours": 24,
     "map_proj": 1,
-    "min_lon": [100.0],
-    "max_lon": [115.0],
-    "min_lat": [30.0],
-    "max_lat": [40.0],
+    "min_lon": [65.0],
+    "max_lon": [140.0],
+    "min_lat": [10.0],
+    "max_lat": [60.0],
     "resolution": 18000.0,
     "parent_id": [1],
     "parent_grid_ratio": [1],
@@ -15,6 +15,7 @@
   },
   "wrfda": {
     "type": "3dvar",
+    "ob_format": 1,
     "time_window": 360,
     "obsproc_output_format": 2,
     "cv_options": 3

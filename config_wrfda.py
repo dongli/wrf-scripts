@@ -42,6 +42,7 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	template = re.sub(r'\([^\)]*\)', '', template)
 	namelist_input = f90nml.read(StringIO(template))
 	namelist_input['wrfvar1']['var4d_lbc'] = False
+	namelist_input['wrfvar3']['ob_format'] = wrfda_config['ob_format']
 	namelist_input['wrfvar6']['orthonorm_gradient'] = True
 	namelist_input['wrfvar6']['use_lanczos'] = True
 	namelist_input['wrfvar6']['write_lanczos'] = True

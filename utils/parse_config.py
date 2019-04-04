@@ -124,18 +124,21 @@ def parse_config(config_json):
 		if common_config['resolution'] >= 30000:
  			common_config['time_step'] = 120
 		elif 25000 <= common_config['resolution'] < 30000:
-			common_config['time_step'] = 90
-		elif 20000 <= common_config['resolution'] < 15000:
-			common_config['time_step'] = 60
+			common_config['time_step'] = 120
+		elif 20000 <= common_config['resolution'] < 25000:
+			common_config['time_step'] = 120
 		elif 15000 <= common_config['resolution'] < 20000:
-			common_config['time_step'] = 30
+			common_config['time_step'] = 90
 		elif 10000 <= common_config['resolution'] < 15000:
-			common_config['time_step'] = 30
+			common_config['time_step'] = 60
 		elif 5000 <= common_config['resolution'] < 10000:
-			common_config['time_step'] = 10
+			common_config['time_step'] = 30
 		elif 2500 <= common_config['resolution'] >= 5000:
 			common_config['time_step'] = 10
 		else:
 			common_config['time_step'] = 5
+
+	if not 'ob_format' in config['wrfda']:
+		config['wrfda']['ob_format'] = 2
 
 	return config

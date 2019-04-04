@@ -66,9 +66,10 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None):
 	run(f'ln -sf {wrf_work_dir}/wrfinput_d01_{start_time_str} {wrfda_work_dir}/fg')
 
 	# Observation data
-	if wrfda_config['type'] == '3dvar' and os.path.isfile(f'obs_gts_{start_time.format(datetime_fmt)}.3DVAR'):
+	if wrfda_config['type'] == '3dvar' and wrfda_config['ob_format'] == 2 and os.path.isfile(f'obs_gts_{start_time.format(datetime_fmt)}.3DVAR'):
 		run(f'ln -sf obs_gts_{start_time.format(datetime_fmt)}.3DVAR ob.ascii')
-	if not os.path.isfile('ob.ascii'): cli.error('ob.ascii does not exist!')
+	if wrfda_config['ob_format'] == 1 and not os.path.isfile('ob.bufr'): cli.error('ob.bufr does not exist!')
+	if wrfda_config['ob_format'] == 2 and not os.path.isfile('ob.ascii'): cli.error('ob.ascii does not exist!')
 
 	if os.path.isfile(f'{wrfda_work_dir}/wrfvar_output_{start_time_str}') and not args.force:
 		cli.notice(f'{wrfda_work_dir}/wrfvar_output_{start_time_str} already exists.')
