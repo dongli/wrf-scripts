@@ -10,7 +10,7 @@ from math import radians, cos, sin, asin, sqrt
 from shutil import copy
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import cli, parse_config
+from utils import cli, parse_config, wrf_version, Version
 
 def config_wrf(work_root, wrf_root, wrfda_root, config, args):
 	common_config = config['common']
@@ -26,6 +26,8 @@ def config_wrf(work_root, wrf_root, wrfda_root, config, args):
 	wrf_work_dir = work_root + '/wrf'
 	if not os.path.isdir(wrf_work_dir): os.mkdir(wrf_work_dir)
 	os.chdir(wrf_work_dir)
+
+	version = wrf_version(wrf_root)
 
 	cli.notice('Edit namelist.input for WRF.')
 	copy(f'{wrf_root}/run/namelist.input', 'namelist.input')
@@ -62,6 +64,8 @@ def config_wrf(work_root, wrf_root, wrfda_root, config, args):
 	namelist_input['physics']     ['bldt']                   = phys_config['bldt']       if 'bldt'       in phys_config else 0
 	namelist_input['physics']     ['cu_physics']             = phys_config['cu']         if 'cu'         in phys_config else 3
 	namelist_input['physics']     ['cudt']                   = phys_config['cudt']       if 'cudt'       in phys_config else 0
+	if version == Version('3.9.1'):
+		namelist_input['dynamics']['max_rot_angle_gwd']  = 100
 	namelist_input.write('./namelist.input', force=True)
 	
 	cli.notice('Succeeded.')
