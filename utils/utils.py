@@ -7,3 +7,6 @@ from run import run
 from parse_config import parse_config
 from wrf_version import wrf_version, Version
 from gsi_version import gsi_version
+from submit_job import submit_job
+from kill_job import kill_job
+from job_running import job_running

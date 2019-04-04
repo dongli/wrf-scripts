@@ -8,7 +8,7 @@ import re
 import sys
 import config_wrfda
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import cli, check_files, run, parse_config
+from utils import cli, check_files, run, submit_job, parse_config
 
 scripts_root = os.path.dirname(os.path.realpath(__file__))
 
@@ -66,8 +66,11 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None):
 	run(f'ln -sf {wrf_work_dir}/wrfinput_d01_{start_time_str} {wrfda_work_dir}/fg')
 
 	# Observation data
-	if wrfda_config['type'] == '3dvar' and wrfda_config['ob_format'] == 2 and os.path.isfile(f'obs_gts_{start_time.format(datetime_fmt)}.3DVAR'):
-		run(f'ln -sf obs_gts_{start_time.format(datetime_fmt)}.3DVAR ob.ascii')
+	if wrfda_config['type'] == '3dvar':
+		if wrfda_config['ob_format'] == 2 and os.path.isfile(f'obs_gts_{start_time.format(datetime_fmt)}.3DVAR'):
+			run(f'ln -sf obs_gts_{start_time.format(datetime_fmt)}.3DVAR ob.ascii')
+		elif wrfda_config['ob_format'] == 1 and wrfda_config['prepbufr_source'] == 'gdas':
+			run(f'ln -sf {args.prepbufr_root}/gdas.{start_time.format("YYYYMMDD")}/gdas.t{start_time.hour:02}z.prepbufr.nr ob.bufr')
 	if wrfda_config['ob_format'] == 1 and not os.path.isfile('ob.bufr'): cli.error('ob.bufr does not exist!')
 	if wrfda_config['ob_format'] == 2 and not os.path.isfile('ob.ascii'): cli.error('ob.ascii does not exist!')
 
@@ -75,11 +78,14 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None):
 		cli.notice(f'{wrfda_work_dir}/wrfvar_output_{start_time_str} already exists.')
 		return
 
-	run(f'{wrfda_root}/var/build/da_wrfvar.exe')
+	if True:
+		submit_job(f'{wrfda_root}/var/build/da_wrfvar.exe', 10, config, wait=True)
+	else:
+		run(f'{wrfda_root}/var/build/da_wrfvar.exe', bg=True)
 
 	expected_files = [f'wrfvar_output', 'statistics']
 	if not check_files(expected_files):
-		cli.error('Failed!')
+		cli.error('Failed! See {work_root}/rsl.error.0000.')
 	else:
 		print(open('statistics').read())
 		run(f'ncl -Q {scripts_root}/plots/plot_cost_grad_fn.ncl')

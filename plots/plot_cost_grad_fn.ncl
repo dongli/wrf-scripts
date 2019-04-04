@@ -1,5 +1,5 @@
-cost_fn = readAsciiTable("./cost_fn", 13, "float", 2)
-grad_fn = readAsciiTable("./grad_fn", 12, "float", 2)
+cost_fn = readAsciiTable("./cost_fn", 12, "float", 2)
+grad_fn = readAsciiTable("./grad_fn", 11, "float", 2)
 
 dims = dimsizes(cost_fn)
 

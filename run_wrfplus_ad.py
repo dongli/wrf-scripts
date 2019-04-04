@@ -12,7 +12,7 @@ from shutil import copyfile
 from netCDF4 import Dataset
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import cli, check_files, run, parse_config, wrf_version, Version
+from utils import cli, check_files, run, submit_job, parse_config, wrf_version, Version
 
 def run_wrfplus_ad(work_root, wrfplus_root, config, args):
 	common_config = config['common']
@@ -51,20 +51,24 @@ def run_wrfplus_ad(work_root, wrfplus_root, config, args):
 			run(f'ln -sf {wrfplus_root}/run/RRTM_DATA_DBL RRTM_DATA')
 			run(f'ln -sf {wrfplus_root}/run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA')
 			if version >= Version('4.0'):
-				proc = run(f'mpiexec -np {args.np} {wrfplus_root}/run/wrfplus.exe', bg=True)
+				cmd = f'{wrfplus_root}/run/wrfplus.exe'
 			else:
-				proc = run(f'mpiexec -np {args.np} {wrfplus_root}/run/wrf.exe', bg=True)
-			bar = ProgressBar(max_value=100, widgets=[Percentage(), Bar(), Timer()])
-			while proc.poll() == None:
-				sleep(10)
-				res = subprocess.run(['tail', '-n', '3', 'rsl.error.0000'], stdout=subprocess.PIPE)
-				for line in res.stdout.decode('utf-8').split():
-					time_match = re.match(r'(\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2})', line)
-					if time_match:
-						run_time = pendulum.from_format(time_match[0], 'YYYY-MM-DD_HH:mm:ss')
-						run_progress = ((run_time - start_time).in_hours() / (end_time - start_time).in_hours()) * 100
-						bar.update(int(run_progress))
-						break
+				cmd = f'{wrfplus_root}/run/wrf.exe'
+			if True:
+				submit_job(cmd, args.np, config, wait=True)
+			else:
+				proc = run(f'mpiexec -np {args.np} {cmd}', bg=True)
+				bar = ProgressBar(max_value=100, widgets=[Percentage(), Bar(), Timer()])
+				while proc.poll() == None:
+					sleep(10)
+					res = subprocess.run(['tail', '-n', '3', 'rsl.error.0000'], stdout=subprocess.PIPE)
+					for line in res.stdout.decode('utf-8').split():
+						time_match = re.match(r'(\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2})', line)
+						if time_match:
+							run_time = pendulum.from_format(time_match[0], 'YYYY-MM-DD_HH:mm:ss')
+							run_progress = ((run_time - start_time).in_hours() / (end_time - start_time).in_hours()) * 100
+							bar.update(int(run_progress))
+							break
 		except KeyboardInterrupt:
 			cli.warning('Ended by user!')
 			proc.kill()

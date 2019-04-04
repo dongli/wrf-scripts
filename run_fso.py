@@ -16,10 +16,10 @@ parser.add_argument(      '--wrf-root', dest='wrf_root', help='WRF root director
 parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')
 parser.add_argument(      '--wrfplus-root', dest='wrfplus_root', help='WRFPLUS root directory (e.g. WRFPLUS)')    
 parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
-parser.add_argument('-p', '--prod-root', dest='prod_root', help='Product root directory')
 parser.add_argument('-g', '--geog-root', dest='geog_root', help='GEOG data root directory (e.g. WPS_GEOG)')
 parser.add_argument('-b', '--bkg-root', dest='bkg_root', help='Background root directory')
-parser.add_argument('-l', '--littler-root', dest='littler_root', help='Little_r data root directory')
+parser.add_argument('-l', '--littler-root', dest='littler_root', help='LITTLE_R data root directory')
+parser.add_argument('-p', '--prepbufr-root', dest='prepbufr_root', help='PrepBUFR data root directory')
 parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
 parser.add_argument('-n', '--num-proc', dest='np', help='MPI process number to run WRF.', default=2, type=int)
 parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
@@ -34,15 +34,6 @@ if not args.work_root:
 args.work_root = os.path.abspath(args.work_root)
 if not os.path.isdir(args.work_root):
 	cli.error(f'Directory {args.work_root} does not exist!')
-
-if not args.prod_root:
-	if os.getenv('PROD_ROOT'):
-		args.prod_root = os.getenv('PROD_ROOT')
-	else:
-		cli.error('Option --prod-root or environment variable PROD_ROOT need to be set!')
-args.prod_root = os.path.abspath(args.prod_root)
-if not os.path.isdir(args.prod_root):
-	cli.error(f'Directory {args.prod_root} does not exist!')
 
 if not args.wrf_root:
 	if os.getenv('WRF_ROOT'):
@@ -108,22 +99,32 @@ args.bkg_root = os.path.abspath(args.bkg_root)
 if not os.path.isdir(args.bkg_root):
 	cli.error(f'Directory {args.bkg_root} does not exist!')
 
-if not args.littler_root:
-	if os.getenv('LITTLER_ROOT'):
-		args.littler_root = os.getenv('LITTLER_ROOT')
-	else:
-		cli.error('Option --littler-root or environment variable LITTLER_ROOT need to be set!')
-args.littler_root = os.path.abspath(args.littler_root)
-if not os.path.isdir(args.littler_root):
-	cli.error(f'Directory {args.littler_root} does not exist!')
-
 version = wrf_version(args.wrf_root)
 if version >= Version('4.0'):
 	cli.error('WRFPLUS 4.0 does not pass tangient and adjoint tests!')
-if version != Version('3.8.1'):
-	cli.error('Only WRF 3.8.1 has been tested for FSO application!')
+if version != Version('3.8.1') and version != Version('3.9.1'):
+	cli.error('Only WRF 3.8.1 and 3.9.1 have been tested for FSO application!')
 
 config = parse_config(args.config_json)
+
+if config['wrfda']['ob_format'] == 1:
+	if not args.prepbufr_root:
+		if os.getenv('PREPBUFR_ROOT'):
+			args.prepbufr_root = os.getenv('PREPBUFR_ROOT')
+		else:
+			cli.error('Option --prepbufr-root or environment variable PREPBUFR_ROOT need to be set!')
+	args.prepbufr_root = os.path.abspath(args.prepbufr_root)
+	if not os.path.isdir(args.prepbufr_root):
+		cli.error(f'Directory {args.prepbufr_root} does not exist!')
+elif config['wrfda']['ob_format'] == 2:
+	if not args.littler_root:
+		if os.getenv('LITTLER_ROOT'):
+			args.littler_root = os.getenv('LITTLER_ROOT')
+		else:
+			cli.error('Option --littler-root or environment variable LITTLER_ROOT need to be set!')
+	args.littler_root = os.path.abspath(args.littler_root)
+	if not os.path.isdir(args.littler_root):
+		cli.error(f'Directory {args.littler_root} does not exist!')
 
 start_time = config['common']['start_time']
 end_time = config['common']['end_time']
@@ -149,7 +150,8 @@ if not os.path.isdir(args.work_root + '/fa/wrf'): os.mkdir(args.work_root + '/fa
 run(f'cp {args.work_root}/fb/wrf/wrfinput_d*_{start_time_str} {args.work_root}/fa/wrf')
 run(f'cp {args.work_root}/fb/wrf/wrfbdy_d01_{start_time_str} {args.work_root}/fa/wrf')
 wrf.config_wrfda(args.work_root + '/fa', args.wrfda_root, config, args)
-wrf.run_wrfda_obsproc(args.work_root + '/fa', args.wrfda_root, args.littler_root, config, args)
+if config['wrfda']['ob_format'] == 2:
+	wrf.run_wrfda_obsproc(args.work_root + '/fa', args.wrfda_root, args.littler_root, config, args)
 wrf.run_wrfda_3dvar(args.work_root + '/fa', args.wrfda_root, config, args)
 wrf.run_wrfda_update_bc(args.work_root + '/fa', args.wrfda_root, False, config, args)
 wrf.config_wrf(args.work_root + '/fa', args.wrf_root, args.wrfda_root, config, args)

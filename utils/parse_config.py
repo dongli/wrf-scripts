@@ -140,5 +140,7 @@ def parse_config(config_json):
 
 	if not 'ob_format' in config['wrfda']:
 		config['wrfda']['ob_format'] = 2
+	if config['wrfda']['ob_format'] == 1 and not 'prepbufr_source' in config['wrfda']:
+		config['wrfda']['prepbufr_source'] = 'gdas'
 
 	return config
