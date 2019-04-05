@@ -76,6 +76,10 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 			])
 
 		cli.notice('Compile WRF ...')
+		if args.debug:
+			edit_file('configure.wrf', [
+				['FCFLAGS\s*=\s*\$\(FCOPTIM\)\s*\$\(FCBASEOPTS\)', 'FCFLAGS = -O0 -g -fbacktrace $(FCBASEOPTS)']
+			])
 		if args.verbose:
 			run(f'./compile em_real')
 		else:
@@ -170,6 +174,10 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 			])
 
 		cli.notice('Compile WRFPLUS ...')
+		if args.debug:
+			edit_file('configure.wrf', [
+				['FCFLAGS\s*=\s*\$\(FCOPTIM\)\s*\$\(FCBASEOPTS\)', 'FCFLAGS = -O0 -g -fbacktrace $(FCBASEOPTS)']
+			])
 		if version >= Version('4.0'):
 			build_target = 'wrfplus'
 		else:
@@ -273,9 +281,10 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 			])
 
 		cli.notice('Compile WRFDA ...')
-		# edit_file('configure.wrf', [
-		# 	['FCFLAGS         =    \$\(FCOPTIM\) \$\(FCBASEOPTS\)', 'FCFLAGS         =  -O0  -g -fbacktrace $(FCBASEOPTS)']
-		# ])
+		if args.debug:
+			edit_file('configure.wrf', [
+				['FCFLAGS\s*=\s*\$\(FCOPTIM\)\s*\$\(FCBASEOPTS\)', 'FCFLAGS = -O0 -g -fbacktrace $(FCBASEOPTS)']
+			])
 		if args.verbose:
 			run(f'./compile all_wrfvar')
 		else:
@@ -303,6 +312,7 @@ if __name__ == '__main__':
 	parser.add_argument('-j', '--jobs', help='Set job size to compile.', type=int, default=2)
 	parser.add_argument('-s', '--compiler-suite', dest='compiler_suite', help='Compiler suite', choices=['gnu', 'pgi', 'intel'])
 	parser.add_argument('-f', '--force', help='Force to rebuild if already built', action='store_true')
+	parser.add_argument('-d', '--debug', help='Build WRF with debug compile options', action='store_true')
 	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
 	args = parser.parse_args()
 
