@@ -78,10 +78,8 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None):
 		cli.notice(f'{wrfda_work_dir}/wrfvar_output_{start_time_str} already exists.')
 		return
 
-	if True:
-		submit_job(f'{wrfda_root}/var/build/da_wrfvar.exe', 10, config, wait=True)
-	else:
-		run(f'{wrfda_root}/var/build/da_wrfvar.exe', bg=True)
+	cli.notice(f'Run da_wrfvar.exe at {wrfda_work_dir} ...')
+	submit_job(f'{wrfda_root}/var/build/da_wrfvar.exe', 10, config, args, wait=True)
 
 	expected_files = [f'wrfvar_output', 'statistics']
 	if not check_files(expected_files):

@@ -5,7 +5,6 @@ from glob import glob
 import os
 import re
 import pendulum
-from progressbar import ProgressBar, Percentage, Bar, Timer
 import subprocess
 from time import sleep
 from shutil import copyfile
@@ -45,38 +44,20 @@ def run_wrf(work_root, wrf_root, config, args):
 			run('ln -sf wrfinput_d{0:02d}_{1} wrfinput_d{0:02d}'.format(i + 1, start_time_str))
 		run(f'ln -sf wrfbdy_d01_{start_time_str} wrfbdy_d01')
 
+	cli.notice(f'Run wrf.exe at {wrf_work_dir} ...')
 	expected_files = ['wrfout_d{:02d}_{}'.format(i + 1, end_time_str) for i in range(common_config['max_dom'])]
 	if not check_files(expected_files) or args.force:
 		run('rm -f wrfout_*')
-		try:
-			run(f'ln -sf {wrf_root}/run/LANDUSE.TBL .')
-			run(f'ln -sf {wrf_root}/run/ozone_plev.formatted .')
-			run(f'ln -sf {wrf_root}/run/ozone_lat.formatted .')
-			run(f'ln -sf {wrf_root}/run/ozone.formatted .')
-			run(f'ln -sf {wrf_root}/run/RRTMG_LW_DATA .')
-			run(f'ln -sf {wrf_root}/run/RRTMG_SW_DATA .')
-			run(f'ln -sf {wrf_root}/run/VEGPARM.TBL .')
-			run(f'ln -sf {wrf_root}/run/SOILPARM.TBL .')
-			run(f'ln -sf {wrf_root}/run/GENPARM.TBL .')
-			if True:
-				submit_job(f'{wrf_root}/run/wrf.exe', args.np, config, wait=True)
-			else:
-				proc = run(f'mpiexec -np {args.np} {wrf_root}/run/wrf.exe', bg=True)
-				bar = ProgressBar(max_value=100, widgets=[Percentage(), Bar(), Timer()])
-				while proc.poll() == None:
-					sleep(10)
-					res = subprocess.run(['tail', '-n', '3', 'rsl.error.0000'], stdout=subprocess.PIPE)
-					for line in res.stdout.decode('utf-8').split():
-						time_match = re.match(r'(\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2})', line)
-						if time_match:
-							run_time = pendulum.from_format(time_match[0], 'YYYY-MM-DD_HH:mm:ss')
-							run_progress = ((run_time - start_time).in_hours() / (end_time - start_time).in_hours()) * 100
-							bar.update(int(run_progress))
-							break
-		except KeyboardInterrupt:
-			cli.warning('Ended by user!')
-			proc.kill()
-			sys.exit()
+		run(f'ln -sf {wrf_root}/run/LANDUSE.TBL .')
+		run(f'ln -sf {wrf_root}/run/ozone_plev.formatted .')
+		run(f'ln -sf {wrf_root}/run/ozone_lat.formatted .')
+		run(f'ln -sf {wrf_root}/run/ozone.formatted .')
+		run(f'ln -sf {wrf_root}/run/RRTMG_LW_DATA .')
+		run(f'ln -sf {wrf_root}/run/RRTMG_SW_DATA .')
+		run(f'ln -sf {wrf_root}/run/VEGPARM.TBL .')
+		run(f'ln -sf {wrf_root}/run/SOILPARM.TBL .')
+		run(f'ln -sf {wrf_root}/run/GENPARM.TBL .')
+		submit_job(f'{wrf_root}/run/wrf.exe', args.np, config, args, wait=True)
 		if not check_files(expected_files):
 			cli.error(f'Failed! Check output {os.path.abspath(wrf_work_dir)}/rsl.error.0000.')
 		cli.notice('Succeeded.')

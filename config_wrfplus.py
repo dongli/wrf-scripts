@@ -8,7 +8,7 @@ import re
 from shutil import copy
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import cli, parse_config
+from utils import cli, parse_config, wrf_version, Version
 
 def config_wrfplus(work_root, wrfplus_root, config, args):
 	common_config = config['common']
@@ -27,6 +27,8 @@ def config_wrfplus(work_root, wrfplus_root, config, args):
 	wrfplus_work_dir = work_root + '/wrfplus'
 	if not os.path.isdir(wrfplus_work_dir): os.mkdir(wrfplus_work_dir)
 	os.chdir(wrfplus_work_dir)
+
+	version = wrf_version(wrfplus_root)
 
 	wrf_namelist_input = f90nml.read(f'{wrf_work_dir}/namelist.input')
 
@@ -48,6 +50,7 @@ def config_wrfplus(work_root, wrfplus_root, config, args):
 	namelist_input['time_control']['io_form_auxinput7']      = 2
 	namelist_input['time_control']['iofields_filename']      = f'{wrfplus_root}/var/run/plus.io_config'
 	namelist_input['time_control']['ignore_iofields_warning']= True
+	# Copy from WRF namelist.input.
 	for key in ('time_step', 'max_dom', 'e_we', 'e_sn', 'e_vert', 'p_top_requested', 'num_metgrid_levels', 'num_metgrid_soil_levels', 'dx', 'dy'):
 		if key in wrf_namelist_input['domains']:
 			namelist_input['domains'][key] = wrf_namelist_input['domains'][key]
@@ -66,6 +69,8 @@ def config_wrfplus(work_root, wrfplus_root, config, args):
 	namelist_input['physics']     ['cu_physics']             = 0
 	namelist_input['physics']     ['num_land_cat']           = wrf_namelist_input['physics']['num_land_cat']
 	namelist_input['dynamics']    ['dyn_opt']                = 302
+	if version == Version('3.9.1'):
+		namelist_input['dynamics']['max_rot_angle_gwd']  = 100
 	# Delete some parameters.
 	if 'eta_levels' in namelist_input['domains']:  del namelist_input['domains']['eta_levels']
 	if 'iso_temp'   in namelist_input['dynamics']: del namelist_input['dynamics']['iso_temp']

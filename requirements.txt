@@ -5,7 +5,7 @@ pexpect
 numpy
 f90nml
 netCDF4
-progressbar2
 jinja2
 requests
 packaging
+pyslurm

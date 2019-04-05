@@ -5,7 +5,6 @@ from glob import glob
 import os
 import re
 import pendulum
-from progressbar import ProgressBar, Percentage, Bar, Timer
 import subprocess
 from time import sleep
 from shutil import copyfile
@@ -54,21 +53,7 @@ def run_wrfplus_ad(work_root, wrfplus_root, config, args):
 				cmd = f'{wrfplus_root}/run/wrfplus.exe'
 			else:
 				cmd = f'{wrfplus_root}/run/wrf.exe'
-			if True:
-				submit_job(cmd, args.np, config, wait=True)
-			else:
-				proc = run(f'mpiexec -np {args.np} {cmd}', bg=True)
-				bar = ProgressBar(max_value=100, widgets=[Percentage(), Bar(), Timer()])
-				while proc.poll() == None:
-					sleep(10)
-					res = subprocess.run(['tail', '-n', '3', 'rsl.error.0000'], stdout=subprocess.PIPE)
-					for line in res.stdout.decode('utf-8').split():
-						time_match = re.match(r'(\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2})', line)
-						if time_match:
-							run_time = pendulum.from_format(time_match[0], 'YYYY-MM-DD_HH:mm:ss')
-							run_progress = ((run_time - start_time).in_hours() / (end_time - start_time).in_hours()) * 100
-							bar.update(int(run_progress))
-							break
+			submit_job(cmd, args.np, config, args, wait=True)
 		except KeyboardInterrupt:
 			cli.warning('Ended by user!')
 			proc.kill()
