@@ -38,6 +38,7 @@ def run_wrfplus_ad(work_root, wrfplus_root, config, args):
 
 	version = wrf_version(wrfplus_root)
 
+	cli.stage(f'Run WRFPLUS at {wrfplus_work_dir} ...')
 	expected_files = ['wrfout_d{:02d}_{}'.format(i + 1, start_time_str) for i in range(common_config['max_dom'])]
 	expected_files.append(f'init_sens_d01_{start_time_str}')
 	if not check_files(expected_files) or args.force:

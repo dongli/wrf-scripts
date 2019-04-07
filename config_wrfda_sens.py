@@ -47,6 +47,9 @@ def config_wrfda_sens(work_root, wrfda_root, config, args, wrf_work_dir=None):
 		if not key in namelist_input:
 			namelist_input[key] = value
 	namelist_input['wrfvar1']     ['var4d_lbc']                       = False
+	namelist_input['wrfvar3']     ['ob_format']                       = wrfda_config['ob_format']
+	namelist_input['wrfvar4']     ['use_gpspwobs']                    = False
+	namelist_input['wrfvar4']     ['use_gpsrefobs']                   = False
 	namelist_input['wrfvar6']     ['orthonorm_gradient']              = True
 	namelist_input['wrfvar6']     ['use_lanczos']                     = True
 	namelist_input['wrfvar6']     ['read_lanczos']                    = True

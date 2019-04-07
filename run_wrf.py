@@ -44,7 +44,7 @@ def run_wrf(work_root, wrf_root, config, args):
 			run('ln -sf wrfinput_d{0:02d}_{1} wrfinput_d{0:02d}'.format(i + 1, start_time_str))
 		run(f'ln -sf wrfbdy_d01_{start_time_str} wrfbdy_d01')
 
-	cli.notice(f'Run wrf.exe at {wrf_work_dir} ...')
+	cli.stage(f'Run wrf.exe at {wrf_work_dir} ...')
 	expected_files = ['wrfout_d{:02d}_{}'.format(i + 1, end_time_str) for i in range(common_config['max_dom'])]
 	if not check_files(expected_files) or args.force:
 		run('rm -f wrfout_*')

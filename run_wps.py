@@ -25,7 +25,7 @@ def run_wps(work_root, wps_root, bkg_root, config, args):
 
 	# ------------------------------------------------------------------------------------------------
 	#                                          GEOGRID
-	cli.notice(f'Run geogrid.exe at {wps_work_dir} ...')
+	cli.stage(f'Run geogrid.exe at {wps_work_dir} ...')
 	copy(f'{wps_root}/geogrid/GEOGRID.TBL.ARW', 'GEOGRID.TBL')
 	expected_files = ['geo_em.d{:02d}.nc'.format(i + 1) for i in range(common_config['max_dom'])]
 	if not check_files(expected_files) or args.force:
@@ -46,7 +46,7 @@ def run_wps(work_root, wps_root, bkg_root, config, args):
 
 	# ------------------------------------------------------------------------------------------------
 	#                                           UNGRIB
-	cli.notice(f'Run ungrib.exe at {wps_work_dir} ...')
+	cli.stage(f'Run ungrib.exe at {wps_work_dir} ...')
 	if 'background' in common_config and 'vtable' in common_config['background']:
 		run(f'ln -sf {common_config["background"]["vtable"]} {wps_work_dir}/Vtable')
 	else:
@@ -122,7 +122,7 @@ def run_wps(work_root, wps_root, bkg_root, config, args):
 
 	# ------------------------------------------------------------------------------------------------
 	#                                            METGRID
-	cli.notice(f'Run metgrid.exe {wps_work_dir} ...')
+	cli.stage(f'Run metgrid.exe {wps_work_dir} ...')
 	copy(f'{wps_root}/metgrid/METGRID.TBL.ARW', 'METGRID.TBL')
 	expected_files = ['met_em.d01.{}.nc'.format(time.format('YYYY-MM-DD_HH:mm:ss')) for time in bkg_times]
 	if not check_files(expected_files) or args.force:

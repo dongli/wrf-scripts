@@ -31,7 +31,7 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None):
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 
-	if os.path.isfile(f'wrfvar_output_{start_time_str}'):
+	if os.path.isfile(f'wrfvar_output_{start_time_str}') and not args.force:
 		run(f'ls -l wrfvar_output_{start_time_str}')
 		cli.notice(f'wrfvar_output_{start_time_str} already exist.')
 		return
@@ -78,12 +78,12 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None):
 		cli.notice(f'{wrfda_work_dir}/wrfvar_output_{start_time_str} already exists.')
 		return
 
-	cli.notice(f'Run da_wrfvar.exe at {wrfda_work_dir} ...')
+	cli.stage(f'Run da_wrfvar.exe at {wrfda_work_dir} ...')
 	submit_job(f'{wrfda_root}/var/build/da_wrfvar.exe', 10, config, args, wait=True)
 
 	expected_files = [f'wrfvar_output', 'statistics']
 	if not check_files(expected_files):
-		cli.error('Failed! See {work_root}/rsl.error.0000.')
+		cli.error(f'Failed! See {wrfda_work_dir}/rsl.error.0000.')
 	else:
 		print(open('statistics').read())
 		run(f'ncl -Q {scripts_root}/plots/plot_cost_grad_fn.ncl')

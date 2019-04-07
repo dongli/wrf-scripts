@@ -190,7 +190,7 @@ def calc_final_sens(a, b, c):
 		elif var_name == 'P':
 			xc[:] = xc[:] * (1.0 / 300.0)**2
 
-if not os.path.isfile(f'{args.work_root}/fa/wrfplus/final_sens_d01'):
+if not os.path.isfile(f'{args.work_root}/fa/wrfplus/final_sens_d01') or args.force:
 	cli.notice(f'Calculate final sensitivity {args.work_root}/fa/wrfplus/final_sens_d01.')
 	run(f'cp {args.work_root}/fa/wrf/wrfout_d01_{end_time_str} {args.work_root}/fa/wrfplus/final_sens_d01')
 	saf = Dataset(f'{args.work_root}/fa/wrfplus/final_sens_d01', 'r+')
@@ -238,7 +238,6 @@ sb = Dataset(f'{args.work_root}/fb/wrfplus/init_sens_d01_{start_time_str}')
 ad = Dataset(f'ad_d01_{start_time_str}', 'r+')
 add_init_sens(sa, sb, ad)
 run(f'ln -sf ad_d01_{start_time_str} gr01')
-run(f'ln -sf {args.work_root}/fa/wrfda/ob.ascii .')
 
 run(f'ln -sf {args.work_root}/fa/lanczos_eigenpairs.* ..')
 

@@ -200,7 +200,8 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 	os.chdir(wrfda_root)
 	os.environ['WRFPLUS_DIR'] = wrfplus_root
 	if args.force: run('./clean -a &> /dev/null')
-	if version == Version('3.8.1'):
+	if Version('3.8.1') <= version <= Version('3.9.1'):
+		cli.warning(f'Fix {wrfda_root}/var/da/da_define_structures/da_zero_y.in')
 		edit_file('var/da/da_define_structures/da_zero_y.inc', [
 			[', value \)', ', value_ )'],
 			[':: value$', ':: value_\nreal value'],
@@ -282,8 +283,12 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 
 		cli.notice('Compile WRFDA ...')
 		if args.debug:
+			if args.compiler_suite == 'intel':
+				debug_options = '-O0 -g -traceback'
+			elif args.compiler_suite == 'gnu':
+				debug_options = '-O0 -g -fbacktrace'
 			edit_file('configure.wrf', [
-				['FCFLAGS\s*=\s*\$\(FCOPTIM\)\s*\$\(FCBASEOPTS\)', 'FCFLAGS = -O0 -g -fbacktrace $(FCBASEOPTS)']
+				['FCFLAGS\s*=\s*\$\(FCOPTIM\)\s*\$\(FCBASEOPTS\)', f'FCFLAGS = {debug_options} $(FCBASEOPTS)']
 			])
 		if args.verbose:
 			run(f'./compile all_wrfvar')

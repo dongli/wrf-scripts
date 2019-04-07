@@ -35,11 +35,12 @@ def run_wrfda_update_bc(work_root, wrfda_root, update_lowbc, config, args):
 		parame_in['control_param']['low_bdy_only'] = True
 	parame_in.write(f'{wrfda_work_dir}/parame.in', force=True)
 
+	cli.stage(f'Run WRFDA update_bc at {wrfda_work_dir} ...')
 	if update_lowbc:
 		expected_file = f'wrfbdy_d01_{start_time_str}.low_updated'
 	else:
 		expected_file = f'wrfbdy_d01_{start_time_str}.lateral_updated'
-	if not check_files(expected_file):
+	if not check_files(expected_file) or args.force:
 		if args.verbose:
 			run(f'{wrfda_root}/var/build/da_update_bc.exe')
 		else:

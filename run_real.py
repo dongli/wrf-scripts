@@ -24,7 +24,7 @@ def run_real(work_root, wps_work_dir, wrf_root, config, args):
 	if not os.path.isdir(wrf_work_dir): os.mkdir(wrf_work_dir)
 	os.chdir(wrf_work_dir)
 
-	cli.notice(f'Run real.exe at {wrf_work_dir} ...')
+	cli.stage(f'Run real.exe at {wrf_work_dir} ...')
 	expected_files = ['wrfinput_d{:02d}_{}'.format(i + 1, start_time_str) for i in range(common_config['max_dom'])]
 	if not check_files(expected_files) or args.force:
 		run('rm -f wrfinput_* met_em.*.nc')

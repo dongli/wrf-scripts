@@ -24,16 +24,18 @@ def submit_job(cmd, ntasks, config, args, logfile='rsl.error.0000', wait=False):
 		job_id = pyslurm.job().submit_batch_job(job_opts)
 		cli.notice(f'Job {job_id} submitted running {ntasks} tasks.')
 		if wait:
-			cli.notice('Wait for job.')
+			cli.notice(f'Wait for job {job_id}.')
 			try:
+				last_line = None
 				while job_running(job_id):
 					sleep(10)
-					res = subprocess.run(['tail', '-n', '1', logfile], stdout=subprocess.PIPE)
-					print(f'{cli.cyan("==>")} {res.stdout.decode("utf-8").strip()}')
+					line = subprocess.run(['tail', '-n', '1', logfile], stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
+					if last_line != line:
+						last_line = line
+						print(f'{cli.cyan("==>")} {last_line}')
 			except KeyboardInterrupt:
 				kill_job(job_id)
 				exit(1)
-			cli.notice(f'Job {job_id} finished.')
 		return job_id
 	else:
 		proc = run(f'mpiexec -np {args.np} {cmd}', bg=True)

@@ -72,7 +72,7 @@ def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
 	namelist_obsproc['record9']['OUTPUT_OB_FORMAT']  = output_format
 	namelist_obsproc.write('./namelist.obsproc', force=True)
 
-	cli.notice('Run obsproc.exe ...')
+	cli.stage(f'Run obsproc.exe at {wrfda_work_dir} ...')
 	expected_files = [f'obs_gts_{start_time.format("YYYY-MM-DD_HH:mm:ss")}.3DVAR']
 	if not check_files(expected_files) or args.force:
 		run('rm -f obs_gts_*')

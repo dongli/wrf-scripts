@@ -50,3 +50,11 @@ def banner(message):
 	print('===================================================================================')
 	print(message)
 	print()
+
+stage_num = 0
+def stage(message):
+	global stage_num
+	stage_num += 1
+	print()
+	print(f'[{purple("Stage")} {stage_num}]: {message}')
+	print()
