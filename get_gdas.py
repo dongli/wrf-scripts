@@ -28,7 +28,7 @@ def get_gdas(output_root, start_time, end_time, args):
 			os.makedirs(f'{output_root}/{dir_name}')
 			cli.notice(f'Create directory {output_root}/{dir_name}.')
 		cli.notice(f'Downloading {url}.')
-		local_file_path = f'{output_root}/{time.format("YYYYMMDD")}/{file_name}'
+		local_file_path = f'{output_root}/{dir_name}/{file_name}'
 		if is_downloading(local_file_path):
 			cli.warning(f'Skip downloading {local_file_path}.')
 			return
