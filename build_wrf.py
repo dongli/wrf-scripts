@@ -32,8 +32,10 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 
 	os.chdir(wrf_root)
 	version = wrf_version(wrf_root)
+	if version <= Version('3.6.1'):
+		os.environ['BUFR'] = '1'
 	# Fix possible code bugs.
-	if version == Version('3.8.1'):
+	if Version('3.6.1') <= version <= Version('3.8.1'):
 		edit_file('phys/module_cu_g3.F', [['integer,  dimension \(12\) :: seed', 'integer,  dimension (33) :: seed']])
 	if args.force: run('./clean -a &> /dev/null')
 	expected_exe_files = ('main/wrf.exe', 'main/real.exe', 'main/ndown.exe', 'main/tc.exe')
@@ -77,8 +79,12 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 
 		cli.notice('Compile WRF ...')
 		if args.debug:
+			if args.compiler_suite == 'intel':
+				debug_options = '-O0 -g -traceback'
+			elif args.compiler_suite == 'gnu':
+				debug_options = '-O0 -g -fbacktrace'
 			edit_file('configure.wrf', [
-				['FCFLAGS\s*=\s*\$\(FCOPTIM\)\s*\$\(FCBASEOPTS\)', 'FCFLAGS = -O0 -g -fbacktrace $(FCBASEOPTS)']
+				['FCFLAGS\s*=\s*\$\(FCOPTIM\)\s*\$\(FCBASEOPTS\)', f'FCFLAGS = {debug_options} $(FCBASEOPTS)']
 			])
 		if args.verbose:
 			run(f'./compile em_real')
@@ -144,7 +150,7 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 
 	os.chdir(wrfplus_root)
 	if args.force: run('./clean -a &> /dev/null')
-	if version == Version('3.8.1'):
+	if Version('3.6.1') <= version <= Version('3.8.1'):
 		edit_file('phys/module_cu_g3.F', [['integer,  dimension \(12\) :: seed', 'integer,  dimension (33) :: seed']])
 	if version >= Version('4.0'):
 		expected_exe_files = ('main/wrfplus.exe')
@@ -160,7 +166,10 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		child = pexpect.spawn('./configure wrfplus')
 		child.expect('Enter selection.*')
 		if args.compiler_suite == 'intel':
-			child.sendline('34')
+			if version <= Version('3.6.1'):
+				child.sendline('8')
+			else:
+				child.sendline('34')
 		elif args.compiler_suite == 'gnu':
 			child.sendline('18')
 		elif args.compiler_suite == 'pgi':
@@ -175,8 +184,12 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 
 		cli.notice('Compile WRFPLUS ...')
 		if args.debug:
+			if args.compiler_suite == 'intel':
+				debug_options = '-O0 -g -traceback'
+			elif args.compiler_suite == 'gnu':
+				debug_options = '-O0 -g -fbacktrace'
 			edit_file('configure.wrf', [
-				['FCFLAGS\s*=\s*\$\(FCOPTIM\)\s*\$\(FCBASEOPTS\)', 'FCFLAGS = -O0 -g -fbacktrace $(FCBASEOPTS)']
+				['FCFLAGS\s*=\s*\$\(FCOPTIM\)\s*\$\(FCBASEOPTS\)', f'FCFLAGS = {debug_options} $(FCBASEOPTS)']
 			])
 		if version >= Version('4.0'):
 			build_target = 'wrfplus'
@@ -200,8 +213,8 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 	os.chdir(wrfda_root)
 	os.environ['WRFPLUS_DIR'] = wrfplus_root
 	if args.force: run('./clean -a &> /dev/null')
-	if Version('3.8.1') <= version <= Version('3.9.1'):
-		cli.warning(f'Fix {wrfda_root}/var/da/da_define_structures/da_zero_y.in')
+	if Version('3.6.1') <= version <= Version('3.9.1'):
+		cli.warning(f'Fix {wrfda_root}/var/da/da_define_structures/da_zero_y.inc')
 		edit_file('var/da/da_define_structures/da_zero_y.inc', [
 			[', value \)', ', value_ )'],
 			[':: value$', ':: value_\nreal value'],
