@@ -21,8 +21,10 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	phys_config = config['physics'] if 'physics' in config else {}
 
 	start_time = common_config['start_time']
+	end_time = common_config['end_time']
 	datetime_fmt  = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
+	max_dom = common_config['max_dom']
 
 	wrf_work_dir = work_root + '/wrf'
 	if not os.path.isdir(wrf_work_dir): cli.error(f'{wrf_work_dir} does not exist!')
@@ -59,6 +61,16 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	for key, value in tmp.items():
 		if not key in namelist_input:
 			namelist_input[key] = value
+	namelist_input['time_control']['run_hours']              = common_config['forecast_hours']
+	namelist_input['time_control']['start_year']             = [int(start_time.format("Y")) for i in range(max_dom)]
+	namelist_input['time_control']['start_month']            = [int(start_time.format("M")) for i in range(max_dom)]
+	namelist_input['time_control']['start_day']              = [int(start_time.format("D")) for i in range(max_dom)]
+	namelist_input['time_control']['start_hour']             = [int(start_time.format("H")) for i in range(max_dom)]
+	namelist_input['time_control']['end_year']               = [int(end_time.format("Y")) for i in range(max_dom)]
+	namelist_input['time_control']['end_month']              = [int(end_time.format("M")) for i in range(max_dom)]
+	namelist_input['time_control']['end_day']                = [int(end_time.format("D")) for i in range(max_dom)]
+	namelist_input['time_control']['end_hour']               = [int(end_time.format("H")) for i in range(max_dom)]
+	namelist_input['time_control']['frames_per_outfile']     = 1
 	namelist_input['domains']['e_we'] = common_config['e_we']
 	namelist_input['domains']['e_sn'] = common_config['e_sn']
 	# TODO: Set vertical levels somewhere?

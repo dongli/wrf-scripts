@@ -103,8 +103,8 @@ if not os.path.isdir(args.bkg_root):
 version = wrf_version(args.wrf_root)
 if version >= Version('4.0'):
 	cli.error('WRFPLUS 4.0 does not pass tangient and adjoint tests!')
-if version != Version('3.8.1') and version != Version('3.9.1'):
-	cli.error('Only WRF 3.8.1 and 3.9.1 have been tested for FSO application!')
+if not version in (Version('3.6.1'), Version('3.8.1'), Version('3.9.1')):
+	cli.error('Only WRF 3.6.1, 3.8.1 and 3.9.1 have been tested for FSO application!')
 
 config = parse_config(args.config_json)
 

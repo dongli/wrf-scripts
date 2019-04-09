@@ -21,8 +21,10 @@ def config_wrfda_sens(work_root, wrfda_root, config, args, wrf_work_dir=None):
 	phys_config = config['physics'] if 'physics' in config else {}
 
 	start_time = common_config['start_time']
+	end_time = common_config['end_time']
 	datetime_fmt  = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
+	max_dom = common_config['max_dom']
 
 	if not wrf_work_dir: wrf_work_dir = work_root + '/wrf'
 	if not os.path.isdir(wrf_work_dir): cli.error(f'{wrf_work_dir} does not exist!')
@@ -48,8 +50,6 @@ def config_wrfda_sens(work_root, wrfda_root, config, args, wrf_work_dir=None):
 			namelist_input[key] = value
 	namelist_input['wrfvar1']     ['var4d_lbc']                       = False
 	namelist_input['wrfvar3']     ['ob_format']                       = wrfda_config['ob_format']
-	namelist_input['wrfvar4']     ['use_gpspwobs']                    = False
-	namelist_input['wrfvar4']     ['use_gpsrefobs']                   = False
 	namelist_input['wrfvar6']     ['orthonorm_gradient']              = True
 	namelist_input['wrfvar6']     ['use_lanczos']                     = True
 	namelist_input['wrfvar6']     ['read_lanczos']                    = True
@@ -65,7 +65,15 @@ def config_wrfda_sens(work_root, wrfda_root, config, args, wrf_work_dir=None):
 	namelist_input['wrfvar7']     ['cv_options']                      = wrfda_config['cv_options']
 	namelist_input['wrfvar14']    ['rtminit_satid']                   = -1
 	namelist_input['wrfvar14']    ['rtminit_sensor']                  = -1
-
+	namelist_input['time_control']['run_hours']                       = common_config['forecast_hours']
+	namelist_input['time_control']['start_year']                      = [int(start_time.format("Y")) for i in range(max_dom)]
+	namelist_input['time_control']['start_month']                     = [int(start_time.format("M")) for i in range(max_dom)]
+	namelist_input['time_control']['start_day']                       = [int(start_time.format("D")) for i in range(max_dom)]
+	namelist_input['time_control']['start_hour']                      = [int(start_time.format("H")) for i in range(max_dom)]
+	namelist_input['time_control']['end_year']                        = [int(end_time.format("Y")) for i in range(max_dom)]
+	namelist_input['time_control']['end_month']                       = [int(end_time.format("M")) for i in range(max_dom)]
+	namelist_input['time_control']['end_day']                         = [int(end_time.format("D")) for i in range(max_dom)]
+	namelist_input['time_control']['end_hour']                        = [int(end_time.format("H")) for i in range(max_dom)]
 	namelist_input['time_control']['io_form_auxinput17']              = 2
 	namelist_input['time_control']['auxinput17_inname']               = './gr01'
 	namelist_input['time_control']['iofields_filename']               = f'{wrfda_root}/var/run/fso.io_config'

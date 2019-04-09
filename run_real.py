@@ -35,6 +35,7 @@ def run_real(work_root, wps_work_dir, wrf_root, config, args):
 			cli.error('Failed to open one of met_em.*.nc file!')
 		namelist_input = f90nml.read('./namelist.input')
 		namelist_input['domains']['num_metgrid_levels'] = dataset.dimensions['num_metgrid_levels'].size
+		namelist_input['physics']['num_land_cat'] = dataset.getncattr('NUM_LAND_CAT')
 		if 'num_st_layers' in dataset.dimensions:
 			namelist_input['domains']['num_metgrid_soil_levels'] = dataset.dimensions['num_st_layers'].size
 		else:
@@ -45,7 +46,7 @@ def run_real(work_root, wps_work_dir, wrf_root, config, args):
 		run(f'{wrf_root}/run/real.exe')
 		for i in range(common_config['max_dom']):
 			if not os.path.isfile('wrfinput_d{0:02d}'.format(i + 1)):
-				cli.error('Failed to generate wrfinput_d{0:02d}!'.format(i + 1))
+				cli.error(f'Failed to generate wrfinput_d{0:02d}! See {wrf_work_dir}/rsl.error.0000.'.format(i + 1))
 			run('mv wrfinput_d{0:02d} wrfinput_d{0:02d}_{1}'.format(i + 1, start_time_str))
 		if os.path.isfile('wrfbdy_d01'):
 			run(f'mv wrfbdy_d01 wrfbdy_d01_{start_time_str}')

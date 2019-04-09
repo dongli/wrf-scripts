@@ -52,6 +52,7 @@ def run_wrf(work_root, wrf_root, config, args):
 		run(f'ln -sf {wrf_root}/run/ozone_plev.formatted .')
 		run(f'ln -sf {wrf_root}/run/ozone_lat.formatted .')
 		run(f'ln -sf {wrf_root}/run/ozone.formatted .')
+		run(f'ln -sf {wrf_root}/run/RRTM_DATA_DBL RRTM_DATA')
 		run(f'ln -sf {wrf_root}/run/RRTMG_LW_DATA .')
 		run(f'ln -sf {wrf_root}/run/RRTMG_SW_DATA .')
 		run(f'ln -sf {wrf_root}/run/VEGPARM.TBL .')
