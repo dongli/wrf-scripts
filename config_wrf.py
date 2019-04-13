@@ -67,6 +67,8 @@ def config_wrf(work_root, wrf_root, wrfda_root, config, args):
 	namelist_input['physics']     ['cudt']                   = phys_config['cudt']       if 'cudt'       in phys_config else 0
 	if version == Version('3.9.1'):
 		namelist_input['dynamics']['max_rot_angle_gwd']  = 100
+	# namelist_input['dynamics']    ['epssm']                  = 0.3
+	# namelist_input['dynamics']    ['w_damping']              = 1
 	namelist_input.write('./namelist.input', force=True)
 	
 	cli.notice('Succeeded.')

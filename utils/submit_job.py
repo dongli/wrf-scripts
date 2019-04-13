@@ -1,4 +1,8 @@
-import pyslurm
+try:
+	import pyslurm
+	no_pyslurm = False
+except:
+	no_pyslurm = True
 import subprocess
 import re
 from time import sleep
@@ -11,9 +15,10 @@ import signal
 signal.signal(signal.SIGINT, signal.default_int_handler)
 
 def submit_job(cmd, ntasks, config, args, logfile='rsl.error.0000', wait=False):
-	if args.slurm:
+	if args.slurm and not no_pyslurm:
 		job_opts = {
 			'job_name': config['tag'],
+			'comment': 'WRF',
 			'partition': mach.queue,
 			'ntasks': ntasks,
 			'ntasks_per_node': mach.ntasks_per_node,

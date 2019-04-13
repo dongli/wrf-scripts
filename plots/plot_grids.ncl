@@ -28,7 +28,7 @@ begin
   if (isdefined("namelist_wps")) then
     filename = namelist_wps
   else
-    filename = "/models/WPS/namelist.wps"
+    filename = "./namelist.wps"
     print("[Notice]: Try to use " + filename + ".")
   end if
 

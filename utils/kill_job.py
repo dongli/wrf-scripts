@@ -1,4 +1,8 @@
-import pyslurm
+try:
+	import pyslurm
+	no_pyslurm = False
+except:
+	no_pyslurm = True
 from job_running import job_running
 import cli
 
