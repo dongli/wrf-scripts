@@ -137,10 +137,12 @@ if not os.path.isdir(args.work_root + '/fb'):  os.mkdir(args.work_root + '/fb')
 if not os.path.isdir(args.work_root + '/fa'):  os.mkdir(args.work_root + '/fa')
 if not os.path.isdir(args.work_root + '/ref'): os.mkdir(args.work_root + '/ref')
 
+wrf.config_wps(args.work_root, args.wps_root, args.geog_root, config, args)
+wrf.run_wps_geogrid(args.work_root, args.wps_root, config, args)
+
 # Run forecast with xb as initial condition.
 cli.banner('                   Run forecast with xb as initial condition')
-wrf.config_wps(args.work_root, args.wps_root, args.geog_root, config, args)
-wrf.run_wps(args.work_root, args.wps_root, args.bkg_root, config, args)
+wrf.run_wps_ungrib_metgrid(args.work_root, args.wps_root, args.bkg_root, config, args)
 wrf.config_wrf(args.work_root + '/fb', args.wrf_root, args.wrfda_root, config, args)
 wrf.run_real(args.work_root + '/fb', args.work_root + '/wps', args.wrf_root, config, args)
 wrf.run_wrf(args.work_root + '/fb', args.wrf_root, config, args)
@@ -163,7 +165,8 @@ cli.banner('                   Interpolate reference at valid time')
 ref_config = copy.deepcopy(config)
 ref_config['common']['start_time'] = config['common']['end_time']
 wrf.config_wps(args.work_root + '/ref', args.wps_root, args.geog_root, ref_config, args)
-wrf.run_wps(args.work_root + '/ref', args.wps_root, args.bkg_root, ref_config, args)
+run(f'ln -sf {args.work_root}/wps/geo_em.d01.nc {args.work_root}/ref/wps')
+wrf.run_wps_ungrib_metgrid(args.work_root + '/ref', args.wps_root, args.bkg_root, ref_config, args)
 wrf.config_wrf(args.work_root + '/ref', args.wrf_root, args.wrfda_root, ref_config, args)
 wrf.run_real(args.work_root + '/ref', args.work_root + '/ref/wps', args.wrf_root, ref_config, args)
  
@@ -180,7 +183,7 @@ def calc_final_sens(a, b, c):
 	for var_name in ('U', 'V', 'T', 'P'):
 		xa = a.variables[var_name]
 		xb = b.variables[var_name]
-		if not f'A_{var_name}' in c.variables: c.createVariable(f'A_{var_name}', xa.dtype, xa.dimensions)
+		if not f'A_{var_name}' in c.variables: c.createVariable(f'A_{var_name}', xa.datatype, xa.dimensions)
 		xc = c.variables[f'A_{var_name}']
 		xc.setncatts(xa.__dict__)
 		xc[:] = 0.0
@@ -226,19 +229,20 @@ cli.notice('Add two init_sens_d01 data.')
 os.chdir(args.work_root + '/sens/wrfda')
 
 def add_init_sens(a, b, c):
-	for var_name in ('A_U', 'A_V', 'A_T', 'A_W', 'A_PH', 'A_MU'):
+	for var_name in ('A_U', 'A_V', 'A_T', 'A_W', 'A_PH', 'A_MU', 'A_QVAPOR'):
 		xa = a.variables[var_name]
 		xb = b.variables[var_name]
 		xc = c.variables[var_name]
 		xc[:] = xa[:] + xb[:]
 
 run(f'cp {args.work_root}/fa/wrfplus/init_sens_d01_{start_time_str} ad_d01_{start_time_str}')
-sa = Dataset(f'{args.work_root}/fa/wrfplus/init_sens_d01_{start_time_str}')
-sb = Dataset(f'{args.work_root}/fb/wrfplus/init_sens_d01_{start_time_str}')
+sa = Dataset(f'{args.work_root}/fa/wrfplus/init_sens_d01_{start_time_str}', 'r')
+sb = Dataset(f'{args.work_root}/fb/wrfplus/init_sens_d01_{start_time_str}', 'r')
 ad = Dataset(f'ad_d01_{start_time_str}', 'r+')
 add_init_sens(sa, sb, ad)
 run(f'ln -sf ad_d01_{start_time_str} gr01')
-
+if config['wrfda']['ob_format'] == 2:
+	run(f'ln -sf {args.work_root}/fa/wrfda/obs_gts_{start_time_str}.3DVAR .')
 run(f'ln -sf {args.work_root}/fa/lanczos_eigenpairs.* ..')
 
 wrf.run_wrfda_3dvar(args.work_root + '/sens', args.wrfda_root, config, args, args.work_root + '/fa/wrf')
