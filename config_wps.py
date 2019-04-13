@@ -11,7 +11,7 @@ from shutil import copy
 from pprint import pprint
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import cli, parse_config
+from utils import cli, parse_config, wrf_version, Version
 
 def config_wps(work_root, wps_root, geog_root, config, args):
 	pprint(config)
@@ -27,6 +27,10 @@ def config_wps(work_root, wps_root, geog_root, config, args):
 	wps_work_dir = work_root + '/wps'
 	if not os.path.isdir(wps_work_dir): os.mkdir(wps_work_dir)
 	os.chdir(wps_work_dir)
+
+	version = wrf_version(wps_root)
+	if version < Version('3.9.1'):
+		cli.error(f'WPS {version} may not handle GFS data correctly! Please use WPS >= 3.9.1.')
 
 	cli.notice('Edit namelist.wps for WPS.')
 	copy(f'{wps_root}/namelist.wps', 'namelist.wps')
