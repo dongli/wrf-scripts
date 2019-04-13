@@ -48,6 +48,8 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	namelist_input['wrfvar6']['orthonorm_gradient'] = True
 	namelist_input['wrfvar6']['use_lanczos'] = True
 	namelist_input['wrfvar6']['write_lanczos'] = True
+	namelist_input['wrfvar11']['calculate_cg_cost_fn'] = True
+	namelist_input['wrfvar11']['write_detail_grad_fn'] = True
 	namelist_input['wrfvar18']['analysis_date'] = start_time_str
 	namelist_input['wrfvar21']['time_window_min'] = start_time.subtract(minutes=time_window/2).format(datetime_fmt)
 	namelist_input['wrfvar22']['time_window_max'] = start_time.add(minutes=time_window/2).format(datetime_fmt)
