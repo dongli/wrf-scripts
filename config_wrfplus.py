@@ -68,7 +68,7 @@ def config_wrfplus(work_root, wrfplus_root, config, args):
 	namelist_input['physics']     ['sf_surface_physics']     = wrf_namelist_input['physics']['sf_surface_physics']
 	namelist_input['physics']     ['bl_pbl_physics']         = 98
 	namelist_input['physics']     ['cu_physics']             = 0
-	namelist_input['physics']     ['num_land_cat']           = wrf_namelist_input['physics']['num_land_cat']
+	namelist_input['physics']     ['num_land_cat']           = wrf_namelist_input['physics']['num_land_cat'] if 'num_land_cat' in wrf_namelist_input['physics'] else 21
 	namelist_input['dynamics']    ['dyn_opt']                = 302
 	if version == Version('3.9.1'):
 		namelist_input['dynamics']['max_rot_angle_gwd']  = 100
