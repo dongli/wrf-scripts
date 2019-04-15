@@ -77,19 +77,20 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	namelist_input['domains']['e_sn'] = common_config['e_sn']
 	# TODO: Set vertical levels somewhere?
 	namelist_input['domains']['e_vert'] = e_vert
-	namelist_input['domains']['dx'] = common_config['resolution']
-	namelist_input['domains']['dy'] = common_config['resolution']
+	namelist_input['domains']['dx'] = common_config['dx']
+	namelist_input['domains']['dy'] = common_config['dy']
 	# Sync physics parameters.
-	namelist_input['physics']['mp_physics']             = phys_config['mp']         if 'mp'         in phys_config else 8
-	namelist_input['physics']['ra_lw_physics']          = phys_config['ra_lw']      if 'ra_lw'      in phys_config else 4
-	namelist_input['physics']['ra_sw_physics']          = phys_config['ra_sw']      if 'ra_sw'      in phys_config else 4
-	namelist_input['physics']['radt']                   = phys_config['radt']       if 'radt'       in phys_config else common_config['resolution'] / 1000
-	namelist_input['physics']['sf_sfclay_physics']      = phys_config['sf_sfclay']  if 'sf_sfclay'  in phys_config else 1
-	namelist_input['physics']['sf_surface_physics']     = phys_config['sf_surface'] if 'sf_surface' in phys_config else 2
-	namelist_input['physics']['bl_pbl_physics']         = phys_config['bl_pbl']     if 'bl_pbl'     in phys_config else 1
-	namelist_input['physics']['bldt']                   = phys_config['bldt']       if 'bldt'       in phys_config else 0
-	namelist_input['physics']['cu_physics']             = phys_config['cu']         if 'cu'         in phys_config else 3
-	namelist_input['physics']['cudt']                   = phys_config['cudt']       if 'cudt'       in phys_config else 0
+	namelist_input['physics']['mp_physics']             = phys_config['mp']          if 'mp'          in phys_config else 8
+	namelist_input['physics']['mp_zero_out']            = phys_config['mp_zero_out'] if 'mp_zero_out' in phys_config else 2
+	namelist_input['physics']['ra_lw_physics']          = phys_config['ra_lw']       if 'ra_lw'       in phys_config else 4
+	namelist_input['physics']['ra_sw_physics']          = phys_config['ra_sw']       if 'ra_sw'       in phys_config else 4
+	namelist_input['physics']['radt']                   = phys_config['radt']        if 'radt'        in phys_config else common_config['dx'][0] / 1000
+	namelist_input['physics']['sf_sfclay_physics']      = phys_config['sf_sfclay']   if 'sf_sfclay'   in phys_config else 1
+	namelist_input['physics']['sf_surface_physics']     = phys_config['sf_surface']  if 'sf_surface'  in phys_config else 2
+	namelist_input['physics']['bl_pbl_physics']         = phys_config['bl_pbl']      if 'bl_pbl'      in phys_config else 1
+	namelist_input['physics']['bldt']                   = phys_config['bldt']        if 'bldt'        in phys_config else 0
+	namelist_input['physics']['cu_physics']             = phys_config['cu']          if 'cu'          in phys_config else 3
+	namelist_input['physics']['cudt']                   = phys_config['cudt']        if 'cudt'        in phys_config else 0
 
 	namelist_input.write(f'{wrfda_work_dir}/namelist.input', force=True)
 

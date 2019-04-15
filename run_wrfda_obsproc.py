@@ -68,7 +68,7 @@ def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
 	namelist_obsproc['record7']['STANDARD_LON']      = standard_lon
 	namelist_obsproc['record8']['NESTIX']            = common_config['e_sn']
 	namelist_obsproc['record8']['NESTJX']            = common_config['e_we']
-	namelist_obsproc['record8']['DIS']               = common_config['resolution']
+	namelist_obsproc['record8']['DIS']               = common_config['dx']
 	namelist_obsproc['record9']['OUTPUT_OB_FORMAT']  = output_format
 	namelist_obsproc.write('./namelist.obsproc', force=True)
 

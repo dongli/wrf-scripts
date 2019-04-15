@@ -61,6 +61,7 @@ def config_wrfplus(work_root, wrfplus_root, config, args):
 	namelist_input['domains']     ['parent_grid_ratio']      = common_config['parent_grid_ratio']
 	namelist_input['domains']     ['parent_time_step_ratio'] = common_config['parent_grid_ratio']
 	namelist_input['physics']     ['mp_physics']             = 98
+	namelist_input['physics']     ['mp_zero_out']            = 2
 	namelist_input['physics']     ['ra_lw_physics']          = 0
 	namelist_input['physics']     ['ra_sw_physics']          = 0
 	namelist_input['physics']     ['sf_sfclay_physics']      = 0

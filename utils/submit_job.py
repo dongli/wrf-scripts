@@ -14,12 +14,13 @@ import cli
 import signal
 signal.signal(signal.SIGINT, signal.default_int_handler)
 
-def submit_job(cmd, ntasks, config, args, logfile='rsl.error.0000', wait=False):
+def submit_job(cmd, ntasks, config, args, logfile='rsl.out.0000', wait=False):
 	if args.slurm and not no_pyslurm:
 		job_opts = {
 			'job_name': config['tag'],
 			'comment': 'WRF',
 			'partition': mach.queue,
+			'time': '24:00:00',
 			'ntasks': ntasks,
 			'ntasks_per_node': mach.ntasks_per_node,
 			'nodes': int(ntasks / mach.ntasks_per_node),
