@@ -79,7 +79,7 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None):
 		return
 
 	cli.stage(f'Run da_wrfvar.exe at {wrfda_work_dir} ...')
-	submit_job(f'{wrfda_root}/var/build/da_wrfvar.exe', 10, config, args, wait=True)
+	submit_job(f'{wrfda_root}/var/build/da_wrfvar.exe', args.np, config, args, wait=True)
 
 	expected_files = [f'wrfvar_output', 'statistics']
 	if not check_files(expected_files):

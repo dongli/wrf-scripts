@@ -11,7 +11,7 @@ from shutil import copyfile
 import sys
 script_root = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(f'{script_root}/utils')
-from utils import cli, parse_config
+from utils import cli, parse_config, wrf_version, Version
 
 def config_wrfda(work_root, wrfda_root, config, args):
 	common_config = config['common']
@@ -33,8 +33,13 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 
+	version = wrf_version(wrfda_root)
+
 	wrfinput = Dataset(f'{wrf_work_dir}/wrfinput_d01_{start_time_str}')
 	e_vert = wrfinput.dimensions['bottom_top_stag'].size
+	num_land_cat = wrfinput.getncattr('NUM_LAND_CAT')
+	hypsometric_opt = wrfinput.getncattr('HYPSOMETRIC_OPT')
+	wrfinput.close()
 
 	time_window  = config['wrfda']['time_window'] if 'time_window' in config['wrfda'] else 360
 	# Read in namelist template (not exact Fortran namelist format, we need to change it).
@@ -48,8 +53,6 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	namelist_input['wrfvar6']['orthonorm_gradient'] = True
 	namelist_input['wrfvar6']['use_lanczos'] = True
 	namelist_input['wrfvar6']['write_lanczos'] = True
-	namelist_input['wrfvar11']['calculate_cg_cost_fn'] = True
-	namelist_input['wrfvar11']['write_detail_grad_fn'] = True
 	namelist_input['wrfvar18']['analysis_date'] = start_time_str
 	namelist_input['wrfvar21']['time_window_min'] = start_time.subtract(minutes=time_window/2).format(datetime_fmt)
 	namelist_input['wrfvar22']['time_window_max'] = start_time.add(minutes=time_window/2).format(datetime_fmt)
@@ -58,6 +61,18 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	namelist_input['wrfvar7']['cv_options'] = wrfda_config['cv_options']
 	namelist_input['wrfvar14']['rtminit_satid'] = -1
 	namelist_input['wrfvar14']['rtminit_sensor'] = -1
+	if version == Version('3.6.1'):
+		namelist_input['wrfvar4']['use_iasiobs'] = False
+		del namelist_input['wrfvar4']['use_iasisobs']
+		namelist_input['wrfvar4']['use_seviriobs'] = False
+		del namelist_input['wrfvar4']['use_sevirisobs']
+		namelist_input['wrfvar5']['max_omb_spd'] = namelist_input['wrfvar5']['max_omb_sp']
+		del namelist_input['wrfvar5']['max_omb_sp']
+		namelist_input['wrfvar5']['max_error_spd'] = namelist_input['wrfvar5']['max_error_sp']
+		del namelist_input['wrfvar5']['max_error_sp']
+	elif version > Version('3.8.1'):
+		namelist_input['wrfvar11']['write_detail_grad_fn'] = True
+	namelist_input['wrfvar11']['calculate_cg_cost_fn'] = True
 	# Merge namelist.input in tutorial.
 	tmp = f90nml.read(f'{wrfda_root}/var/test/tutorial/namelist.input')
 	for key, value in tmp.items():
@@ -77,19 +92,22 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	namelist_input['domains']['e_sn'] = common_config['e_sn']
 	# TODO: Set vertical levels somewhere?
 	namelist_input['domains']['e_vert'] = e_vert
-	namelist_input['domains']['dx'] = common_config['resolution']
-	namelist_input['domains']['dy'] = common_config['resolution']
+	namelist_input['domains']['dx'] = common_config['dx']
+	namelist_input['domains']['dy'] = common_config['dy']
+	namelist_input['domains']['hypsometric_opt'] = hypsometric_opt
 	# Sync physics parameters.
-	namelist_input['physics']['mp_physics']             = phys_config['mp']         if 'mp'         in phys_config else 8
-	namelist_input['physics']['ra_lw_physics']          = phys_config['ra_lw']      if 'ra_lw'      in phys_config else 4
-	namelist_input['physics']['ra_sw_physics']          = phys_config['ra_sw']      if 'ra_sw'      in phys_config else 4
-	namelist_input['physics']['radt']                   = phys_config['radt']       if 'radt'       in phys_config else common_config['resolution'] / 1000
-	namelist_input['physics']['sf_sfclay_physics']      = phys_config['sf_sfclay']  if 'sf_sfclay'  in phys_config else 1
-	namelist_input['physics']['sf_surface_physics']     = phys_config['sf_surface'] if 'sf_surface' in phys_config else 2
-	namelist_input['physics']['bl_pbl_physics']         = phys_config['bl_pbl']     if 'bl_pbl'     in phys_config else 1
-	namelist_input['physics']['bldt']                   = phys_config['bldt']       if 'bldt'       in phys_config else 0
-	namelist_input['physics']['cu_physics']             = phys_config['cu']         if 'cu'         in phys_config else 3
-	namelist_input['physics']['cudt']                   = phys_config['cudt']       if 'cudt'       in phys_config else 0
+	namelist_input['physics']['mp_physics']             = phys_config['mp']          if 'mp'          in phys_config else 8
+	namelist_input['physics']['mp_zero_out']            = phys_config['mp_zero_out'] if 'mp_zero_out' in phys_config else 2
+	namelist_input['physics']['ra_lw_physics']          = phys_config['ra_lw']       if 'ra_lw'       in phys_config else 4
+	namelist_input['physics']['ra_sw_physics']          = phys_config['ra_sw']       if 'ra_sw'       in phys_config else 4
+	namelist_input['physics']['radt']                   = phys_config['radt']        if 'radt'        in phys_config else common_config['dx'][0] / 1000
+	namelist_input['physics']['sf_sfclay_physics']      = phys_config['sf_sfclay']   if 'sf_sfclay'   in phys_config else 1
+	namelist_input['physics']['sf_surface_physics']     = phys_config['sf_surface']  if 'sf_surface'  in phys_config else 2
+	namelist_input['physics']['bl_pbl_physics']         = phys_config['bl_pbl']      if 'bl_pbl'      in phys_config else 1
+	namelist_input['physics']['bldt']                   = phys_config['bldt']        if 'bldt'        in phys_config else 0
+	namelist_input['physics']['cu_physics']             = phys_config['cu']          if 'cu'          in phys_config else 3
+	namelist_input['physics']['cudt']                   = phys_config['cudt']        if 'cudt'        in phys_config else 0
+	namelist_input['physics']['num_land_cat']           = num_land_cat
 
 	namelist_input.write(f'{wrfda_work_dir}/namelist.input', force=True)
 

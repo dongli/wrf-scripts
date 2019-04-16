@@ -61,16 +61,23 @@ def config_wrfplus(work_root, wrfplus_root, config, args):
 	namelist_input['domains']     ['parent_grid_ratio']      = common_config['parent_grid_ratio']
 	namelist_input['domains']     ['parent_time_step_ratio'] = common_config['parent_grid_ratio']
 	namelist_input['physics']     ['mp_physics']             = 98
+	namelist_input['physics']     ['mp_zero_out']            = 2
 	namelist_input['physics']     ['ra_lw_physics']          = 0
 	namelist_input['physics']     ['ra_sw_physics']          = 0
 	namelist_input['physics']     ['sf_sfclay_physics']      = 0
 	namelist_input['physics']     ['sf_surface_physics']     = wrf_namelist_input['physics']['sf_surface_physics']
 	namelist_input['physics']     ['bl_pbl_physics']         = 98
 	namelist_input['physics']     ['cu_physics']             = 0
-	namelist_input['physics']     ['num_land_cat']           = wrf_namelist_input['physics']['num_land_cat']
+	namelist_input['physics']     ['num_land_cat']           = wrf_namelist_input['physics']['num_land_cat'] if 'num_land_cat' in wrf_namelist_input['physics'] else 21
 	namelist_input['dynamics']    ['dyn_opt']                = 302
+	namelist_input['dynamics']    ['w_damping']              = 0
+	namelist_input['dynamics']    ['diff_opt']               = 0
+	namelist_input['dynamics']    ['km_opt']                 = 1
+	namelist_input['dynamics']    ['damp_opt']               = 0
+	namelist_input['dynamics']    ['dampcoef']               = 0.2
+	namelist_input['dynamics']    ['time_step_sound']        = 6
 	if version == Version('3.9.1'):
-		namelist_input['dynamics']['max_rot_angle_gwd']  = 100
+		namelist_input['dynamics']['gwd_opt'] = 0
 	# Delete some parameters.
 	if 'eta_levels' in namelist_input['domains']:  del namelist_input['domains']['eta_levels']
 	if 'iso_temp'   in namelist_input['dynamics']: del namelist_input['dynamics']['iso_temp']
