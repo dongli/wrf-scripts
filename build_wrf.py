@@ -77,6 +77,11 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 				['mpif90', 'mpifort']
 			])
 
+		# Fix for OpenMPI.
+		edit_file('./configure.wrf', [
+			['DM_CC\s*=\s*mpicc\s*$', 'DM_CC = mpicc -DMPI2_SUPPORT\n']
+		])
+
 		cli.notice('Compile WRF ...')
 		if args.debug:
 			if args.compiler_suite == 'intel':
@@ -132,6 +137,11 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 
 		run('sed -i "s/WRF_DIR\s*=.*/WRF_DIR = ..\/WRF/" configure.wps')
 
+		# Fix for OpenMPI.
+		edit_file('./configure.wps', [
+			['DM_CC\s*=\s*mpicc\s*$', 'DM_CC = mpicc -DMPI2_SUPPORT\n']
+		])
+
 		cli.notice('Compile WPS ...')
 		if args.verbose:
 			run('./compile')
@@ -181,6 +191,11 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 				['mpif90', 'mpiifort'],
 				['mpicc', 'mpiicc']
 			])
+
+		# Fix for OpenMPI.
+		edit_file('./configure.wrf', [
+			['DM_CC\s*=\s*mpicc\s*$', 'DM_CC = mpicc -DMPI2_SUPPORT\n']
+		])
 
 		cli.notice('Compile WRFPLUS ...')
 		if args.debug:
@@ -293,6 +308,11 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 				['mpif90', 'mpiifort'],
 				['mpicc', 'mpiicc']
 			])
+
+		# Fix for OpenMPI.
+		edit_file('./configure.wrf', [
+			['DM_CC\s*=\s*mpicc\s*$', 'DM_CC = mpicc -DMPI2_SUPPORT\n']
+		])
 
 		cli.notice('Compile WRFDA ...')
 		if args.debug:
