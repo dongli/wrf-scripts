@@ -18,6 +18,27 @@
     "parent_grid_ratio": [1],
     "max_dom": 1
   },
+  "geogrid": {
+    "geog_data_res": "usgs_30s+default"
+  },
+  "physics": {
+    "mp_physics": 4,
+    "ra_lw_physics": 1,
+    "ra_sw_physics": 1,
+    "radt": 9,
+    "sf_sfclay_physics": 1,
+    "sf_surface_physics": 1,
+    "sf_urban_physics": 0,
+    "bl_pbl_physics": 1,
+    "bldt": 0,
+    "cu_physics": 1,
+    "cudt": 0,
+    "isfflx": 1,
+    "ifsnow": 1,
+    "icloud": 1,
+    "surface_input_source": 3,
+    "num_soil_layers": 4
+  },
   "wrfda": {
     "type": "3dvar",
     "ob_format": 2,

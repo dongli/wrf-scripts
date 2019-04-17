@@ -5,8 +5,8 @@ from glob import glob
 import os
 import pendulum
 import f90nml
+from netCDF4 import Dataset
 import re
-from math import radians, cos, sin, asin, sqrt
 from shutil import copy
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
@@ -28,6 +28,13 @@ def config_wrf(work_root, wrf_root, wrfda_root, config, args):
 	os.chdir(wrf_work_dir)
 
 	version = wrf_version(wrf_root)
+
+	if os.path.isfile(f'{wrf_work_dir}/wrfinput_d01_{start_time_str}'):
+		wrfinput = Dataset(f'{wrf_work_dir}/wrfinput_d01_{start_time_str}')
+		num_land_cat = wrfinput.getncattr('NUM_LAND_CAT')
+		wrfinput.close()
+	else:
+		num_land_cat = None
 
 	cli.notice('Edit namelist.input for WRF.')
 	copy(f'{wrf_root}/run/namelist.input', 'namelist.input')
@@ -55,17 +62,9 @@ def config_wrf(work_root, wrf_root, wrfda_root, config, args):
 	namelist_input['domains']     ['parent_grid_ratio']      = common_config['parent_grid_ratio']
 	namelist_input['domains']     ['parent_time_step_ratio'] = common_config['parent_grid_ratio']
 	if 'physics_suite' in namelist_input['physics']: del namelist_input['physics']['physics_suite']
-	namelist_input['physics']     ['mp_physics']             = phys_config['mp']          if 'mp'          in phys_config else 8
-	namelist_input['physics']     ['mp_zero_out']            = phys_config['mp_zero_out'] if 'mp_zero_out' in phys_config else 2
-	namelist_input['physics']     ['ra_lw_physics']          = phys_config['ra_lw']       if 'ra_lw'       in phys_config else 4
-	namelist_input['physics']     ['ra_sw_physics']          = phys_config['ra_sw']       if 'ra_sw'       in phys_config else 4
-	namelist_input['physics']     ['radt']                   = phys_config['radt']        if 'radt'        in phys_config else common_config['dx'][0] / 1000
-	namelist_input['physics']     ['sf_sfclay_physics']      = phys_config['sf_sfclay']   if 'sf_sfclay'   in phys_config else 1
-	namelist_input['physics']     ['sf_surface_physics']     = phys_config['sf_surface']  if 'sf_surface'  in phys_config else 2
-	namelist_input['physics']     ['bl_pbl_physics']         = phys_config['bl_pbl']      if 'bl_pbl'      in phys_config else 1
-	namelist_input['physics']     ['bldt']                   = phys_config['bldt']        if 'bldt'        in phys_config else 0
-	namelist_input['physics']     ['cu_physics']             = phys_config['cu']          if 'cu'          in phys_config else 3
-	namelist_input['physics']     ['cudt']                   = phys_config['cudt']        if 'cudt'        in phys_config else 0
+	for key, value in phys_config.items():
+		namelist_input['physics'][key] = value
+	if num_land_cat != None: namelist_input['physics']['num_land_cat'] = num_land_cat
 	if version == Version('3.9.1'):
 		namelist_input['dynamics']['gwd_opt'] = 0
 		# namelist_input['dynamics']['max_rot_angle_gwd']  = 100

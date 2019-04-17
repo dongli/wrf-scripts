@@ -30,9 +30,11 @@ def run_wrfplus_ad(work_root, wrfplus_root, config, args):
 		cli.error(f'WRFPLUS has not been configured! Run config_wrfplus.py first.')
 	os.chdir(wrfplus_work_dir)
 
-	if os.path.isfile(f'{wrf_work_dir}/wrfinput_d01'):
+	if os.path.isfile(f'{wrf_work_dir}/wrfinput_d01_{start_time_str}'):
 		run(f'ln -sf {wrf_work_dir}/wrfinput_d01 .')
-		run(f'ln -sf {wrf_work_dir}/wrfbdy_d01 .')
+	elif os.path.isfile(f'{wrf_work_dir}/wrfout_d01_{start_time_str}'):
+		run(f'ln -sf {wrf_work_dir}/wrfout_d01_{start_time_str} wrfinput_d01')
+	run(f'ln -sf {wrf_work_dir}/wrfbdy_d01 .')
 	if not os.path.isfile('final_sens_d01'):
 		cli.error('There is no final_sens_d01 file!')
 

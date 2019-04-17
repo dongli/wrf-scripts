@@ -53,6 +53,8 @@ def config_wps(work_root, wps_root, geog_root, config, args):
 	namelist_wps['geogrid']['truelat2']             = common_config['truelat2']
 	namelist_wps['geogrid']['stand_lon']            = common_config['stand_lon']
 	namelist_wps['geogrid']['geog_data_path']       = geog_root
+	for key, value in config['geogrid'].items():
+		namelist_wps['geogrid'][key] = value
 	namelist_wps['geogrid']['opt_geogrid_tbl_path'] = wps_work_dir
 	namelist_wps['metgrid']['opt_metgrid_tbl_path'] = wps_work_dir
 	namelist_wps.write('./namelist.wps', force=True)

@@ -140,18 +140,24 @@ if not os.path.isdir(args.work_root + '/ref'): os.mkdir(args.work_root + '/ref')
 wrf.config_wps(args.work_root, args.wps_root, args.geog_root, config, args)
 wrf.run_wps_geogrid(args.work_root, args.wps_root, config, args)
 
+# Spin up 6 hours.
+spinup_config = copy.deepcopy(config)
+spinup_config['common']['start_time'] = config['common']['start_time'].subtract(hours=6)
+spinup_config['common']['forecast_hours'] += 6
+wrf.config_wps(args.work_root, args.wps_root, args.geog_root, spinup_config, args)
+
 # Run forecast with xb as initial condition.
 cli.banner('                   Run forecast with xb as initial condition')
-wrf.run_wps_ungrib_metgrid(args.work_root, args.wps_root, args.bkg_root, config, args)
-wrf.config_wrf(args.work_root + '/fb', args.wrf_root, args.wrfda_root, config, args)
-wrf.run_real(args.work_root + '/fb', args.work_root + '/wps', args.wrf_root, config, args)
-wrf.run_wrf(args.work_root + '/fb', args.wrf_root, config, args)
+wrf.run_wps_ungrib_metgrid(args.work_root, args.wps_root, args.bkg_root, spinup_config, args)
+wrf.config_wrf(args.work_root + '/fb', args.wrf_root, args.wrfda_root, spinup_config, args)
+wrf.run_real(args.work_root + '/fb', args.work_root + '/wps', args.wrf_root, spinup_config, args)
+wrf.run_wrf(args.work_root + '/fb', args.wrf_root, spinup_config, args)
 
 # Run forecast with xa as initial condition.
 cli.banner('                   Run forecast with xa as initial condition')
 if not os.path.isdir(args.work_root + '/fa/wrf'): os.mkdir(args.work_root + '/fa/wrf')
-run(f'cp {args.work_root}/fb/wrf/wrfinput_d*_{start_time_str} {args.work_root}/fa/wrf')
-run(f'cp {args.work_root}/fb/wrf/wrfbdy_d01_{start_time_str} {args.work_root}/fa/wrf')
+run(f'cp {args.work_root}/fb/wrf/wrfout_d01_{start_time_str} {args.work_root}/fa/wrf/wrfinput_d01_{start_time_str}')
+run(f'cp {args.work_root}/fb/wrf/wrfbdy_d01 {args.work_root}/fa/wrf/wrfbdy_d01_{start_time_str}')
 wrf.config_wrfda(args.work_root + '/fa', args.wrfda_root, config, args)
 if config['wrfda']['ob_format'] == 2:
 	wrf.run_wrfda_obsproc(args.work_root + '/fa', args.wrfda_root, args.littler_root, config, args)
