@@ -25,6 +25,12 @@ def build_upp(wrf_root, upp_root, args):
 		elif args.compiler_suite == 'pgi':
 			child.sendline('14')
 		child.wait()
+
+		if args.compiler_suite == 'intel':
+			edit_file('./configure.upp', [
+				['mpif90', 'mpiifort'],
+				['mpicc', 'mpiicc']
+			])
 	
 		cli.notice('Compile UPP ...')
 		run('./compile &> compile.out')
