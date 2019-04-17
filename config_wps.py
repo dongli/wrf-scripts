@@ -15,11 +15,10 @@ from utils import cli, parse_config, wrf_version, Version
 
 def config_wps(work_root, wps_root, geog_root, config, args):
 	pprint(config)
-	common_config = config['common']
 
-	start_time = common_config['start_time']
-	end_time = common_config['end_time']
-	max_dom = common_config['max_dom']
+	start_time = config['custom']['start_time']
+	end_time = config['custom']['end_time']
+	max_dom = config['share']['max_dom']
 
 	start_time_str = start_time.format('YYYY-MM-DD_HH:mm:ss')
 	end_time_str = end_time.format('YYYY-MM-DD_HH:mm:ss')
@@ -38,20 +37,6 @@ def config_wps(work_root, wps_root, geog_root, config, args):
 	namelist_wps['share']  ['max_dom']              = max_dom
 	namelist_wps['share']  ['start_date']           = [start_time_str for i in range(max_dom)]
 	namelist_wps['share']  ['end_date']             = [end_time_str if i == 0 else start_time_str for i in range(max_dom)]
-	namelist_wps['geogrid']['parent_id']            = common_config['parent_id']
-	namelist_wps['geogrid']['parent_grid_ratio']    = common_config['parent_grid_ratio']
-	namelist_wps['geogrid']['i_parent_start']       = common_config['i_parent_start']
-	namelist_wps['geogrid']['j_parent_start']       = common_config['j_parent_start']
-	namelist_wps['geogrid']['e_we']                 = common_config['e_we']
-	namelist_wps['geogrid']['e_sn']                 = common_config['e_sn']
-	namelist_wps['geogrid']['dx']                   = common_config['dx']
-	namelist_wps['geogrid']['dy']                   = common_config['dy']
-	namelist_wps['geogrid']['map_proj']             = common_config['map_proj']
-	namelist_wps['geogrid']['ref_lat']              = common_config['ref_lat']
-	namelist_wps['geogrid']['ref_lon']              = common_config['ref_lon']
-	namelist_wps['geogrid']['truelat1']             = common_config['truelat1']
-	namelist_wps['geogrid']['truelat2']             = common_config['truelat2']
-	namelist_wps['geogrid']['stand_lon']            = common_config['stand_lon']
 	namelist_wps['geogrid']['geog_data_path']       = geog_root
 	for key, value in config['geogrid'].items():
 		namelist_wps['geogrid'][key] = value

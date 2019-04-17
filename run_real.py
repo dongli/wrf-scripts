@@ -13,11 +13,10 @@ sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, check_files, run, parse_config
 
 def run_real(work_root, wps_work_dir, wrf_root, config, args):
-	common_config = config['common']
-
-	start_time = common_config['start_time']
+	start_time = config['custom']['start_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
+	max_dom = config['share']['max_dom']
 
 	if not os.path.isdir(wps_work_dir): cli.error(f'WPS work directory {wps_work_dir} does not exist!')
 	wrf_work_dir = os.path.abspath(work_root) + '/wrf'
@@ -25,7 +24,7 @@ def run_real(work_root, wps_work_dir, wrf_root, config, args):
 	os.chdir(wrf_work_dir)
 
 	cli.stage(f'Run real.exe at {wrf_work_dir} ...')
-	expected_files = ['wrfinput_d{:02d}_{}'.format(i + 1, start_time_str) for i in range(common_config['max_dom'])]
+	expected_files = ['wrfinput_d{:02d}_{}'.format(i + 1, start_time_str) for i in range(max_dom)]
 	if not check_files(expected_files) or args.force:
 		run('rm -f wrfinput_* met_em.*.nc')
 		run(f'ln -s {wps_work_dir}/met_em.*.nc .')
@@ -44,7 +43,7 @@ def run_real(work_root, wps_work_dir, wrf_root, config, args):
 		dataset.close()
 		namelist_input.write('./namelist.input', force=True)
 		run(f'{wrf_root}/run/real.exe')
-		for i in range(common_config['max_dom']):
+		for i in range(max_dom):
 			if not os.path.isfile('wrfinput_d{0:02d}'.format(i + 1)):
 				cli.error(f'Failed to generate wrfinput_d{0:02d}! See {wrf_work_dir}/rsl.error.0000.'.format(i + 1))
 			run('mv wrfinput_d{0:02d} wrfinput_d{0:02d}_{1}'.format(i + 1, start_time_str))

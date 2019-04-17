@@ -11,12 +11,11 @@ sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, parse_config, wrf_version, Version
 
 def config_wrfplus(work_root, wrfplus_root, config, args):
-	common_config = config['common']
 	phys_config = config['physics'] if 'physics' in config else {}
 
-	start_time = common_config['start_time']
-	end_time = common_config['end_time']
-	max_dom = common_config['max_dom']
+	start_time = config['custom']['start_time']
+	end_time = config['custom']['end_time']
+	max_dom = config['share']['max_dom']
 	
 	start_time_str = start_time.format('YYYY-MM-DD_HH:mm:ss')
 	end_time_str = end_time.format('YYYY-MM-DD_HH:mm:ss')
@@ -35,7 +34,7 @@ def config_wrfplus(work_root, wrfplus_root, config, args):
 	cli.notice('Edit namelist.input for WRF.')
 	copy(f'{wrfplus_root}/test/em_real/namelist.input', 'namelist.input')
 	namelist_input = f90nml.read('namelist.input')
-	namelist_input['time_control']['run_hours']              = common_config['forecast_hours']
+	namelist_input['time_control']['run_hours']              = config['custom']['forecast_hours']
 	namelist_input['time_control']['start_year']             = [int(start_time.format("Y")) for i in range(max_dom)]
 	namelist_input['time_control']['start_month']            = [int(start_time.format("M")) for i in range(max_dom)]
 	namelist_input['time_control']['start_day']              = [int(start_time.format("D")) for i in range(max_dom)]
@@ -54,12 +53,8 @@ def config_wrfplus(work_root, wrfplus_root, config, args):
 	for key in ('time_step', 'max_dom', 'e_we', 'e_sn', 'e_vert', 'p_top_requested', 'num_metgrid_levels', 'num_metgrid_soil_levels', 'dx', 'dy'):
 		if key in wrf_namelist_input['domains']:
 			namelist_input['domains'][key] = wrf_namelist_input['domains'][key]
-	namelist_input['domains']     ['grid_id']                = [i + 1 for i in range(max_dom)]
-	namelist_input['domains']     ['parent_id']              = common_config['parent_id']
-	namelist_input['domains']     ['i_parent_start']         = common_config['i_parent_start']
-	namelist_input['domains']     ['j_parent_start']         = common_config['j_parent_start']
-	namelist_input['domains']     ['parent_grid_ratio']      = common_config['parent_grid_ratio']
-	namelist_input['domains']     ['parent_time_step_ratio'] = common_config['parent_grid_ratio']
+	for key, value in config['domains'].items():
+		namelist_input['domains'][key] = value
 	namelist_input['physics']     ['mp_physics']             = 98
 	namelist_input['physics']     ['mp_zero_out']            = 2
 	namelist_input['physics']     ['ra_lw_physics']          = 0

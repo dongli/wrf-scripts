@@ -13,12 +13,11 @@ sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, parse_config, wrf_version, Version
 
 def config_wrf(work_root, wrf_root, wrfda_root, config, args):
-	common_config = config['common']
 	phys_config = config['physics'] if 'physics' in config else {}
 
-	start_time = common_config['start_time']
-	end_time = common_config['end_time']
-	max_dom = common_config['max_dom']
+	start_time = config['custom']['start_time']
+	end_time = config['custom']['end_time']
+	max_dom = config['share']['max_dom']
 	
 	start_time_str = start_time.format('YYYY-MM-DD_HH:mm:ss')
 	end_time_str = end_time.format('YYYY-MM-DD_HH:mm:ss')
@@ -39,7 +38,7 @@ def config_wrf(work_root, wrf_root, wrfda_root, config, args):
 	cli.notice('Edit namelist.input for WRF.')
 	copy(f'{wrf_root}/run/namelist.input', 'namelist.input')
 	namelist_input = f90nml.read('namelist.input')
-	namelist_input['time_control']['run_hours']              = common_config['forecast_hours']
+	namelist_input['time_control']['run_hours']              = config['custom']['forecast_hours']
 	namelist_input['time_control']['start_year']             = [int(start_time.format("Y")) for i in range(max_dom)]
 	namelist_input['time_control']['start_month']            = [int(start_time.format("M")) for i in range(max_dom)]
 	namelist_input['time_control']['start_day']              = [int(start_time.format("D")) for i in range(max_dom)]
@@ -49,18 +48,8 @@ def config_wrf(work_root, wrf_root, wrfda_root, config, args):
 	namelist_input['time_control']['end_day']                = [int(end_time.format("D")) for i in range(max_dom)]
 	namelist_input['time_control']['end_hour']               = [int(end_time.format("H")) for i in range(max_dom)]
 	namelist_input['time_control']['frames_per_outfile']     = 1
-	namelist_input['domains']     ['time_step']              = int(common_config['time_step'])
-	namelist_input['domains']     ['max_dom']                = max_dom
-	namelist_input['domains']     ['e_we']                   = common_config['e_we']
-	namelist_input['domains']     ['e_sn']                   = common_config['e_sn']
-	namelist_input['domains']     ['dx']                     = [common_config['dx'][i] / common_config['parent_grid_ratio'][i] for i in range(max_dom)]
-	namelist_input['domains']     ['dy']                     = [common_config['dy'][i] / common_config['parent_grid_ratio'][i] for i in range(max_dom)]
-	namelist_input['domains']     ['grid_id']                = [i + 1 for i in range(max_dom)]
-	namelist_input['domains']     ['parent_id']              = common_config['parent_id']
-	namelist_input['domains']     ['i_parent_start']         = common_config['i_parent_start']
-	namelist_input['domains']     ['j_parent_start']         = common_config['j_parent_start']
-	namelist_input['domains']     ['parent_grid_ratio']      = common_config['parent_grid_ratio']
-	namelist_input['domains']     ['parent_time_step_ratio'] = common_config['parent_grid_ratio']
+	for key, value in config['domains'].items():
+		namelist_input['domains'][key] = value
 	if 'physics_suite' in namelist_input['physics']: del namelist_input['physics']['physics_suite']
 	for key, value in phys_config.items():
 		namelist_input['physics'][key] = value

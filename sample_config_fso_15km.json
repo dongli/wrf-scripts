@@ -1,24 +1,23 @@
 {
   "tag": "test",
-  "common": {
+  "custom": {
     "start_time": "2016070400",
-    "forecast_hours": 12,
+    "forecast_hours": 12
+  },
+  "geogrid": {
     "map_proj": "lambert",
     "e_we": 340,
     "e_sn": 268,
     "e_vert": 30,
     "ref_lat": 35.0,
     "ref_lon": 105.0,
-    "truelat1": 30,
-    "truelat2": 60,
+    "truelat1": 30.0,
+    "truelat2": 60.0,
     "stand_lon": 115.0,
     "dx": 15000.0,
     "dy": 15000.0,
     "parent_id": [1],
     "parent_grid_ratio": [1],
-    "max_dom": 1
-  },
-  "geogrid": {
     "geog_data_res": "usgs_30s+default"
   },
   "physics": {

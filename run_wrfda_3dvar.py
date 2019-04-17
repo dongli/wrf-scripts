@@ -13,14 +13,14 @@ from utils import cli, check_files, run, submit_job, parse_config
 scripts_root = os.path.dirname(os.path.realpath(__file__))
 
 def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None):
-	common_config = config['common']
 	if not 'wrfda' in config:
 		cli.error('There is no "wrfda" in configuration file!')
 	wrfda_config = config['wrfda']
 	
-	start_time = common_config['start_time']
+	start_time = config['custom']['start_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
+	max_dom = config['share']['max_dom']
 
 	if not wrf_work_dir: wrf_work_dir = os.path.abspath(work_root) + '/wrf'
 	if not os.path.isdir(wrf_work_dir): cli.error(f'{wrf_work_dir} does not exist!')
@@ -59,7 +59,7 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None):
 		run(f'ln -sf {wrfda_root}/var/run/be.dat.cv3 be.dat')
 
 	# First guess
-	expected_files = ['{}/wrfinput_d{:02d}_{}'.format(wrf_work_dir, i + 1, start_time_str) for i in range(common_config['max_dom'])]
+	expected_files = ['{}/wrfinput_d{:02d}_{}'.format(wrf_work_dir, i + 1, start_time_str) for i in range(max_dom)]
 	if not check_files(expected_files):
 		cli.error('real.exe or da_update_bc.exe wasn\'t executed successfully!')
 	# TODO: Assume there is only one domain to be assimilated.

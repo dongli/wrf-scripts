@@ -12,15 +12,13 @@ sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, check_files, run, parse_config
 
 def run_wps_geogrid(work_root, wps_root, config, args):
-	common_config = config['common']
-
 	wps_work_dir = os.path.abspath(work_root) + '/wps'
 	if not os.path.isdir(wps_work_dir): os.mkdir(wps_work_dir)
 	os.chdir(wps_work_dir)
 
 	cli.notice(f'Run geogrid.exe at {wps_work_dir} ...')
 	copy(f'{wps_root}/geogrid/GEOGRID.TBL.ARW', 'GEOGRID.TBL')
-	expected_files = ['geo_em.d{:02d}.nc'.format(i + 1) for i in range(common_config['max_dom'])]
+	expected_files = ['geo_em.d{:02d}.nc'.format(i + 1) for i in range(config['share']['max_dom'])]
 	if not check_files(expected_files):
 		run('rm -f geo_em.d*.nc')
 		if args.verbose:

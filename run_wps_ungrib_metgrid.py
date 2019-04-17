@@ -12,10 +12,8 @@ sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, check_files, run, parse_config
 
 def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
-	common_config = config['common']
-
-	if 'background' in common_config and 'type' in common_config['background']:
-		bkg_type = common_config['background']['type']
+	if 'background' in config['custom'] and 'type' in config['custom']['background']:
+		bkg_type = config['custom']['background']['type']
 	else:
 		bkg_type = 'gfs'
 
@@ -25,32 +23,32 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 	os.chdir(wps_work_dir)
 
 	cli.stage(f'Run ungrib.exe at {wps_work_dir} ...')
-	if 'background' in common_config and 'vtable' in common_config['background']:
-		run(f'ln -sf {common_config["background"]["vtable"]} {wps_work_dir}/Vtable')
+	if 'background' in config['custom'] and 'vtable' in config['custom']['background']:
+		run(f'ln -sf {config["custom"]["background"]["vtable"]} {wps_work_dir}/Vtable')
 	else:
 		run(f'ln -sf {wps_root}/ungrib/Variable_Tables/Vtable.{bkg_type.upper()} {wps_work_dir}/Vtable')
 
 	def eval_bkg_dir(bkg_start_time):
-		if 'background' in common_config and 'dir_pattern' in common_config['background']:
-			return bkg_root + '/' + Template(common_config['background']['dir_pattern']).render(bkg_start_time=bkg_start_time)
+		if 'background' in config['custom'] and 'dir_pattern' in config['custom']['background']:
+			return bkg_root + '/' + Template(config['custom']['background']['dir_pattern']).render(bkg_start_time=bkg_start_time)
 		elif bkg_type == 'gfs':
 			return bkg_root + '/gfs.' + bkg_start_time.format('YYYYMMDDHH')
 
 	# Find out suitable background data that cover forecast time period.
 	def is_bkg_exist(bkg_start_time):
 		bkg_dir = eval_bkg_dir(bkg_start_time)
-		if 'background' in common_config and 'file_pattern' in common_config['background']:
-			file_name = Template(common_config['background']['file_pattern']).render(bkg_start_time=bkg_start_time)
+		if 'background' in config['custom'] and 'file_pattern' in config['custom']['background']:
+			file_name = Template(config['custom']['background']['file_pattern']).render(bkg_start_time=bkg_start_time)
 		elif bkg_type == 'gfs':
 			file_name = 'gfs.t{:02d}z.pgrb2.*.f*'.format(bkg_start_time.hour)
 		return len(glob(f'{bkg_dir}/{file_name}')) != 0
 
 	found = False
-	for date in (common_config['start_time'], common_config['start_time'].subtract(days=1)):
+	for date in (config['custom']['start_time'], config['custom']['start_time'].subtract(days=1)):
 		if found: break
 		for hour in (18, 12, 6, 0):
 			bkg_start_time = pendulum.datetime(date.year, date.month, date.day, hour)
-			if ((common_config['start_time'] - date).days == 1 or common_config['start_time'].hour >= hour) and is_bkg_exist(bkg_start_time):
+			if ((config['custom']['start_time'] - date).days == 1 or config['custom']['start_time'].hour >= hour) and is_bkg_exist(bkg_start_time):
 				found = True
 				break
 	if not found: cli.error('Background data is not available!')
@@ -60,8 +58,8 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 	interval_seconds = int(re.search('interval_seconds\s*=\s*(\d+)', open('./namelist.wps').read())[1])
 	bkg_times = []
 	bkg_time = bkg_start_time
-	while bkg_time <= common_config['end_time']:
-		if bkg_time >= common_config['start_time']:
+	while bkg_time <= config['custom']['end_time']:
+		if bkg_time >= config['custom']['start_time']:
 			bkg_times.append(bkg_time)
 		bkg_time = bkg_time.add(seconds=interval_seconds)
 	if len(bkg_times) == 0: cli.error('Failed to set background times, check start_time and forecast_hours.')
@@ -70,13 +68,13 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 	expected_files = [f'FILE:{time.format("YYYY-MM-DD_HH")}' for time in bkg_times]
 	if not check_files(expected_files) or args.force:
 		run('rm -f GRIBFILE.* FILE:*')
-		if 'background' in common_config and 'file_processes' in common_config['background']:
+		if 'background' in config['custom'] and 'file_processes' in config['custom']['background']:
 			if not os.path.isdir(f'{wps_work_dir}/background'): os.mkdir(f'{wps_work_dir}/background')
 			os.chdir(f'{wps_work_dir}/background')
 			for bkg_time in bkg_times:
 				try:
-					bkg_file = glob(bkg_dir + '/' + Template(common_config['background']['file_pattern']).render(bkg_start_time=bkg_start_time, bkg_time=bkg_time))[0]
-					for file_process in common_config['background']['file_processes']:
+					bkg_file = glob(bkg_dir + '/' + Template(config['custom']['background']['file_pattern']).render(bkg_start_time=bkg_start_time, bkg_time=bkg_time))[0]
+					for file_process in config['custom']['background']['file_processes']:
 						run(Template(file_process).render(bkg_file=bkg_file, bkg_file_basename=os.path.basename(bkg_file), bkg_start_time=bkg_start_time, bkg_time=bkg_time))
 				except:
 					continue

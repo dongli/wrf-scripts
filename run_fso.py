@@ -127,8 +127,8 @@ elif config['wrfda']['ob_format'] == 2:
 	if not os.path.isdir(args.littler_root):
 		cli.error(f'Directory {args.littler_root} does not exist!')
 
-start_time = config['common']['start_time']
-end_time = config['common']['end_time']
+start_time = config['custom']['start_time']
+end_time = config['custom']['end_time']
 datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 start_time_str = start_time.format(datetime_fmt)
 end_time_str = end_time.format(datetime_fmt)
@@ -142,8 +142,8 @@ wrf.run_wps_geogrid(args.work_root, args.wps_root, config, args)
 
 # Spin up 6 hours.
 spinup_config = copy.deepcopy(config)
-spinup_config['common']['start_time'] = config['common']['start_time'].subtract(hours=6)
-spinup_config['common']['forecast_hours'] += 6
+spinup_config['custom']['start_time'] = config['custom']['start_time'].subtract(hours=6)
+spinup_config['custom']['forecast_hours'] += 6
 wrf.config_wps(args.work_root, args.wps_root, args.geog_root, spinup_config, args)
 
 # Run forecast with xb as initial condition.
@@ -169,7 +169,7 @@ wrf.run_wrf(args.work_root + '/fa', args.wrf_root, config, args)
 # Interpolate reference at valid time.
 cli.banner('                   Interpolate reference at valid time')
 ref_config = copy.deepcopy(config)
-ref_config['common']['start_time'] = config['common']['end_time']
+ref_config['custom']['start_time'] = config['custom']['end_time']
 wrf.config_wps(args.work_root + '/ref', args.wps_root, args.geog_root, ref_config, args)
 run(f'ln -sf {args.work_root}/wps/geo_em.d01.nc {args.work_root}/ref/wps')
 wrf.run_wps_ungrib_metgrid(args.work_root + '/ref', args.wps_root, args.bkg_root, ref_config, args)

@@ -13,7 +13,6 @@ sys.path.append(f'{script_root}/utils')
 from utils import cli, check_files, run, parse_config
 
 def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
-	common_config = config['common']
 	if not 'wrfda' in config:
 		cli.error('There is no wrfda in configuration file!')
 	if not 'obsproc' in config['wrfda']:
@@ -23,7 +22,7 @@ def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
 		}
 	wrfda_config = config['wrfda']
 
-	start_time = common_config['start_time']
+	start_time = config['custom']['start_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
 
@@ -44,11 +43,11 @@ def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
 		standard_lon = ncfile.getncattr('STAND_LON')
 		ncfile.close()
 	else:
-		iproj        = common_config['map_proj']
-		phic         = common_config['ref_lat']
-		xlonc        = common_config['ref_lon']
-		moad_cen_lat = common_config['ref_lat']
-		standard_lon = common_config['ref_lon']
+		iproj        = config['geogrid']['map_proj']
+		phic         = config['geogrid']['ref_lat']
+		xlonc        = config['geogrid']['ref_lon']
+		moad_cen_lat = config['geogrid']['ref_lat']
+		standard_lon = config['geogrid']['ref_lon']
 
 	output_format = wrfda_config['obsproc_output_format'] if 'obsproc_output_format' in wrfda_config else 2
 	time_window   = wrfda_config['time_window']   if 'time_window'   in wrfda_config else 360
@@ -66,9 +65,9 @@ def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
 	namelist_obsproc['record7']['XLONC']             = xlonc
 	namelist_obsproc['record7']['MOAD_CEN_LAT']      = moad_cen_lat
 	namelist_obsproc['record7']['STANDARD_LON']      = standard_lon
-	namelist_obsproc['record8']['NESTIX']            = common_config['e_sn']
-	namelist_obsproc['record8']['NESTJX']            = common_config['e_we']
-	namelist_obsproc['record8']['DIS']               = common_config['dx']
+	namelist_obsproc['record8']['NESTIX']            = config['geogrid']['e_sn']
+	namelist_obsproc['record8']['NESTJX']            = config['geogrid']['e_we']
+	namelist_obsproc['record8']['DIS']               = config['geogrid']['dx']
 	namelist_obsproc['record9']['OUTPUT_OB_FORMAT']  = output_format
 	namelist_obsproc.write('./namelist.obsproc', force=True)
 

@@ -14,13 +14,12 @@ sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, check_files, run, submit_job, parse_config
 
 def run_wrf(work_root, wrf_root, config, args):
-	common_config = config['common']
-
-	start_time = common_config['start_time']
-	end_time = common_config['end_time']
+	start_time = config['custom']['start_time']
+	end_time = config['custom']['end_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
 	end_time_str = end_time.format(datetime_fmt)
+	max_dom = config['share']['max_dom']
 
 	wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
 
@@ -36,16 +35,16 @@ def run_wrf(work_root, wrf_root, config, args):
 		run(f'ln -sf {wrfda_work_dir}/wrfvar_output_{start_time_str} wrfinput_d01')
 		run(f'ln -sf {wrfda_work_dir}/wrfbdy_d01_{start_time_str}.lateral_updated wrfbdy_d01')
 	else:
-		expected_files = ['wrfinput_d{:02d}_{}'.format(i + 1, start_time_str) for i in range(common_config['max_dom'])]
+		expected_files = ['wrfinput_d{:02d}_{}'.format(i + 1, start_time_str) for i in range(max_dom)]
 		expected_files.append(f'wrfbdy_d01_{start_time_str}')
 		if not check_files(expected_files):
 			cli.error('real.exe wasn\'t executed successfully!')
-		for i in range(common_config['max_dom']):
+		for i in range(max_dom):
 			run('ln -sf wrfinput_d{0:02d}_{1} wrfinput_d{0:02d}'.format(i + 1, start_time_str))
 		run(f'ln -sf wrfbdy_d01_{start_time_str} wrfbdy_d01')
 
 	cli.stage(f'Run wrf.exe at {wrf_work_dir} ...')
-	expected_files = ['wrfout_d{:02d}_{}'.format(i + 1, end_time_str) for i in range(common_config['max_dom'])]
+	expected_files = ['wrfout_d{:02d}_{}'.format(i + 1, end_time_str) for i in range(max_dom)]
 	if not check_files(expected_files) or args.force:
 		run('rm -f wrfout_*')
 		run(f'ln -sf {wrf_root}/run/LANDUSE.TBL .')

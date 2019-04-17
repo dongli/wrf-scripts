@@ -9,9 +9,7 @@ sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, check_files, run, parse_config
 
 def run_wrfda_update_bc(work_root, wrfda_root, update_lowbc, config, args):
-	common_config = config['common']
-
-	start_time = common_config['start_time']
+	start_time = config['custom']['start_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
 

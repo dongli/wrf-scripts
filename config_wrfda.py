@@ -14,17 +14,16 @@ sys.path.append(f'{script_root}/utils')
 from utils import cli, parse_config, wrf_version, Version
 
 def config_wrfda(work_root, wrfda_root, config, args):
-	common_config = config['common']
 	if not 'wrfda' in config:
 		cli.error('There is no "wrfda" in configuration file!')
 	wrfda_config = config['wrfda']
 	phys_config = config['physics'] if 'physics' in config else {}
 
-	start_time = common_config['start_time']
-	end_time = common_config['end_time']
+	start_time = config['custom']['start_time']
+	end_time = config['custom']['end_time']
 	datetime_fmt  = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
-	max_dom = common_config['max_dom']
+	max_dom = config['share']['max_dom']
 
 	wrf_work_dir = work_root + '/wrf'
 	if not os.path.isdir(wrf_work_dir): cli.error(f'{wrf_work_dir} does not exist!')
@@ -36,7 +35,6 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	version = wrf_version(wrfda_root)
 
 	wrfinput = Dataset(f'{wrf_work_dir}/wrfinput_d01_{start_time_str}')
-	e_vert = wrfinput.dimensions['bottom_top_stag'].size
 	num_land_cat = wrfinput.getncattr('NUM_LAND_CAT')
 	hypsometric_opt = wrfinput.getncattr('HYPSOMETRIC_OPT')
 	wrfinput.close()
@@ -78,7 +76,7 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	for key, value in tmp.items():
 		if not key in namelist_input:
 			namelist_input[key] = value
-	namelist_input['time_control']['run_hours']              = common_config['forecast_hours']
+	namelist_input['time_control']['run_hours']              = config['custom']['forecast_hours']
 	namelist_input['time_control']['start_year']             = [int(start_time.format("Y")) for i in range(max_dom)]
 	namelist_input['time_control']['start_month']            = [int(start_time.format("M")) for i in range(max_dom)]
 	namelist_input['time_control']['start_day']              = [int(start_time.format("D")) for i in range(max_dom)]
@@ -88,12 +86,8 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	namelist_input['time_control']['end_day']                = [int(end_time.format("D")) for i in range(max_dom)]
 	namelist_input['time_control']['end_hour']               = [int(end_time.format("H")) for i in range(max_dom)]
 	namelist_input['time_control']['frames_per_outfile']     = 1
-	namelist_input['domains']['e_we'] = common_config['e_we']
-	namelist_input['domains']['e_sn'] = common_config['e_sn']
-	# TODO: Set vertical levels somewhere?
-	namelist_input['domains']['e_vert'] = e_vert
-	namelist_input['domains']['dx'] = common_config['dx']
-	namelist_input['domains']['dy'] = common_config['dy']
+	for key, value in config['domains'].items():
+		namelist_input['domains'][key] = value
 	namelist_input['domains']['hypsometric_opt'] = hypsometric_opt
 	# Sync physics parameters.
 	for key, value in phys_config.items():
