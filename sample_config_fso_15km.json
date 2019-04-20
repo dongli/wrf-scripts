@@ -4,11 +4,14 @@
     "start_time": "2016070400",
     "forecast_hours": 12
   },
+  "domains": {
+    "e_vert": 30,
+    "max_dom": 1
+  },
   "geogrid": {
     "map_proj": "lambert",
     "e_we": 340,
     "e_sn": 268,
-    "e_vert": 30,
     "ref_lat": 35.0,
     "ref_lon": 105.0,
     "truelat1": 30.0,

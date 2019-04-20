@@ -1,6 +1,5 @@
 pendulum
 psutil
-pyproj
 pexpect
 numpy
 f90nml
