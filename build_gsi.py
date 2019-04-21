@@ -9,24 +9,24 @@ sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import gsi_version, Version, edit_file, run, cli, check_files
 
 def build_gsi(wrf_root, gsi_root, args):
-	if args.compiler_suite == 'gnu':
-		fc = 'gfortran'
-	elif args.compiler_suite == 'intel':
-		fc = 'ifort'
-	
 	# Check environment.
 	if not os.getenv('NETCDF'):
 		cli.error('Shell variable NETCDF is not set!')
 	if not os.getenv('LAPACK_PATH') and args.compiler_suite != 'intel':
 		cli.error('Shell variable LAPACK_PATH is not set!')
-	
-	os.chdir(args.wrf_root)
-	expected_exe_files = ('main/wrf.exe', 'main/real.exe', 'main/ndown.exe', 'main/tc.exe')
-	if not check_files(expected_exe_files):
-		cli.error('WRF has not been built! Build it first.')
-	
-	os.chdir(args.gsi_root)
+
 	version = gsi_version(args.gsi_root)
+
+	if version <= Version('3.6'):
+		# 3.7 changes: Added wrf interface as a library (wrflib). No need to compile WRF with GSI and EnKF.
+		if not os.path.isdir(args.wrf_root):
+			cli.error(f'WRF directory {args.wrf_root} does not exist!')
+		os.chdir(args.wrf_root)
+		expected_exe_files = ('main/wrf.exe', 'main/real.exe', 'main/ndown.exe', 'main/tc.exe')
+		if not check_files(expected_exe_files):
+			cli.error('WRF has not been built! Build it first.')
+
+	os.chdir(args.gsi_root)
 
 	if args.force: run('rm -rf build')
 	if not os.path.isdir('build'): os.mkdir('build')
@@ -67,7 +67,7 @@ def build_gsi(wrf_root, gsi_root, args):
 			'lib/libw3nco_v2.0.6.a'
 		)
 	if not check_files(expected_exe_files):
-		cmake_args = f'-DBUILD_CORELIBS=ON -DBUILD_WRF=ON -DWRFPATH={args.wrf_root}'
+		cmake_args = f'-DBUILD_ENKF=ON -DBUILD_CORELIBS=ON -DUSE_WRF=ON -DBUILD_WRF=ON -DBUILD_GFS=OFF'
 		if version == Version('3.6'):
 			cli.notice('Fix GSI 3.6!')
 			edit_file('../cmake/Modules/FindCORELIBS.cmake', [
@@ -90,6 +90,7 @@ def build_gsi(wrf_root, gsi_root, args):
 			edit_file('../src/setupoz.f90', [
 				['my_head%ij\(1\),my_head%wij\(1\)\)', 'my_head%ij,my_head%wij)']
 			])
+			cmake_args += f'-DWRFPATH={args.wrf_root}'
 		if version == Version('3.7'):
 			cli.warning('GSI 3.7 has bug when rerun cmake, so clean all build files.')
 			run('rm -rf ../build/*')
@@ -97,9 +98,13 @@ def build_gsi(wrf_root, gsi_root, args):
 
 		cli.notice('Configure GSI ...')
 		if args.compiler_suite == 'gnu':
-			run(f'CC=gcc CXX=g++ FC=gfortran cmake .. {cmake_args} &> cmake.out')
+			cc = 'gcc'; cxx = 'g++'; fc = 'gfortran'
 		elif args.compiler_suite == 'intel':
-			run(f'CC=mpiicc CXX=mpiicpc FC=mpiifort cmake .. {cmake_args} &> cmake.out')
+			cc = 'mpiicc'; cxx = 'mpiicpc'; fc = 'mpiifort'
+		if args.verbose:
+			run(f'CC={cc} CXX={cxx} FC={fc} cmake .. {cmake_args}')
+		else:
+			run(f'CC={cc} CXX={cxx} FC={fc} cmake .. {cmake_args} &> cmake.out')
 	
 		cli.notice('Compile GSI ...')
 		if args.verbose:
@@ -203,11 +208,7 @@ if __name__ == '__main__':
 			args.wrf_root = os.getenv('WRF_ROOT')
 		elif args.codes:
 			args.wrf_root = args.codes + '/WRF'
-		else:
-			cli.error('Option --wrf-root or environment variable WRF_ROOT need to be set!')
-	args.wrf_root = os.path.abspath(args.wrf_root)
-	if not os.path.isdir(args.wrf_root):
-		cli.error(f'Directory {args.wrf_root} does not exist!')
+	if args.wrf_root: args.wrf_root = os.path.abspath(args.wrf_root)
 
 	if not args.gsi_root:
 		if os.getenv('GSI_ROOT'):
