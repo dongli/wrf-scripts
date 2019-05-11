@@ -92,9 +92,16 @@ def build_gsi(wrf_root, gsi_root, args):
 			])
 			cmake_args += f'-DWRFPATH={args.wrf_root}'
 		if version == Version('3.7'):
+			cli.notice('Fix GSI 3.7!')
+			edit_file('../src/setuplight.f90', [
+				['my_head%wij\(1\)\)', 'my_head%wij)']
+			])
 			cli.warning('GSI 3.7 has bug when rerun cmake, so clean all build files.')
 			run('rm -rf ../build/*')
 			cmake_args += '-DBUILD_UTIL_COM=ON'
+
+		# Fix not-found -lnetcdf -lnetcdff.
+		edit_file('../cmake/Modules/setCompilerFlags.cmake', [['-lnetcdf -lnetcdff', '']])
 
 		cli.notice('Configure GSI ...')
 		if args.compiler_suite == 'gnu':
