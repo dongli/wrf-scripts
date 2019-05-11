@@ -137,6 +137,13 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 
 		run('sed -i "s/WRF_DIR\s*=.*/WRF_DIR = ..\/WRF/" configure.wps')
 
+		if args.compiler_suite == 'gnu':
+			# Fix for gfortran 9.1.0.
+			edit_file('ungrib/src/ngl/g2/intmath.f', [['iand\(i,i-1\)/=0', 'iand(i,i-1_8)/=0']], return_on_first_match=True)
+			edit_file('ungrib/src/ngl/g2/intmath.f', [['iand\(i,i-1\)/=0', 'iand(i,i-1_4)/=0']], return_on_first_match=True)
+			edit_file('ungrib/src/ngl/g2/intmath.f', [['iand\(i,i-1\)/=0', 'iand(i,i-1_2)/=0']], return_on_first_match=True)
+			edit_file('ungrib/src/ngl/g2/intmath.f', [['iand\(i,i-1\)/=0', 'iand(i,i-1_1)/=0']], return_on_first_match=True)
+
 		# Fix for OpenMPI.
 		edit_file('./configure.wps', [
 			['DM_CC\s*=\s*mpicc\s*$', 'DM_CC = mpicc -DMPI2_SUPPORT\n']
