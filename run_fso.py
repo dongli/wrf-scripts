@@ -34,7 +34,8 @@ if not args.work_root:
 		cli.error('Option --work-root or environment variable WORK_ROOT need to be set!')
 args.work_root = os.path.abspath(args.work_root)
 if not os.path.isdir(args.work_root):
-	cli.error(f'Directory {args.work_root} does not exist!')
+	os.makedirs(args.work_root)
+	cli.notice(f'Create work directory {args.work_root}.')
 
 if not args.wrf_root:
 	if os.getenv('WRF_ROOT'):
