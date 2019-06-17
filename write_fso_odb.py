@@ -22,8 +22,8 @@ rsl_out = open(f'{args.work_root}/sens/wrfda/rsl.out.0000', 'r')
 lines = ''.join(rsl_out.readlines())
 
 header = ''
-header += 'obs_type@fso_obs_type:STRING\t'
-header += 'obs_impact@fso_obs_type:REAL\n'
+header += 'obs_type@fso_obs_impact:STRING\t'
+header += 'obs_impact@fso_obs_impact:REAL\n'
 
 output = tempfile.NamedTemporaryFile(mode='w')
 output.write(header)
@@ -34,14 +34,14 @@ for obs_type in ('sound', 'synop', 'pilot', 'satem', 'geoamv', 'polaramv', 'aire
 		output.write(f'{obs_type}\t{match[1]}\n')
 
 output.flush()
-print(f'[Notice]: Write {args.output_prefix}.1.')
-res = run(f'odb import -d TAB {output.name} {args.output_prefix}.1', shell=True, stdout=PIPE, stderr=PIPE)
+print(f'[Notice]: Write {args.output_prefix}.obs_impact.')
+res = run(f'odb import -d TAB {output.name} {args.output_prefix}.obs_impact', shell=True, stdout=PIPE, stderr=PIPE)
 if res.returncode != 0:
 	print(res.stderr.decode('utf-8'))
 
 header = ''
-header += 'var_type@fso_var_type:STRING\t'
-header += 'var_impact@fso_var_type:REAL\n'
+header += 'var_type@fso_var_impact:STRING\t'
+header += 'var_impact@fso_var_impact:REAL\n'
 
 output = tempfile.NamedTemporaryFile(mode='w')
 output.write(header)
@@ -52,42 +52,42 @@ for var_type in ('u', 'v', 't', 'p', 'q'):
 		output.write(f'{var_type}\t{match[1]}\n')
 
 output.flush()
-print(f'[Notice]: Write {args.output_prefix}.2.')
-res = run(f'odb import -d TAB {output.name} {args.output_prefix}.2', shell=True, stdout=PIPE, stderr=PIPE)
+print(f'[Notice]: Write {args.output_prefix}.var_impact.')
+res = run(f'odb import -d TAB {output.name} {args.output_prefix}.var_impact', shell=True, stdout=PIPE, stderr=PIPE)
 if res.returncode != 0:
 	print(res.stderr.decode('utf-8'))
 
 gts_omb_oma_01 = open(f'{args.work_root}/sens/wrfda/gts_omb_oma_01', 'r')
 
 header = ''
-header += 'obs_type@fso:STRING\t'
-header += 'lon@fso:REAL\t'
-header += 'lat@fso:REAL\t'
-header += 'u@fso:REAL\t'
-header += 'u_impact@fso:REAL\t'
-header += 'u_qc@fso:INTEGER\t'
-header += 'u_obserr@fso:REAL\t'
-header += 'u_incr@fso:REAL\t'
-header += 'v@fso:REAL\t'
-header += 'v_impact@fso:REAL\t'
-header += 'v_qc@fso:INTEGER\t'
-header += 'v_obserr@fso:REAL\t'
-header += 'v_incr@fso:REAL\t'
-header += 't@fso:REAL\t'
-header += 't_impact@fso:REAL\t'
-header += 't_qc@fso:INTEGER\t'
-header += 't_obserr@fso:REAL\t'
-header += 't_incr@fso:REAL\t'
-header += 'p@fso:REAL\t'
-header += 'p_impact@fso:REAL\t'
-header += 'p_qc@fso:INTEGER\t'
-header += 'p_obserr@fso:REAL\t'
-header += 'p_incr@fso:REAL\t'
-header += 'q@fso:REAL\t'
-header += 'q_impact@fso:REAL\t'
-header += 'q_qc@fso:INTEGER\t'
-header += 'q_obserr@fso:REAL\t'
-header += 'q_incr@fso:REAL\n'
+header += 'obs_type@detail_impact:STRING\t'
+header += 'lon@detail_impact:REAL\t'
+header += 'lat@detail_impact:REAL\t'
+header += 'u@detail_impact:REAL\t'
+header += 'u_impact@detail_impact:REAL\t'
+header += 'u_qc@detail_impact:INTEGER\t'
+header += 'u_obserr@detail_impact:REAL\t'
+header += 'u_incr@detail_impact:REAL\t'
+header += 'v@detail_impact:REAL\t'
+header += 'v_impact@detail_impact:REAL\t'
+header += 'v_qc@detail_impact:INTEGER\t'
+header += 'v_obserr@detail_impact:REAL\t'
+header += 'v_incr@detail_impact:REAL\t'
+header += 't@detail_impact:REAL\t'
+header += 't_impact@detail_impact:REAL\t'
+header += 't_qc@detail_impact:INTEGER\t'
+header += 't_obserr@detail_impact:REAL\t'
+header += 't_incr@detail_impact:REAL\t'
+header += 'p@detail_impact:REAL\t'
+header += 'p_impact@detail_impact:REAL\t'
+header += 'p_qc@detail_impact:INTEGER\t'
+header += 'p_obserr@detail_impact:REAL\t'
+header += 'p_incr@detail_impact:REAL\t'
+header += 'q@detail_impact:REAL\t'
+header += 'q_impact@detail_impact:REAL\t'
+header += 'q_qc@detail_impact:INTEGER\t'
+header += 'q_obserr@detail_impact:REAL\t'
+header += 'q_incr@detail_impact:REAL\n'
 
 output = tempfile.NamedTemporaryFile(mode='w')
 output.write(header)
@@ -185,7 +185,7 @@ while True:
 		break
 
 output.flush()
-print(f'[Notice]: Write {args.output_prefix}.3.')
-res = run(f'odb import -d TAB {output.name} {args.output_prefix}.3', shell=True, stdout=PIPE, stderr=PIPE)
+print(f'[Notice]: Write {args.output_prefix}.detail_impact.')
+res = run(f'odb import -d TAB {output.name} {args.output_prefix}.detail_impact', shell=True, stdout=PIPE, stderr=PIPE)
 if res.returncode != 0:
 	print(res.stderr.decode('utf-8'))
