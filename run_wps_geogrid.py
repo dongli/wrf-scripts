@@ -65,4 +65,6 @@ if __name__ == '__main__':
 	if not os.path.isdir(args.wps_root):
 		cli.error(f'Directory {args.wps_root} does not exist!')
 
+	config = parse_config(args.config_json) 
+
 	run_wps_geogrid(args.work_root, args.wps_root, config, args)
