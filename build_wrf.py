@@ -30,6 +30,8 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 	if not 'JASPERINC' in os.environ or not 'JASPERLIB' in os.environ:
 		cli.error('JASPERINC and JASPERLIB environment variables are not set!')
 
+	# ---------------------------------------------------------------------------------
+	#                                    WRF
 	os.chdir(wrf_root)
 	version = wrf_version(wrf_root)
 	if version <= Version('3.6.1'):
@@ -106,6 +108,8 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 	else:
 		cli.notice('WRF is already built.')
 
+	# ---------------------------------------------------------------------------------
+	#                                    WPS
 	os.chdir(wps_root)
 	if args.force: run('./clean -a &> /dev/null')
 	expected_exe_files = ('geogrid/src/geogrid.exe', 'metgrid/src/metgrid.exe', 'ungrib/src/ungrib.exe')
@@ -165,6 +169,8 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 	else:
 		cli.notice('WPS is already built.')
 
+	# ---------------------------------------------------------------------------------
+	#                                    WRFPLUS
 	os.chdir(wrfplus_root)
 	if args.force: run('./clean -a &> /dev/null')
 	if Version('3.6.1') <= version <= Version('3.8.1'):
@@ -232,6 +238,8 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 	else:
 		cli.notice('WRFPLUS is already built.')
 
+	# ---------------------------------------------------------------------------------
+	#                                    WRFDA
 	os.chdir(wrfda_root)
 	os.environ['WRFPLUS_DIR'] = wrfplus_root
 	if args.force: run('./clean -a &> /dev/null')
@@ -247,6 +255,11 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
       value = value_
    end if
 ''']
+		])
+	if version == Version('4.1.1'):
+		cli.warning(f'Fix {wrfda_root}/share/input_wrf.F')
+		edit_file('share/input_wrf.F', [
+			['FUNCTION check_which_switch', 'FUNCTION check_which_switch1']
 		])
 	expected_exe_files = [
 		'var/build/da_advance_time.exe',
