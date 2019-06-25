@@ -9,7 +9,7 @@ import re
 from shutil import copy
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import cli, check_files, run, parse_config
+from utils import cli, check_files, edit_file, run, parse_config
 
 def run_wps_geogrid(work_root, wps_root, config, args):
 	wps_work_dir = os.path.abspath(work_root) + '/wps'
@@ -18,6 +18,10 @@ def run_wps_geogrid(work_root, wps_root, config, args):
 
 	cli.notice(f'Run geogrid.exe at {wps_work_dir} ...')
 	copy(f'{wps_root}/geogrid/GEOGRID.TBL.ARW', 'GEOGRID.TBL')
+	edit_file('GEOGRID.TBL', [
+		['rel_path=default:albedo_modis', 'rel_path=default:albedo_ncep'],
+		['rel_path=default:maxsnowalb_modis', 'rel_path=default:maxsnowalb']
+	])
 	expected_files = ['geo_em.d{:02d}.nc'.format(i + 1) for i in range(config['share']['max_dom'])]
 	if not check_files(expected_files):
 		run('rm -f geo_em.d*.nc')

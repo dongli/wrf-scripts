@@ -18,7 +18,7 @@ def get_gfs(output_root, start_time, forecast_hours, resolution, args):
 		cli.notice(f'Create directory {output_root}.')
 
 	def download_gfs(start_time, forecast_hour):
-		dir_name = f'gfs.{start_time.format("YYYYMMDDHH")}'
+		dir_name = f'gfs.{start_time.format("YYYYMMDD")}/{start_time.format("HH")}'
 		file_name = 'gfs.t{:02d}z.pgrb2.{}.f{:03d}'.format(start_time.hour, resolution, forecast_hour)
 		url = f'{root_url}/{dir_name}/{file_name}'
 		if not os.path.isdir(f'{output_root}/{dir_name}'):
@@ -44,8 +44,10 @@ def get_gfs(output_root, start_time, forecast_hours, resolution, args):
 			os.remove(local_file_path)
 			cli.error(f'Failed to download {file_name}!')
 
-	res = requests.head(f'{root_url}/gfs.{start_time.format("YYYYMMDDHH")}/')
-	if res.status_code != 200:
+	res = requests.head(f'{root_url}/gfs.{start_time.format("YYYYMMDD")}/{start_time.format("HH")}')
+	if res.status_code not in (200, 301):
+		print(res.status_code)
+		print(f'{root_url}/gfs.{start_time.format("YYYYMMDD")}/{start_time.format("HH")}')
 		cli.error(f'Remote GFS data at {start_time} do not exist!')
 
 	for forecast_hour in forecast_hours:
