@@ -23,18 +23,28 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	end_time = config['custom']['end_time']
 	datetime_fmt  = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
-	max_dom = config['share']['max_dom']
+	max_dom = config['domains']['max_dom']
 
+	# Need to take some parameters from wrfinput file.
 	wrf_work_dir = work_root + '/wrf'
 	if not os.path.isdir(wrf_work_dir): cli.error(f'{wrf_work_dir} does not exist!')
 
-	wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
-	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
+	if max_dom > 1:
+		if not 'run_wrfda_on_dom' in config['custom']:
+			cli.error('You need to set run_wrfda_on_dom to set which domain to work on!')
+		dom_idx = config['custom']['run_wrfda_on_dom']
+		dom_str = 'd' + str(dom_idx + 1).zfill(2)
+		wrfda_work_dir = os.path.abspath(work_root) + f'/wrfda/{dom_str}'
+	else:
+		dom_idx = 0
+		dom_str = 'd01'
+		wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
+	if not os.path.isdir(wrfda_work_dir): os.makedirs(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 
 	version = wrf_version(wrfda_root)
 
-	wrfinput = Dataset(f'{wrf_work_dir}/wrfinput_d01_{start_time_str}')
+	wrfinput = Dataset(f'{wrf_work_dir}/wrfinput_{dom_str}_{start_time_str}')
 	num_land_cat = wrfinput.getncattr('NUM_LAND_CAT')
 	hypsometric_opt = wrfinput.getncattr('HYPSOMETRIC_OPT')
 	wrfinput.close()
@@ -88,6 +98,10 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	namelist_input['time_control']['frames_per_outfile']     = 1
 	for key, value in config['domains'].items():
 		namelist_input['domains'][key] = value
+	# WRFDA only take grids parameters one domain at a time.
+	namelist_input['domains']['max_dom']                     = 1
+	for key in ('e_we', 'e_sn', 'e_vert', 'dx', 'dy', 'grid_id', 'parent_id', 'i_parent_start', 'j_parent_start', 'parent_grid_ratio', 'parent_time_step_ratio'):
+		namelist_input['domains'][key] = config['domains'][key][dom_idx]
 	namelist_input['domains']['hypsometric_opt'] = hypsometric_opt
 	# Sync physics parameters.
 	for key, value in phys_config.items():
@@ -95,6 +109,11 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	namelist_input['physics']['num_land_cat'] = num_land_cat
 	if version == Version('3.9.1'):
 		namelist_input['dynamics']['gwd_opt'] = 0
+	# Write customized parameters.
+	for section in ['wrfvar4']:
+		if not section in config: continue
+		for key, value in config[section].items():
+			namelist_input[section][key] = value
 
 	namelist_input.write(f'{wrfda_work_dir}/namelist.input', force=True)
 

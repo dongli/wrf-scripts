@@ -18,13 +18,13 @@ def config_wps(work_root, wps_root, geog_root, config, args):
 
 	start_time = config['custom']['start_time']
 	end_time = config['custom']['end_time']
-	max_dom = config['share']['max_dom']
+	max_dom = config['domains']['max_dom']
 
 	start_time_str = start_time.format('YYYY-MM-DD_HH:mm:ss')
 	end_time_str = end_time.format('YYYY-MM-DD_HH:mm:ss')
 
 	wps_work_dir = work_root + '/wps'
-	if not os.path.isdir(wps_work_dir): os.mkdir(wps_work_dir)
+	if not os.path.isdir(wps_work_dir): os.makedirs(wps_work_dir)
 	os.chdir(wps_work_dir)
 
 	version = wrf_version(wps_root)

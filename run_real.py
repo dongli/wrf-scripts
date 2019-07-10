@@ -16,7 +16,7 @@ def run_real(work_root, wps_work_dir, wrf_root, config, args):
 	start_time = config['custom']['start_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
-	max_dom = config['share']['max_dom']
+	max_dom = config['domains']['max_dom']
 
 	if not os.path.isdir(wps_work_dir): cli.error(f'WPS work directory {wps_work_dir} does not exist!')
 	wrf_work_dir = os.path.abspath(work_root) + '/wrf'

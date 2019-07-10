@@ -12,19 +12,25 @@ def run_wrfda_update_bc(work_root, wrfda_root, update_lowbc, config, args):
 	start_time = config['custom']['start_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
+	max_dom = config['domains']['max_dom']
 
 	wrf_work_dir = os.path.abspath(work_root) + '/wrf'
 
-	wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
+	if max_dom > 1:
+		dom_str = 'd' + str(config['custom']['run_wrfda_on_dom'] + 1).zfill(2)
+		wrfda_work_dir = os.path.abspath(work_root) + f'/wrfda/{dom_str}'
+	else:
+		dom_str = 'd01'
+		wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 
 	cli.stage(f'Run WRFDA update_bc at {wrfda_work_dir} ...')
 
-	expected_files = [f'{wrf_work_dir}/wrfbdy_d01_{start_time_str}', f'wrfvar_output_{start_time_str}', 'fg']
+	expected_files = [f'{wrf_work_dir}/wrfbdy_{dom_str}_{start_time_str}', f'wrfvar_output_{start_time_str}', 'fg']
 	if not check_files(expected_files):
 		cli.error('da_wrfvar.exe or real.exe wasn\'t executed successfully!')
-	run(f'cp {wrf_work_dir}/wrfbdy_d01_{start_time_str} wrfbdy_d01')
+	run(f'cp {wrf_work_dir}/wrfbdy_{dom_str}_{start_time_str} wrfbdy_{dom_str}')
 	run(f'cp wrfvar_output_{start_time_str} wrfvar_output')
 
 	parame_in = f90nml.read(f'{wrfda_root}/var/test/update_bc/parame.in')
@@ -35,15 +41,15 @@ def run_wrfda_update_bc(work_root, wrfda_root, update_lowbc, config, args):
 	parame_in.write(f'{wrfda_work_dir}/parame.in', force=True)
 
 	if update_lowbc:
-		expected_file = f'wrfbdy_d01_{start_time_str}.low_updated'
+		expected_file = f'wrfbdy_{dom_str}_{start_time_str}.low_updated'
 	else:
-		expected_file = f'wrfbdy_d01_{start_time_str}.lateral_updated'
+		expected_file = f'wrfbdy_{dom_str}_{start_time_str}.lateral_updated'
 	if not check_files(expected_file) or args.force:
 		if args.verbose:
 			run(f'{wrfda_root}/var/build/da_update_bc.exe')
 		else:
 			run(f'{wrfda_root}/var/build/da_update_bc.exe &> da_update_bc.out')
-		run(f'cp wrfbdy_d01 {expected_file}')
+		run(f'cp wrfbdy_{dom_str} {expected_file}')
 	else:
 		run(f'ls -l {expected_file}')
 

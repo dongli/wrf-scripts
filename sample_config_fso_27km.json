@@ -1,14 +1,12 @@
 {
   "tag": "test",
   "custom": {
-    "start_time": "2016070400",
+    "start_time": "2019050200",
     "forecast_hours": 12
   },
   "domains": {
     "e_vert": 30,
-    "max_dom": 1
-  },
-  "geogrid": {
+    "max_dom": 1,
     "map_proj": "lambert",
     "e_we": 240,
     "e_sn": 210,
@@ -21,6 +19,9 @@
     "dy": 27000.0,
     "parent_id": [1],
     "parent_grid_ratio": [1],
+    "parent_time_step_ratio": [1]
+  },
+  "geogrid": {
     "geog_data_res": "usgs_30s+default"
   },
   "physics": {
@@ -43,7 +44,7 @@
   },
   "wrfda": {
     "type": "3dvar",
-    "ob_format": 2,
+    "ob_format": 1,
     "time_window": 360,
     "obsproc_output_format": 2,
     "cv_options": 3

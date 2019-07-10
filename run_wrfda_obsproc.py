@@ -28,12 +28,14 @@ def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
 
 	wrf_work_dir = os.path.abspath(work_root) + '/wrf'
 
-	wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
+	wrfda_work_dir = os.path.abspath(work_root) + '/wrfda/obsproc'
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 
+	cli.notice('Use builtin obserr.')
 	run(f'ln -sf {wrfda_root}/var/obsproc/obserr.txt {wrfda_work_dir}')
 
+	# Use d01 domain extent.
 	if check_files([f'{wrf_work_dir}/wrfinput_d01_{start_time_str}']):
 		ncfile       = Dataset(f'{wrf_work_dir}/wrfinput_d01_{start_time_str}', 'r')
 		iproj        = ncfile.getncattr('MAP_PROJ')
@@ -56,7 +58,7 @@ def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
 		namelist_obsproc = f90nml.read(f'{wrfda_root}/var/obsproc/namelist.obsproc.3dvar.wrfvar-tut')
 	else:
 		cli.error('Currently, we only support 3DVar...')
-	namelist_obsproc['record1']['obs_gts_filename']  = 'obs.{}'.format(start_time.format('YYYYMMDDHHmm'))
+	namelist_obsproc['record1']['obs_gts_filename']  = 'obs.gts.{}'.format(start_time.format('YYYYMMDDHHmm'))
 	namelist_obsproc['record2']['time_window_min']   = start_time.subtract(minutes=time_window/2).format('YYYY-MM-DD_HH:mm:ss')
 	namelist_obsproc['record2']['time_analysis']     = start_time.format('YYYY-MM-DD_HH:mm:ss')
 	namelist_obsproc['record2']['time_window_max']   = start_time.add(minutes=time_window/2).format('YYYY-MM-DD_HH:mm:ss')
@@ -75,10 +77,10 @@ def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
 	expected_files = [f'obs_gts_{start_time.format("YYYY-MM-DD_HH:mm:ss")}.3DVAR']
 	if not check_files(expected_files) or args.force:
 		run('rm -f obs_gts_*')
-		if os.path.exists(f'{littler_root}/obs.{start_time.format("YYYYMMDDHHmm")}'):
-			run(f'ln -sf {littler_root}/obs.{start_time.format("YYYYMMDDHHmm")} {wrfda_work_dir}')
+		if os.path.exists(f'{littler_root}/{start_time.format("YYYYMMDD")}/obs.gts.{start_time.format("YYYYMMDDHHmm")}'):
+			run(f'ln -sf {littler_root}/{start_time.format("YYYYMMDD")}/obs.gts.{start_time.format("YYYYMMDDHHmm")} {wrfda_work_dir}')
 		else:
-			cli.error(f'Failed! {littler_root}/obs.{start_time.format("YYYYMMDDHHmm")} Not Found.')
+			cli.error(f'Failed! {littler_root}/{start_time.format("YYYYMMDD")}/obs.gts.{start_time.format("YYYYMMDDHHmm")} Not Found.')
 		if args.verbose:
 			run(f'{wrfda_root}/var/obsproc/obsproc.exe')
 		else:

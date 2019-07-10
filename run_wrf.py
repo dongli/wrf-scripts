@@ -13,13 +13,23 @@ import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, check_files, run, submit_job, parse_config
 
+def copy_wrfda_output(dom_str, start_time_str, wrfda_work_dir):
+	if os.path.isfile(f'{wrfda_work_dir}/wrfvar_output_{start_time_str}'):
+		cli.notice(f'Use assimilated input for domain {dom_str}.')
+	else:
+		return False
+	run(f'ln -sf {wrfda_work_dir}/wrfvar_output_{start_time_str} wrfinput_{dom_str}')
+	if dom_str == 'd01':
+		run(f'ln -sf {wrfda_work_dir}/wrfbdy_d01_{start_time_str}.lateral_updated wrfbdy_d01')
+	return True
+
 def run_wrf(work_root, wrf_root, config, args):
 	start_time = config['custom']['start_time']
 	end_time = config['custom']['end_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
 	end_time_str = end_time.format(datetime_fmt)
-	max_dom = config['share']['max_dom']
+	max_dom = config['domains']['max_dom']
 
 	wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
 
@@ -27,14 +37,14 @@ def run_wrf(work_root, wrf_root, config, args):
 	if not os.path.isdir(wrf_work_dir): os.mkdir(wrf_work_dir)
 	os.chdir(wrf_work_dir)
 
-	if os.path.isfile(f'{wrfda_work_dir}/wrfvar_output_{start_time_str}'):
-		cli.notice('Use assimilated input for domain 01.')
-		expected_files = [f'{wrfda_work_dir}/wrfvar_output_{start_time_str}', f'{wrfda_work_dir}/wrfbdy_d01_{start_time_str}.lateral_updated']
-		if not check_files(expected_files):
-			cli.error('da_wrfvar.exe wasn\'t executed successfully!')
-		run(f'ln -sf {wrfda_work_dir}/wrfvar_output_{start_time_str} wrfinput_d01')
-		run(f'ln -sf {wrfda_work_dir}/wrfbdy_d01_{start_time_str}.lateral_updated wrfbdy_d01')
-	else:
+	all_wrfda_ok = True
+	for dom_idx in range(max_dom):
+		dom_str = 'd' + str(dom_idx + 1).zfill(2)
+		if not copy_wrfda_output(dom_str, start_time_str, wrfda_work_dir + '/' + dom_str):
+			all_wrfda_ok = False
+			break
+	if not all_wrfda_ok:
+		cli.warning('Do not use data assimilation.')
 		expected_files = ['wrfinput_d{:02d}_{}'.format(i + 1, start_time_str) for i in range(max_dom)]
 		expected_files.append(f'wrfbdy_d01_{start_time_str}')
 		if not check_files(expected_files):

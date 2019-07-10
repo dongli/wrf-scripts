@@ -22,7 +22,7 @@ def run_wps_geogrid(work_root, wps_root, config, args):
 		['rel_path=default:albedo_modis', 'rel_path=default:albedo_ncep'],
 		['rel_path=default:maxsnowalb_modis', 'rel_path=default:maxsnowalb']
 	])
-	expected_files = ['geo_em.d{:02d}.nc'.format(i + 1) for i in range(config['share']['max_dom'])]
+	expected_files = ['geo_em.d{:02d}.nc'.format(i + 1) for i in range(config['domains']['max_dom'])]
 	if not check_files(expected_files):
 		run('rm -f geo_em.d*.nc')
 		if args.verbose:
