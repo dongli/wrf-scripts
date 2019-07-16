@@ -28,7 +28,13 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		cli.warning('NETCDF environment variable is not set!')
 
 	if not 'JASPERINC' in os.environ or not 'JASPERLIB' in os.environ:
-		cli.error('JASPERINC and JASPERLIB environment variables are not set!')
+		if 'JASPER_ROOT' in os.environ:
+			os.environ['JASPERINC'] = os.environ['JASPER_ROOT'] + '/include'
+			os.environ['JASPERLIB'] = os.environ['JASPER_ROOT'] + '/lib'
+			cli.notice(f'Set JASPERINC to {os.environ["JASPERINC"]}.')
+			cli.notice(f'Set JASPERLIB to {os.environ["JASPERLIB"]}.')
+		else:
+			cli.error('JASPERINC and JASPERLIB environment variables are not set!')
 
 	# ---------------------------------------------------------------------------------
 	#                                    WRF
