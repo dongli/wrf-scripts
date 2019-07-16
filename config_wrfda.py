@@ -101,7 +101,8 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	# WRFDA only take grids parameters one domain at a time.
 	namelist_input['domains']['max_dom']                     = 1
 	for key in ('e_we', 'e_sn', 'e_vert', 'dx', 'dy', 'grid_id', 'parent_id', 'i_parent_start', 'j_parent_start', 'parent_grid_ratio', 'parent_time_step_ratio'):
-		namelist_input['domains'][key] = config['domains'][key][dom_idx]
+		if key in config['domains']:
+			namelist_input['domains'][key] = config['domains'][key][dom_idx]
 	namelist_input['domains']['hypsometric_opt'] = hypsometric_opt
 	# Sync physics parameters.
 	for key, value in phys_config.items():
@@ -110,7 +111,7 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	if version == Version('3.9.1'):
 		namelist_input['dynamics']['gwd_opt'] = 0
 	# Write customized parameters.
-	for section in ['wrfvar4']:
+	for section in ['wrfvar1', 'wrfvar2', 'wrfvar7', 'wrfvar11', 'wrfvar12', 'wrfvar13']:
 		if not section in config: continue
 		for key, value in config[section].items():
 			namelist_input[section][key] = value

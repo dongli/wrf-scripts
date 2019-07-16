@@ -18,7 +18,7 @@ def run_wrfplus_ad(work_root, wrfplus_root, config, args):
 	end_time = config['custom']['end_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
-	max_dom = config['share']['max_dom']
+	max_dom = config['domains']['max_dom']
 
 	wrf_work_dir = os.path.abspath(work_root) + '/wrf'
 	if not os.path.isdir(wrf_work_dir):

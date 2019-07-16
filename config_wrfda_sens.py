@@ -23,7 +23,7 @@ def config_wrfda_sens(work_root, wrfda_root, config, args, wrf_work_dir=None):
 	end_time = config['custom']['end_time']
 	datetime_fmt  = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
-	max_dom = config['share']['max_dom']
+	max_dom = config['domains']['max_dom']
 
 	if not wrf_work_dir: wrf_work_dir = work_root + '/wrf'
 	if not os.path.isdir(wrf_work_dir): cli.error(f'{wrf_work_dir} does not exist!')

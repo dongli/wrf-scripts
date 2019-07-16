@@ -4,9 +4,6 @@
     "start_time": "2019050200",
     "forecast_hours": 12
   },
-  "time_control": {
-
-  },
   "domains": {
     "e_we": [649, 631],
     "e_sn": [500, 511],

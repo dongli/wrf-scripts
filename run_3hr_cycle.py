@@ -161,19 +161,28 @@ wrf.run_wrfda_3dvar(args.work_root, args.wrfda_root, config, args)
 # Run radar data assimilation.
 config['custom']['run_wrfda_on_dom'] = 0
 if not 'wrfvar4' in config: config['wrfvar4'] = {}
+config['wrfvar1']['write_increments'] = True
+config['wrfvar2']['calc_w_increment'] = True
 config['wrfvar4']['use_radarobs'] = True
-config['wrfvar4']['use_radar_rf'] = True
+config['wrfvar4']['use_radar_rv'] = True
+config['wrfvar4']['use_radar_rqv'] = True
+config['wrfvar4']['use_radar_rhv'] = True
 config['wrfvar4']['use_synopobs'] = False
 config['wrfvar4']['use_shipsobs'] = False
 config['wrfvar4']['use_metarobs'] = False
 config['wrfvar4']['use_soundobs'] = False
 config['wrfvar4']['use_pilotobs'] = False
-config['wrfvar4']['use_airsobs'] = False
+config['wrfvar4']['use_airepobs'] = False
 config['wrfvar4']['use_geoamvobs'] = False
 config['wrfvar4']['use_polaramvobs'] = False
 config['wrfvar4']['use_bogusobs'] = False
 config['wrfvar4']['use_buoyobs'] = False
 config['wrfvar4']['use_profilerobs'] = False
+config['wrfvar4']['use_satemobs'] = False
+config['wrfvar4']['use_gpspwobs'] = False
+config['wrfvar4']['use_gpsrefobs'] = False
+config['wrfvar4']['use_3dvar_phy'] = False
+config['wrfvar4']['use_airsretobs'] = False
 wrf.config_wrfda(args.work_root, args.wrfda_root, config, args)
 wrf.run_wrfda_3dvar(args.work_root, args.wrfda_root, config, args, force=True)
 

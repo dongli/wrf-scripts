@@ -48,16 +48,18 @@ def config_wrf(work_root, wrf_root, wrfda_root, config, args):
 	namelist_input['time_control']['end_day']                = [int(end_time.format("D")) for i in range(max_dom)]
 	namelist_input['time_control']['end_hour']               = [int(end_time.format("H")) for i in range(max_dom)]
 	namelist_input['time_control']['frames_per_outfile']     = 1
-	for key, value in config['time_control'].items():
-		namelist_input['time_control'][key] = value
+	if 'time_control' in config:
+		for key, value in config['time_control'].items():
+			namelist_input['time_control'][key] = value
 	for key, value in config['domains'].items():
 		namelist_input['domains'][key] = value
 	if 'physics_suite' in namelist_input['physics']: del namelist_input['physics']['physics_suite']
 	for key, value in phys_config.items():
 		namelist_input['physics'][key] = value
 	if num_land_cat != None: namelist_input['physics']['num_land_cat'] = num_land_cat
-	for key, value in config['dynamics'].items():
-		namelist_input['dynamics'][key] = value
+	if 'dynamics' in config:
+		for key, value in config['dynamics'].items():
+			namelist_input['dynamics'][key] = value
 	if version == Version('3.9.1'):
 		namelist_input['dynamics']['gwd_opt'] = 0
 	namelist_input.write('./namelist.input', force=True)

@@ -15,7 +15,7 @@ def config_wrfplus(work_root, wrfplus_root, config, args):
 
 	start_time = config['custom']['start_time']
 	end_time = config['custom']['end_time']
-	max_dom = config['share']['max_dom']
+	max_dom = config['domains']['max_dom']
 	
 	start_time_str = start_time.format('YYYY-MM-DD_HH:mm:ss')
 	end_time_str = end_time.format('YYYY-MM-DD_HH:mm:ss')

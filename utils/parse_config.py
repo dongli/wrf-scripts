@@ -20,9 +20,9 @@ def parse_config(config_json):
 			cli.error(f'{cli.red(config_json)} is not a JSON file or text!')
 
 	# Set defaults.
-	check_mandatory_params(config['domains'], ['max_dom', 'dx', 'dy', 'e_we', 'e_sn', 'e_vert'])
 	if not 'share' in config: config['share'] = {}
 	if not 'domains' in config: config['domains'] = {}
+	check_mandatory_params(config['domains'], ('max_dom', 'dx', 'dy', 'e_we', 'e_sn', 'e_vert'))
 	# - parent_grid_ratio, parent_time_step_ratio, i_parent_start, j_parent_start, parent_id
 	if config['domains']['max_dom'] == 1:
 		config['domains']['parent_grid_ratio'] = [1]
@@ -30,7 +30,11 @@ def parse_config(config_json):
 		config['domains']['i_parent_start'] = [1]
 		config['domains']['j_parent_start'] = [1]
 	else:
-		check_mandatory_params(config['domains'], ['parent_time_step_ratio', 'i_parent_start', 'j_parent_start'])
+		check_mandatory_params(config['domains'], ('parent_time_step_ratio', 'i_parent_start', 'j_parent_start'))
+	# Change to array.
+	for key in ('dx', 'dy', 'e_we', 'e_sn', 'e_vert', 'parent_time_step_ratio', 'i_parent_start', 'j_parent_start'):
+		if type(config['domains'][key]) != list:
+			config['domains'][key] = [config['domains'][key]]
 	if not 'parent_grid_ratio' in config['domains']:
 		config['domains']['parent_grid_ratio'] = [1]
 		for i in range(1, len(config['domains']['dx'])):
