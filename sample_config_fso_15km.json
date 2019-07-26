@@ -5,22 +5,23 @@
     "forecast_hours": 12
   },
   "domains": {
+    "max_dom": 1,
+    "e_we": 340,
+    "e_sn": 268,
     "e_vert": 30,
-    "max_dom": 1
+    "dx": 15000.0,
+    "dy": 15000.0,
+    "parent_id": [1],
+    "parent_grid_ratio": [1],
+    "parent_time_step_ratio": [1]
   },
   "geogrid": {
     "map_proj": "lambert",
-    "e_we": 340,
-    "e_sn": 268,
     "ref_lat": 35.0,
     "ref_lon": 105.0,
     "truelat1": 30.0,
     "truelat2": 60.0,
     "stand_lon": 115.0,
-    "dx": 15000.0,
-    "dy": 15000.0,
-    "parent_id": [1],
-    "parent_grid_ratio": [1],
     "geog_data_res": "usgs_30s+default"
   },
   "physics": {

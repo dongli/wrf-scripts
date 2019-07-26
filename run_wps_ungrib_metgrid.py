@@ -24,21 +24,24 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 
 	cli.stage(f'Run ungrib.exe at {wps_work_dir} ...')
 	if 'background' in config['custom'] and 'vtable' in config['custom']['background']:
-		run(f'ln -sf {config["custom"]["background"]["vtable"]} {wps_work_dir}/Vtable')
+		if os.path.isfile(config["custom"]["background"]["vtable"]):
+			run(f'ln -sf {config["custom"]["Background"]["vtable"]} {wps_work_dir}/Vtable')
+		else:
+			run(f'ln -sf {wps_root}/ungrib/Variable_Tables/Vtable.{config["custom"]["background"]["vtable"]} {wps_work_dir}/Vtable')
 	else:
 		run(f'ln -sf {wps_root}/ungrib/Variable_Tables/Vtable.{bkg_type.upper()} {wps_work_dir}/Vtable')
 
-	def eval_bkg_dir(bkg_start_time):
+	def eval_bkg_dir(bkg_start_time, bkg_time):
 		if 'background' in config['custom'] and 'dir_pattern' in config['custom']['background']:
-			return bkg_root + '/' + Template(config['custom']['background']['dir_pattern']).render(bkg_start_time=bkg_start_time)
+			return bkg_root + '/' + Template(config['custom']['background']['dir_pattern']).render(bkg_start_time=bkg_start_time, bkg_time=bkg_time)
 		elif bkg_type == 'gfs':
 			return bkg_root + '/gfs.' + bkg_start_time.format('YYYYMMDDHH')
 
 	# Find out suitable background data that cover forecast time period.
 	def is_bkg_exist(bkg_start_time):
-		bkg_dir = eval_bkg_dir(bkg_start_time)
+		bkg_dir = eval_bkg_dir(bkg_start_time, bkg_start_time)
 		if 'background' in config['custom'] and 'file_pattern' in config['custom']['background']:
-			file_name = Template(config['custom']['background']['file_pattern']).render(bkg_start_time=bkg_start_time)
+			file_name = Template(config['custom']['background']['file_pattern']).render(bkg_start_time=bkg_start_time, bkg_time=bkg_start_time)
 		elif bkg_type == 'gfs':
 			file_name = 'gfs.t{:02d}z.pgrb2.*.f*'.format(bkg_start_time.hour)
 		return len(glob(f'{bkg_dir}/{file_name}')) != 0
@@ -64,7 +67,6 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 		bkg_time = bkg_time.add(seconds=interval_seconds)
 	if len(bkg_times) == 0: cli.error('Failed to set background times, check start_time and forecast_hours.')
 
-	bkg_dir = eval_bkg_dir(bkg_start_time)
 	expected_files = [f'FILE:{time.format("YYYY-MM-DD_HH")}' for time in bkg_times]
 	if not check_files(expected_files) or args.force:
 		run('rm -f GRIBFILE.* FILE:*')
@@ -73,6 +75,7 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 			os.chdir(f'{wps_work_dir}/background')
 			for bkg_time in bkg_times:
 				try:
+					bkg_dir = eval_bkg_dir(bkg_start_time, bkg_time)
 					bkg_file = glob(bkg_dir + '/' + Template(config['custom']['background']['file_pattern']).render(bkg_start_time=bkg_start_time, bkg_time=bkg_time))[0]
 					for file_process in config['custom']['background']['file_processes']:
 						run(Template(file_process).render(bkg_file=bkg_file, bkg_file_basename=os.path.basename(bkg_file), bkg_start_time=bkg_start_time, bkg_time=bkg_time))
@@ -81,6 +84,7 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 			os.chdir(wps_work_dir)
 			run(f'{wps_root}/link_grib.csh {wps_work_dir}/background/*')
 		else:
+			bkg_dir = eval_bkg_dir(bkg_start_time, bkg_start_time)
 			if len(glob(f'{bkg_dir}/*.0p25.*')) > 0:
 				res = '0p25'
 			elif len(glob(f'{bkg_dir}/*.0p50.*')) > 0:

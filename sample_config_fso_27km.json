@@ -1,8 +1,8 @@
 {
   "tag": "test",
   "custom": {
-    "start_time": "2019040206",
-    "forecast_hours": 6
+    "start_time": "2016070400",
+    "forecast_hours": 12
   },
   "domains": {
     "max_dom": 1,
@@ -44,7 +44,7 @@
   },
   "wrfda": {
     "type": "3dvar",
-    "ob_format": 1,
+    "ob_format": 2,
     "time_window": 360,
     "obsproc_output_format": 2,
     "cv_options": 3
