@@ -1,4 +1,4 @@
-if (numAsciiCol("./cost_fn") .ge. 12) then
+if (numAsciiCol("./cost_fn") .ge. 12 .and. numAsciiRow("./cost_fn") .gt. 2) then
   cost_fn = readAsciiTable("./cost_fn", 12, "float", 2)
   grad_fn = readAsciiTable("./grad_fn", 11, "float", 2)
   

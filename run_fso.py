@@ -249,7 +249,8 @@ ad = Dataset(f'ad_d01_{start_time_str}', 'r+')
 add_init_sens(sa, sb, ad)
 run(f'ln -sf ad_d01_{start_time_str} gr01')
 if config['wrfda']['ob_format'] == 2:
-	run(f'ln -sf {args.work_root}/fa/wrfda/obs_gts_{start_time_str}.3DVAR .')
+	if not os.path.isdir('obsproc'): os.makedirs('obsproc')
+	run(f'ln -sf {args.work_root}/fa/wrfda/obsproc/obs_gts_{start_time_str}.3DVAR obsproc')
 run(f'ln -sf {args.work_root}/fa/lanczos_eigenpairs.* ..')
 
 wrf.run_wrfda_3dvar(args.work_root + '/sens', args.wrfda_root, config, args, args.work_root + '/fa/wrf')
