@@ -7,4 +7,3 @@ netCDF4
 jinja2
 requests
 packaging
-pyslurm

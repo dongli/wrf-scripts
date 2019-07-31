@@ -2,11 +2,11 @@ import cli
 import os
 import subprocess
 
-def run(cmd, bg=False, raise_error=False):
-	print(f'{cli.blue("==>")} {cmd}')
+def run(cmd, bg=False, raise_error=False, stdout=False, echo=True):
+	if echo: print(f'{cli.blue("==>")} {cmd}')
 	if bg:
 		return subprocess.Popen(cmd.split())
-	elif raise_error:
+	elif raise_error or stdout != None:
 		res = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
 		if raise_error:
 			try:
@@ -14,5 +14,6 @@ def run(cmd, bg=False, raise_error=False):
 			except:
 				print(res.stdout.decode('utf-8'))
 				raise
+		if stdout != None: return res.stdout.decode('utf-8').strip()
 	else:
 		os.system(cmd)

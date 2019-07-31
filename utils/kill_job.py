@@ -1,12 +1,11 @@
-try:
-	import pyslurm
-	no_pyslurm = False
-except:
-	no_pyslurm = True
 from job_running import job_running
 import cli
+from run import run
 
-def kill_job(job_id):
+def kill_job(args, job_id):
 	if job_running(job_id):
 		cli.warning(f'Kill job {job_id}.')
-		pyslurm.slurm_kill_job(job_id, 9)
+		if args.slurm:
+			run(f'scancel {job_id}')
+		elif args.pbs:
+			cli.error('Underconstruction!')
