@@ -7,4 +7,5 @@ def job_running(args, job_id):
 		stdout = run(f'scontrol show jobid -dd {job_id} | grep JobState', stdout=True, echo=False)
 		return re.search('JobState=RUNNING', stdout) != None or re.search('JobState=PENDING', stdout) != None
 	elif args.pbs:
-		cli.error('Underconstruction!')
+		stdout = run(f'qstat -f {job_id}', stdout=True, echo=False)
+		return re.search('job_state = R', stdout) != None or re.search('job_state = Q', stdout) != None

@@ -46,6 +46,38 @@ mpiexec -np {ntasks} {cmd}
 				kill_job(args, job_id)
 				exit(1)
 		return job_id
+	elif args.pbs:
+		f = open('submit.sh', 'w')
+		f.write(f'''\
+#!/bin/bash
+#PBS -N {config["tag"]}
+#PBS -q {mach.queue}
+#PBS -l nodes={int(ntasks / mach.ntasks_per_node)}:ppn={mach.ntasks_per_node}
+
+cd $PBS_O_WORKDIR
+mpiexec -np {ntasks} -machinefile $PBS_NODEFILE {cmd}
+''')
+		f.close()
+		stdout = run('qsub < submit.sh', stdout=True)
+		match = re.search('(\w+)', stdout)
+		if not match: cli.error(f'Failed to parse job id from {stdout}')
+		job_id = match[1]
+		cli.notice(f'Job {job_id} submitted running {ntasks} tasks.')
+		if wait:
+			cli.notice(f'Wait for job {job_id}.')
+			try:
+				last_line = None
+				while job_running(args, job_id):
+					sleep(10)
+					if not os.path.isfile(logfile): continue
+					line = subprocess.run(['tail', '-n', '1', logfile], stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
+					if last_line != line and line != '':
+						last_line = line
+						print(f'{cli.cyan("==>")} {last_line}')
+			except KeyboardInterrupt:
+				kill_job(args, job_id)
+				exit(1)
+		return job_id
 	else:
 		proc = run(f'mpiexec -np {args.np} {cmd}', bg=True)
 		try:

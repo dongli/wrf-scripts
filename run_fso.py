@@ -23,6 +23,7 @@ parser.add_argument('-p', '--prepbufr-root', dest='prepbufr_root', help='PrepBUF
 parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
 parser.add_argument('-n', '--num-proc', dest='np', help='MPI process number to run WRF.', default=2, type=int)
 parser.add_argument(      '--slurm', help='Use SLURM job management system to run MPI jobs.', action='store_true')
+parser.add_argument(      '--pbs', help='Use PBS job management system variants (e.g. TORQUE) to run MPI jobs.', action='store_true')
 parser.add_argument('-v', '--verbose', help='Print out work log', action='store_true')
 parser.add_argument('-f', '--force', help='Force to run', action='store_true')
 args = parser.parse_args()

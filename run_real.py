@@ -10,7 +10,7 @@ import re
 from shutil import copyfile
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import cli, check_files, run, parse_config
+from utils import cli, check_files, run, submit_job, parse_config
 
 def run_real(work_root, wps_work_dir, wrf_root, config, args):
 	start_time = config['custom']['start_time']
@@ -42,7 +42,7 @@ def run_real(work_root, wps_work_dir, wrf_root, config, args):
 			namelist_input['domains']['num_metgrid_soil_levels'] = 0
 		dataset.close()
 		namelist_input.write('./namelist.input', force=True)
-		run(f'{wrf_root}/run/real.exe')
+		submit_job(f'{wrf_root}/run/real.exe', args.np, config, args, wait=True)
 		for i in range(max_dom):
 			if not os.path.isfile('wrfinput_d{0:02d}'.format(i + 1)):
 				cli.error(f'Failed to generate wrfinput_d{0:02d}! See {wrf_work_dir}/rsl.error.0000.'.format(i + 1))
@@ -61,6 +61,9 @@ if __name__ == '__main__':
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
 	parser.add_argument(      '--wps-work-dir',  dest='wps_work_dir', help='Work root directory of WPS')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file')
+	parser.add_argument(      '--slurm', help='Use SLURM job management system to run MPI jobs.', action='store_true')
+	parser.add_argument(      '--pbs', help='Use PBS job management system variants (e.g. TORQUE) to run MPI jobs.', action='store_true')
+	parser.add_argument('-n', '--num-proc', dest='np', help='MPI process number to run WRF.', default=2, type=int)
 	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
 	args = parser.parse_args()

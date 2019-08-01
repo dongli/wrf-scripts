@@ -81,6 +81,8 @@ if __name__ == '__main__':
 	parser.add_argument(      '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRFV3)')
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
+	parser.add_argument(      '--slurm', help='Use SLURM job management system to run MPI jobs.', action='store_true')
+	parser.add_argument(      '--pbs', help='Use PBS job management system variants (e.g. TORQUE) to run MPI jobs.', action='store_true')
 	parser.add_argument('-n', '--num-proc', dest='np', help='MPI process number to run WRF.', default=2, type=int)
 	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
