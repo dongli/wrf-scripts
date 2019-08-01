@@ -28,6 +28,8 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 			run(f'ln -sf {config["custom"]["Background"]["vtable"]} {wps_work_dir}/Vtable')
 		else:
 			run(f'ln -sf {wps_root}/ungrib/Variable_Tables/Vtable.{config["custom"]["background"]["vtable"]} {wps_work_dir}/Vtable')
+	elif bkg_type.lower() == 'era5':
+		run(f'ln -sf {wps_root}/ungrib/Variable_Tables/Vtable.ERA-interim.pl {wps_work_dir}/Vtable')
 	else:
 		run(f'ln -sf {wps_root}/ungrib/Variable_Tables/Vtable.{bkg_type.upper()} {wps_work_dir}/Vtable')
 
