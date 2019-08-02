@@ -47,7 +47,7 @@ def config_wrf(work_root, wrf_root, wrfda_root, config, args):
 	namelist_input['time_control']['end_month']              = [int(end_time.format("M")) for i in range(max_dom)]
 	namelist_input['time_control']['end_day']                = [int(end_time.format("D")) for i in range(max_dom)]
 	namelist_input['time_control']['end_hour']               = [int(end_time.format("H")) for i in range(max_dom)]
-	namelist_input['time_control']['frames_per_outfile']     = 1
+	namelist_input['time_control']['frames_per_outfile']     = [1 for i in range(max_dom)]
 	if 'time_control' in config:
 		for key, value in config['time_control'].items():
 			namelist_input['time_control'][key] = value

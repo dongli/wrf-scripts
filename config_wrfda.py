@@ -95,7 +95,7 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	namelist_input['time_control']['end_month']              = [int(end_time.format("M")) for i in range(max_dom)]
 	namelist_input['time_control']['end_day']                = [int(end_time.format("D")) for i in range(max_dom)]
 	namelist_input['time_control']['end_hour']               = [int(end_time.format("H")) for i in range(max_dom)]
-	namelist_input['time_control']['frames_per_outfile']     = 1
+	namelist_input['time_control']['frames_per_outfile']     = [1 for i in range(max_dom)]
 	for key, value in config['domains'].items():
 		namelist_input['domains'][key] = value
 	# WRFDA only take grids parameters one domain at a time.

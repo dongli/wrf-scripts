@@ -11,6 +11,12 @@ import signal
 signal.signal(signal.SIGINT, signal.default_int_handler)
 
 def submit_job(cmd, ntasks, config, args, logfile='rsl.out.0000', wait=False):
+	if args.ntasks_per_node != None:
+		ntasks_per_node = args.ntasks_per_node
+	elif 'WRF_SCRIPTS_NTAKS_PER_NODE' in os.environ:
+		ntasks_per_node = os.environ['WRF_SCRIPTS_NTAKS_PER_NODE']
+	else:
+		ntasks_per_node = mach.ntasks_per_node
 	if args.slurm:
 		f = open('submit.sh', 'w')
 		f.write(f'''\
@@ -20,8 +26,8 @@ def submit_job(cmd, ntasks, config, args, logfile='rsl.out.0000', wait=False):
 #SBATCH --partition {mach.queue}
 #SBATCH --time 24:00:00
 #SBATCH --ntasks {ntasks}
-#SBATCH --ntasks-per-node {mach.ntasks_per_node}
-#SBATCH --nodes {int(ntasks / mach.ntasks_per_node)}
+#SBATCH --ntasks-per-node {ntasks_per_node}
+#SBATCH --nodes {int(ntasks / ntasks_per_node)}
 
 mpiexec -np {ntasks} {cmd}
 ''')
@@ -52,7 +58,7 @@ mpiexec -np {ntasks} {cmd}
 #!/bin/bash
 #PBS -N {config["tag"]}
 #PBS -q {mach.queue}
-#PBS -l nodes={int(ntasks / mach.ntasks_per_node)}:ppn={mach.ntasks_per_node}
+#PBS -l nodes={int(ntasks / ntasks_per_node)}:ppn={ntasks_per_node}
 
 cd $PBS_O_WORKDIR
 mpiexec -np {ntasks} -machinefile $PBS_NODEFILE {cmd}

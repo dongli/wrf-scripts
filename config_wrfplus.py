@@ -45,7 +45,7 @@ def config_wrfplus(work_root, wrfplus_root, config, args):
 	namelist_input['time_control']['end_hour']               = [int(end_time.format("H")) for i in range(max_dom)]
 	namelist_input['time_control']['interval_seconds']       = wrf_namelist_input['time_control']['interval_seconds']
 	namelist_input['time_control']['history_interval']       = wrf_namelist_input['time_control']['history_interval']
-	namelist_input['time_control']['frames_per_outfile']     = 1
+	namelist_input['time_control']['frames_per_outfile']     = [1 for i in range(max_dom)]
 	namelist_input['time_control']['io_form_auxinput7']      = 2
 	namelist_input['time_control']['iofields_filename']      = f'{wrfplus_root}/var/run/plus.io_config'
 	namelist_input['time_control']['ignore_iofields_warning']= True
