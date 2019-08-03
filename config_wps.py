@@ -37,6 +37,8 @@ def config_wps(work_root, wps_root, geog_root, config, args):
 	namelist_wps['share']  ['max_dom']              = max_dom
 	namelist_wps['share']  ['start_date']           = [start_time_str for i in range(max_dom)]
 	namelist_wps['share']  ['end_date']             = [end_time_str if i == 0 else start_time_str for i in range(max_dom)]
+	if 'background' in config['custom'] and 'interval_seconds' in config['custom']['background']:
+		namelist_wps['share']  ['interval_seconds']   = config['custom']['background']['interval_seconds']
 	namelist_wps['geogrid']['geog_data_path']       = geog_root
 	for key, value in config['geogrid'].items():
 		namelist_wps['geogrid'][key] = value

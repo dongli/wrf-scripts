@@ -9,7 +9,8 @@
       "file_pattern": "era5_{{ bkg_time.format('YYYYMMDD') }}.grb",
       "file_processes": [
         "ln -sf {{ bkg_file }} ."
-      ]
+      ],
+      "interval_seconds": 3600
     }
   },
   "domains": {
