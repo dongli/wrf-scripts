@@ -64,11 +64,20 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 				child.sendline('15')
 		else:
 			if args.compiler_suite == 'intel':
-				child.sendline('15')
+				if args.openmp:
+					child.sendline('16') # INTEL (ifort/icc) dm+sm
+				else:
+					child.sendline('15') # INTEL (ifort/icc) dmpar
 			elif args.compiler_suite == 'gnu':
-				child.sendline('34')
+				if args.openmp:
+					child.sendline('35') # GNU (gfortran/gcc) dm+sm
+				else:
+					child.sendline('34') # GNU (gfortran/gcc) dmpar
 			elif args.compiler_suite == 'pgi':
-				child.sendline('54')
+				if args.openmp:
+					child.sendline('55') # PGI (pgf90/pgcc) dm+sm
+				else:
+					child.sendline('54') # PGI (pgf90/pgcc) dmpar
 		child.expect('Compile for nesting.*:')
 		child.sendline('1')
 		if platform.system() == 'Darwin': child.expect('This build of WRF will use NETCDF4 with HDF5 compression')
@@ -124,9 +133,9 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		child = pexpect.spawn('./configure')
 		child.expect('Enter selection.*')
 		if args.compiler_suite == 'intel':
-			child.sendline('19')
+			child.sendline('19') # Linux x86_64, Intel compiler    (dmpar)
 		elif args.compiler_suite == 'gnu':
-			child.sendline('3')
+			child.sendline('3')  # Linux x86_64, gfortran    (dmpar)
 		elif args.compiler_suite == 'pgi':
 			child.sendline('7')
 		child.wait()
@@ -373,6 +382,7 @@ if __name__ == '__main__':
 	parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')
 	parser.add_argument('-b', '--use-hyb', dest='use_hyb', help='Use hybrid vertical coordinate', action='store_true')
 	parser.add_argument('-g', '--use-grib', dest='use_grib', help='Use GRIB IO capability of WRF', action='store_true')
+	parser.add_argument(      '--openmp', help='Use OpenMP parallelism.', action='store_true')
 	parser.add_argument('-j', '--jobs', help='Set job size to compile.', type=int, default=2)
 	parser.add_argument('-s', '--compiler-suite', dest='compiler_suite', help='Compiler suite', choices=['gnu', 'pgi', 'intel'])
 	parser.add_argument('-f', '--force', help='Force to rebuild if already built', action='store_true')
