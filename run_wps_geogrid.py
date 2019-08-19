@@ -9,7 +9,7 @@ import re
 from shutil import copy
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import cli, check_files, edit_file, run, parse_config
+from utils import cli, check_files, edit_file, run, parse_config, submit_job
 
 def run_wps_geogrid(work_root, wps_root, config, args):
 	wps_work_dir = os.path.abspath(work_root) + '/wps'
@@ -26,15 +26,9 @@ def run_wps_geogrid(work_root, wps_root, config, args):
 	expected_files = ['geo_em.d{:02d}.nc'.format(i + 1) for i in range(config['domains']['max_dom'])]
 	if not check_files(expected_files):
 		run('rm -f geo_em.d*.nc')
-		if args.verbose:
-			run(f'{wps_root}/geogrid/src/geogrid.exe')
-		else:
-			run(f'{wps_root}/geogrid/src/geogrid.exe &> geogrid.out')
+		submit_job(f'{wps_root}/geogrid/src/geogrid.exe', args.np, config, args, logfile='geogrid.log.0000', wait=True)
 		if not check_files(expected_files):
-			if args.verbose:
-				cli.error(f'Failed!')
-			else:
-				cli.error(f'Failed! Check output {os.path.abspath(wps_work_dir)}/geogrid.out.')
+			cli.error(f'Failed! Check output {os.path.abspath(wps_work_dir)}/geogrid.out.0000')
 		cli.notice('Succeeded.')
 	else:
 		cli.notice('File geo_em.*.nc already exist.')
@@ -46,8 +40,11 @@ if __name__ == '__main__':
 	parser.add_argument(      '--wps-root', dest='wps_root', help='WPS root directory (e.g. WPS)')
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
+	parser.add_argument(      '--slurm', help='Use SLURM job management system to run MPI jobs.', action='store_true')
+	parser.add_argument(      '--pbs', help='Use PBS job management system variants (e.g. TORQUE) to run MPI jobs.', action='store_true')
+	parser.add_argument(      '--ntasks-per-node', dest='ntasks_per_node', help='Override the default setting.', default=None, type=int)
+	parser.add_argument('-n', '--num-proc', dest='np', help='MPI process number to run WRF.', default=2, type=int)
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
-	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
 	args = parser.parse_args()
 
 	if not args.work_root:

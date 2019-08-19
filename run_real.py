@@ -65,7 +65,6 @@ if __name__ == '__main__':
 	parser.add_argument(      '--pbs', help='Use PBS job management system variants (e.g. TORQUE) to run MPI jobs.', action='store_true')
 	parser.add_argument(      '--ntasks-per-node', dest='ntasks_per_node', help='Override the default setting.', default=None, type=int)
 	parser.add_argument('-n', '--num-proc', dest='np', help='MPI process number to run WRF.', default=2, type=int)
-	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
 	args = parser.parse_args()
 

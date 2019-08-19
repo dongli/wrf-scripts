@@ -17,6 +17,9 @@ def submit_job(cmd, ntasks, config, args, logfile='rsl.out.0000', wait=False):
 		ntasks_per_node = os.environ['WRF_SCRIPTS_NTAKS_PER_NODE']
 	else:
 		ntasks_per_node = mach.ntasks_per_node
+	if ntasks < ntasks_per_node:
+		cli.warning(f'Change ntasks_per_node  from {ntasks_per_node} to {ntasks}.')
+		ntasks_per_node = ntasks
 	if args.slurm:
 		f = open('submit.sh', 'w')
 		f.write(f'''\

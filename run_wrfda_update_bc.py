@@ -6,7 +6,7 @@ import os
 import f90nml
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import cli, check_files, run, parse_config
+from utils import cli, check_files, run, parse_config, submit_job
 
 def run_wrfda_update_bc(work_root, wrfda_root, update_lowbc, config, args):
 	start_time = config['custom']['start_time']
@@ -45,10 +45,7 @@ def run_wrfda_update_bc(work_root, wrfda_root, update_lowbc, config, args):
 	else:
 		expected_file = f'wrfbdy_{dom_str}_{start_time_str}.lateral_updated'
 	if not check_files(expected_file) or args.force:
-		if args.verbose:
-			run(f'{wrfda_root}/var/build/da_update_bc.exe')
-		else:
-			run(f'{wrfda_root}/var/build/da_update_bc.exe &> da_update_bc.out')
+		submit_job(f'{wrfda_root}/var/build/da_update_bc.exe', args.np, config, args, wait=True)
 		run(f'cp wrfbdy_{dom_str} {expected_file}')
 	else:
 		run(f'ls -l {expected_file}')
@@ -62,8 +59,11 @@ if __name__ == '__main__':
 	parser.add_argument('-w', '--work-root', dest='work_root', help='Work root directory')	
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
 	parser.add_argument('-l', '--update-lowbc', dest='update_lowbc', help='Update low boundary condition.', action='store_true')
+	parser.add_argument(      '--slurm', help='Use SLURM job management system to run MPI jobs.', action='store_true')
+	parser.add_argument(      '--pbs', help='Use PBS job management system variants (e.g. TORQUE) to run MPI jobs.', action='store_true')
+	parser.add_argument(      '--ntasks-per-node', dest='ntasks_per_node', help='Override the default setting.', default=None, type=int)
+	parser.add_argument('-n', '--num-proc', dest='np', help='MPI process number to run WRF.', default=2, type=int)
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
-	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
 	args = parser.parse_args()
 
 	if not args.work_root:

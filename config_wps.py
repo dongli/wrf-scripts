@@ -14,8 +14,6 @@ sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
 from utils import cli, parse_config, wrf_version, Version
 
 def config_wps(work_root, wps_root, geog_root, config, args):
-	pprint(config)
-
 	start_time = config['custom']['start_time']
 	end_time = config['custom']['end_time']
 	max_dom = config['domains']['max_dom']

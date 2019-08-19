@@ -10,7 +10,7 @@ import f90nml
 import sys
 script_root = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(f'{script_root}/utils')
-from utils import cli, check_files, run, parse_config
+from utils import cli, check_files, run, parse_config, submit_job
 
 def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
 	if not 'wrfda' in config:
@@ -81,15 +81,9 @@ def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
 			run(f'ln -sf {littler_root}/{start_time.format("YYYYMMDD")}/obs.gts.{start_time.format("YYYYMMDDHHmm")} {wrfda_work_dir}')
 		else:
 			cli.error(f'Failed! {littler_root}/{start_time.format("YYYYMMDD")}/obs.gts.{start_time.format("YYYYMMDDHHmm")} Not Found.')
-		if args.verbose:
-			run(f'{wrfda_root}/var/obsproc/obsproc.exe')
-		else:
-			run(f'{wrfda_root}/var/obsproc/obsproc.exe > obsproc.out 2>&1')
+		submit_job(f'{wrfda_root}/var/obsproc/obsproc.exe', args.np, config, args, logfile='obsproc.out', wait=True)
 		if not check_files(expected_files):
-			if args.verbose:
-				cli.error('Failed!')
-			else:
-				cli.error(f'Failed! Check output {wrfda_work_dir}/obsproc.out')
+			cli.error(f'Failed! Check output {wrfda_work_dir}/obsproc.out')
 		cli.notice('Succeeded.')
 	else:
 		cli.notice('File obs_gts_* already exist.')
@@ -102,8 +96,11 @@ if __name__ == '__main__':
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
 	parser.add_argument('-l', '--littler-root', dest='littler_root', help='Little_r data root directory')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
+	parser.add_argument(      '--slurm', help='Use SLURM job management system to run MPI jobs.', action='store_true')
+	parser.add_argument(      '--pbs', help='Use PBS job management system variants (e.g. TORQUE) to run MPI jobs.', action='store_true')
+	parser.add_argument(      '--ntasks-per-node', dest='ntasks_per_node', help='Override the default setting.', default=None, type=int)
+	parser.add_argument('-n', '--num-proc', dest='np', help='MPI process number to run WRF.', default=1, type=int)
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
-	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
 	args = parser.parse_args()
 
 	if not args.work_root:

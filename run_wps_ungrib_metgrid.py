@@ -9,7 +9,7 @@ import re
 from shutil import copy
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import cli, check_files, run, parse_config
+from utils import cli, check_files, run, submit_job, parse_config
 
 def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 	if 'background' in config['custom'] and 'type' in config['custom']['background']:
@@ -96,15 +96,9 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 			else:
 				cli.error(f'There is no GFS data in {bkg_dir}!')
 			run(f'{wps_root}/link_grib.csh {bkg_dir}/*.{res}.*')
-		if args.verbose:
-			run(f'{wps_root}/ungrib/src/ungrib.exe')
-		else:
-			run(f'{wps_root}/ungrib/src/ungrib.exe &> ungrib.out')
+		submit_job(f'{wps_root}/ungrib/src/ungrib.exe', args.np, config, args, logfile='ungrib.log', wait=True)
 		if not check_files(expected_files):
-			if args.verbose:
-				cli.error('Failed!')
-			else:
-				cli.error(f'Failed! Check output {wps_work_dir}/ungrib.out.')
+			cli.error(f'Failed! Check output {wps_work_dir}/ungrib.out.')
 		cli.notice('Succeeded.')
 	else:
 		cli.notice('File FILE:* already exist.')
@@ -116,15 +110,9 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 	if not check_files(expected_files) or args.force:
 		# Remove possible existing met_em files.
 		run('rm -f met_em.*')
-		if args.verbose:
-			run(f'{wps_root}/metgrid/src/metgrid.exe')
-		else:
-			run(f'{wps_root}/metgrid/src/metgrid.exe > metgrid.out 2>&1')
+		submit_job(f'{wps_root}/metgrid/src/metgrid.exe', args.np, config, args, logfile='metgrid.log.0000', wait=True)
 		if not check_files(expected_files):
-			if args.verbose:
-				cli.error('Failed!')
-			else:
-				cli.error('Failed! Check output {}/metgrid.out.'.format(wps_root))
+			cli.error('Failed! Check output {}/metgrid.log.0000.'.format(wps_root))
 		cli.notice('Succeeded.')
 	else:
 		cli.notice('File met_em.* already exist.')
@@ -137,8 +125,11 @@ if __name__ == '__main__':
 	parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
 	parser.add_argument('-b', '--bkg-root', dest='bkg_root', help='Background root directory')
 	parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
+	parser.add_argument(      '--slurm', help='Use SLURM job management system to run MPI jobs.', action='store_true')
+	parser.add_argument(      '--pbs', help='Use PBS job management system variants (e.g. TORQUE) to run MPI jobs.', action='store_true')
+	parser.add_argument(      '--ntasks-per-node', dest='ntasks_per_node', help='Override the default setting.', default=None, type=int)
+	parser.add_argument('-n', '--num-proc', dest='np', help='MPI process number to run WRF.', default=2, type=int)
 	parser.add_argument('-f', '--force', help='Force to run', action='store_true')
-	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
 	args = parser.parse_args()
 
 	if not args.work_root:
