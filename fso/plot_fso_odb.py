@@ -11,9 +11,9 @@ parser = argparse.ArgumentParser(description="Plot FSO result from ODB files.", 
 parser.add_argument('-i', '--input-prefix', dest='input_prefix', help='Input ODB file prefix')
 args = parser.parse_args()
 
-file_paths = glob(args.input_prefix + '*')
+file_paths = sorted(glob(args.input_prefix + '*'))
 
-cmd = f'odb sql "select *" -T -i {file_paths[0]}'
+cmd = f'odb sql "select *" -T -i {file_paths[1]}'
 res = run(cmd, shell=True, stdout=PIPE, stderr=PIPE)
 if res.returncode != 0:
 	print('[Error]: Failed to run {cmd}!')
@@ -24,7 +24,7 @@ for line in res.stdout.decode('utf-8').strip().split('\n'):
 	obs_type, impact = line.split()
 	obs_impact[obs_type.replace("'", '')] = float(impact)
 
-cmd = f'odb sql "select *" -T -i {file_paths[1]}'
+cmd = f'odb sql "select *" -T -i {file_paths[2]}'
 res = run(cmd, shell=True, stdout=PIPE, stderr=PIPE)
 if res.returncode != 0:
 	print('[Error]: Failed to run {cmd}!')
@@ -42,7 +42,7 @@ for k in range(len(p)):
 		lev_impact[var][p[k]] = []
 	p1 = p[k+1] if k != len(p) - 1 else p[-1] - 50
 	p2 = p[k-1] if k != 0 else p[0] + 50
-	cmd = f'odb sql \'select * where obs_type="sound" and p>={p1*100} and p<={p2*100}\' -T -i {file_paths[2]}'
+	cmd = f'odb sql \'select * where obs_type="sound" and p>={p1*100} and p<={p2*100}\' -T -i {file_paths[0]}'
 	res = run(cmd, shell=True, stdout=PIPE, stderr=PIPE)
 	if res.returncode != 0:
 		print(f'[Error]: Failed to run {cmd}!')

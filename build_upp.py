@@ -19,11 +19,11 @@ def build_upp(wrf_root, upp_root, args):
 		child = pexpect.spawn('./configure')
 		child.expect('Enter selection.*')
 		if args.compiler_suite == 'intel':
-			child.sendline('4')
+			child.sendline('4')  # Linux x86_64, Intel compiler (dmpar)
 		elif args.compiler_suite == 'gnu':
-			child.sendline('8')
+			child.sendline('8')  # Linux x86_64, gfortran compiler (dmpar)
 		elif args.compiler_suite == 'pgi':
-			child.sendline('14')
+			child.sendline('14') # Linux x86_64, PGI compiler: -f90=pgf90  (dmpar)
 		child.wait()
 
 		if args.compiler_suite == 'intel':
