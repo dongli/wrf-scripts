@@ -1,8 +1,11 @@
 {
   "tag": "test",
   "custom": {
-    "start_time": "2016070400",
-    "forecast_hours": 12
+    "start_time": "2019042406",
+    "forecast_hours": 6,
+    "background": {
+      "dir_pattern": "gfs.{{ bkg_start_time.format('YYYYMMDDHH') }}"
+    }
   },
   "domains": {
     "max_dom": 1,
@@ -44,7 +47,7 @@
   },
   "wrfda": {
     "type": "3dvar",
-    "ob_format": 2,
+    "ob_format": 1,
     "time_window": 360,
     "obsproc_output_format": 2,
     "cv_options": 3

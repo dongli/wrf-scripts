@@ -5,8 +5,9 @@ import copy
 from netCDF4 import Dataset
 import os
 import sys
-sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, parse_config, run, copy_netcdf_file, wrf_version, Version
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/..')
 import wrf_operators as wrf
 
 parser = argparse.ArgumentParser(description="Run WRF FSO.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018-2019 All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
@@ -22,6 +23,7 @@ parser.add_argument('-l', '--littler-root', dest='littler_root', help='LITTLE_R 
 parser.add_argument('-p', '--prepbufr-root', dest='prepbufr_root', help='PrepBUFR data root directory')
 parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
 parser.add_argument('-n', '--num-proc', dest='np', help='MPI process number to run WRF.', default=2, type=int)
+parser.add_argument(      '--ntasks-per-node', dest='ntasks_per_node', help='Override the default setting.', default=None, type=int)
 parser.add_argument(      '--slurm', help='Use SLURM job management system to run MPI jobs.', action='store_true')
 parser.add_argument(      '--pbs', help='Use PBS job management system variants (e.g. TORQUE) to run MPI jobs.', action='store_true')
 parser.add_argument('-v', '--verbose', help='Print out work log', action='store_true')
