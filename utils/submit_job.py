@@ -17,7 +17,7 @@ def submit_job(cmd, ntasks, config, args, logfile='rsl.out.0000', wait=False):
 		ntasks_per_node = os.environ['WRF_SCRIPTS_NTAKS_PER_NODE']
 	else:
 		ntasks_per_node = mach.ntasks_per_node
-	if ntasks < ntasks_per_node:
+	if ntasks_per_node != None and ntasks < ntasks_per_node:
 		cli.warning(f'Change ntasks_per_node  from {ntasks_per_node} to {ntasks}.')
 		ntasks_per_node = ntasks
 	if args.slurm:
@@ -50,7 +50,7 @@ mpiexec -np {ntasks} {cmd}
 					line = subprocess.run(['tail', '-n', '1', logfile], stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
 					if last_line != line and line != '':
 						last_line = line
-						print(f'{cli.cyan("==>")} {last_line}')
+						print(f'{cli.cyan("==>")} {last_line if len(last_line) <= 80 else last_line[:80]}')
 			except KeyboardInterrupt:
 				kill_job(args, job_id)
 				exit(1)
@@ -82,18 +82,19 @@ mpiexec -np {ntasks} -machinefile $PBS_NODEFILE {cmd}
 					line = subprocess.run(['tail', '-n', '1', logfile], stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
 					if last_line != line and line != '':
 						last_line = line
-						print(f'{cli.cyan("==>")} {last_line}')
+						print(f'{cli.cyan("==>")} {last_line if len(last_line) <= 80 else last_line[:80]}')
 			except KeyboardInterrupt:
 				kill_job(args, job_id)
 				exit(1)
 		return job_id
 	else:
-		proc = run(f'mpiexec -np {args.np} {cmd}', bg=True)
+		proc = run(f'mpiexec -np {ntasks} {cmd}', bg=True)
 		try:
 			while proc.poll() == None:
 				sleep(10)
 				res = subprocess.run(['tail', '-n', '1', logfile], stdout=subprocess.PIPE)
-				print(f'{cli.cyan("==>")} {res.stdout.decode("utf-8").strip()}')
+				last_line = res.stdout.decode("utf-8").strip()
+				print(f'{cli.cyan("==>")} {last_line if len(last_line) <= 80 else last_line[:80]}')
 		except KeyboardInterrupt:
 			cli.warning('Ended by user!')
 			proc.kill()

@@ -9,7 +9,7 @@ import re
 from shutil import copy
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import cli, check_files, run, submit_job, parse_config
+from utils import cli, check_files, wrf_version, Version, run, submit_job, parse_config
 
 def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 	if 'background' in config['custom'] and 'type' in config['custom']['background']:
@@ -21,6 +21,11 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 	if not os.path.isdir(wps_work_dir):
 		cli.error(f'Directory {wps_work_dir} does not exist! Run GEOGRID first.')
 	os.chdir(wps_work_dir)
+
+	version = wrf_version(wps_root)
+
+	if config['custom']['start_time'] >= pendulum.datetime(2019, 6, 11) and version < Version('4.0'):
+		cli.error('WPS (>= 4.0) is needed to process new GFS data since 2019-06-12!')
 
 	cli.stage(f'Run ungrib.exe at {wps_work_dir} ...')
 	if 'background' in config['custom'] and 'vtable' in config['custom']['background']:
@@ -37,7 +42,7 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 		if 'background' in config['custom'] and 'dir_pattern' in config['custom']['background']:
 			return bkg_root + '/' + Template(config['custom']['background']['dir_pattern']).render(bkg_start_time=bkg_start_time, bkg_time=bkg_time)
 		elif bkg_type == 'gfs':
-			return bkg_root + '/gfs.' + bkg_start_time.format('YYYYMMDDHH')
+			return bkg_root + '/gfs.' + bkg_start_time.format('YYYYMMDD') + '/' + bkg_start_time.format('HH')
 
 	# Find out suitable background data that cover forecast time period.
 	def is_bkg_exist(bkg_start_time):
@@ -112,7 +117,7 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 		run('rm -f met_em.*')
 		submit_job(f'{wps_root}/metgrid/src/metgrid.exe', args.np, config, args, logfile='metgrid.log.0000', wait=True)
 		if not check_files(expected_files):
-			cli.error('Failed! Check output {}/metgrid.log.0000.'.format(wps_root))
+			cli.error(f'Failed! Check output {wps_work_dir}/metgrid.log.0000.')
 		cli.notice('Succeeded.')
 	else:
 		cli.notice('File met_em.* already exist.')

@@ -18,7 +18,7 @@ def get_gdas(output_root, start_time, end_time, args):
 		cli.notice(f'Create directory {output_root}.')
 
 	def download_gdas(time):
-		dir_name = f'gdas.{time.format("YYYYMMDD")}'
+		dir_name = f'gdas.{time.format("YYYYMMDD")}/{time.format("HH")}'
 		res = requests.head(f'{root_url}/{dir_name}/')
 		if res.status_code != 200 and res.status_code != 302:
 			cli.error(f'Remote GDAS data at {time} do not exist!')
