@@ -155,6 +155,9 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 			run('sed -i "s/mpif90 -f90=.*/mpif90/" configure.wps')
 
 		run('sed -i "s/WRF_DIR\s*=.*/WRF_DIR = ..\/WRF/" configure.wps')
+		if 'LIBPNG_ROOT' in os.environ:
+			run(f'sed -i "s@COMPRESSION_LIBS\s*=\(.*\)@COMPRESSION_LIBS = \\1 -L{os.environ["LIBPNG_ROOT"]}/lib@" configure.wps')
+			run(f'sed -i "s@COMPRESSION_INC\s*=\(.*\)@COMPRESSION_INC = \\1 -I{os.environ["LIBPNG_ROOT"]}/include@" configure.wps')
 
 		if args.compiler_suite == 'gnu':
 			# Fix for gfortran 9.1.0.
