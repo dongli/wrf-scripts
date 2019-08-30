@@ -6,10 +6,10 @@ import os
 import pexpect
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import edit_file, run, cli, check_files
+from utils import edit_file, run, cli, check_files, upp_version, Version
 
 def build_upp(wrf_root, upp_root, args):
-	os.environ['WRF_DIR'] = wrf_root
+	if wrf_root != None: os.environ['WRF_DIR'] = wrf_root
 	
 	os.chdir(upp_root)
 	if args.force: run('./clean -a &> /dev/null')
@@ -31,7 +31,13 @@ def build_upp(wrf_root, upp_root, args):
 				['mpif90', 'mpiifort'],
 				['mpicc', 'mpiicc']
 			])
-	
+
+		if 'LIBPNG_ROOT' in os.environ:
+			edit_file('./configure.upp', [
+				['-lpng', f'-L{os.environ["LIBPNG_ROOT"]}/lib -lpng'],
+				['GRIB2SUPT_INC\s*=\s*(.*)', f'GRIB2SUPT_INC = \\1 -I{os.environ["LIBPNG_ROOT"]}/include']
+			])
+
 		cli.notice('Compile UPP ...')
 		run('./compile &> compile.out')
 	
@@ -50,18 +56,7 @@ if __name__ == '__main__':
 	parser.add_argument('-s', '--compiler-suite', dest='compiler_suite', help='Compiler suite', choices=['gnu', 'pgi', 'intel'])
 	parser.add_argument('-f', '--force', help='Force to rebuild if already built', action='store_true')
 	args = parser.parse_args()
-	
-	if not args.wrf_root:
-		if os.getenv('WRF_ROOT'):
-			args.wrf_root = os.getenv('WRF_ROOT')
-		elif args.codes:
-			args.wrf_root = args.codes + '/WRF'
-		else:
-			cli.error('Option --wrf-root or environment variable WRF_ROOT need to be set!')
-	args.wrf_root = os.path.abspath(args.wrf_root)
-	if not os.path.isdir(args.wrf_root):
-		cli.error(f'Directory {args.wrf_root} does not exist!')
-	
+
 	if not args.upp_root:
 		if os.getenv('UPP_ROOT'):
 			args.upp_root = os.getenv('UPP_ROOT')
@@ -72,5 +67,19 @@ if __name__ == '__main__':
 	args.upp_root = os.path.abspath(args.upp_root)
 	if not os.path.isdir(args.upp_root):
 		cli.error(f'Directory {args.upp_root} does not exist!')
+
+	version = upp_version(args.upp_root)
+
+	if version < Version('4.0'):
+		if not args.wrf_root:
+			if os.getenv('WRF_ROOT'):
+				args.wrf_root = os.getenv('WRF_ROOT')
+			elif args.codes:
+				args.wrf_root = args.codes + '/WRF'
+			else:
+				cli.error('Option --wrf-root or environment variable WRF_ROOT need to be set!')
+		args.wrf_root = os.path.abspath(args.wrf_root)
+		if not os.path.isdir(args.wrf_root):
+			cli.error(f'Directory {args.wrf_root} does not exist!')
 
 	build_upp(args.wrf_root, args.upp_root, args)

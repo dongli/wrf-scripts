@@ -10,8 +10,9 @@ from math import radians, cos, sin, asin, sqrt
 from shutil import copy
 from pprint import pprint
 import sys
-sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
-from utils import cli, parse_config, wrf_version, Version
+script_root = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(f'{script_root}/utils')
+from utils import cli, parse_config, wrf_version, Version, run
 
 def config_wps(work_root, wps_root, geog_root, config, args):
 	start_time = config['custom']['start_time']
@@ -43,6 +44,8 @@ def config_wps(work_root, wps_root, geog_root, config, args):
 	namelist_wps['geogrid']['opt_geogrid_tbl_path'] = wps_work_dir
 	namelist_wps['metgrid']['opt_metgrid_tbl_path'] = wps_work_dir
 	namelist_wps.write('./namelist.wps', force=True)
+	run(f'ncl {script_root}/plots/plot_domains.ncl > /dev/null')
+	cli.notice(f'Check {wps_work_dir}/wps_show_dom.pdf for domains.')
 
 	cli.notice('Succeeded.')
 

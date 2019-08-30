@@ -35,6 +35,9 @@ def parse_config(config_json):
 	for key in ('dx', 'dy', 'e_we', 'e_sn', 'e_vert', 'parent_time_step_ratio', 'i_parent_start', 'j_parent_start'):
 		if type(config['domains'][key]) != list:
 			config['domains'][key] = [config['domains'][key]]
+		# Check dimension.
+		if len(config['domains'][key]) != config['domains']['max_dom']:
+			cli.error(f'Parameter max_dom is {config["domains"]["max_dom"]}, but {key} only has {len(config["domains"][key])} elements!')
 	if not 'parent_grid_ratio' in config['domains']:
 		config['domains']['parent_grid_ratio'] = [1]
 		for i in range(1, len(config['domains']['dx'])):
