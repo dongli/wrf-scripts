@@ -1,14 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-from glob import glob
 import os
-import pendulum
-import f90nml
-import re
-from math import radians, cos, sin, asin, sqrt
-from shutil import copy
-from pprint import pprint
 import sys
 script_root = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(f'{script_root}/utils')
@@ -33,6 +26,9 @@ def run_upp(work_root, upp_root, config, args):
 	if not os.path.isdir(f'{upp_work_dir}/postprd'): run(f'mkdir {upp_work_dir}/postprd')
 
 	run(f'cp {upp_root}/parm/postxconfig-NT-WRF.txt {upp_work_dir}/parm')
+	run(f'cp {upp_root}/parm/postcntrl.xml {upp_work_dir}/parm')
+	run(f'cp {upp_root}/parm/post_avblflds.xml {upp_work_dir}/parm')
+	run(f'cp {upp_root}/parm/wrf_cntrl.parm {upp_work_dir}/parm')
 	run(f'cp {upp_root}/scripts/run_unipost {upp_work_dir}/postprd')
 
 	edit_file('./postprd/run_unipost', [
