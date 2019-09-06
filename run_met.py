@@ -26,21 +26,30 @@ def run_met(work_root, met_root, config, args):
 
 	cli.stage('Prepare observation file.')
 
-	if args.littler_root:
-		if 'obs' in config['custom']:
-			if 'little_r' in config['custom']['obs']:
-				dir_pattern = config['custom']['obs']['little_r']['dir_pattern']
-				file_pattern = config['custom']['obs']['little_r']['file_pattern']
-				obs_dir = Template(dir_pattern).render(obs_time=start_time)
-				obs_file = Template(file_pattern).render(obs_time=start_time)
-				if not os.path.isfile(f'{args.littler_root}/{obs_dir}/{obs_file}'):
-					cli.error(f'Observation {args.littler_root}/{obs_dir}/{obs_file} does not exist!')
-				run(f'{met_root}/bin/ascii2nc -format little_r {args.littler_root}/{obs_dir}/{obs_file} ob.nc')
-	elif args.prepbufr_root:
-		pass
+	expected_files = ['ob.nc']
+	if not check_files(expected_files) or args.force:
+		if args.littler_root:
+			if 'obs' in config['custom']:
+				if 'little_r' in config['custom']['obs']:
+					dir_pattern = config['custom']['obs']['little_r']['dir_pattern']
+					file_pattern = config['custom']['obs']['little_r']['file_pattern']
+					obs_dir = Template(dir_pattern).render(obs_time=start_time)
+					obs_file = Template(file_pattern).render(obs_time=start_time)
+					if not os.path.isfile(f'{args.littler_root}/{obs_dir}/{obs_file}'):
+						cli.error(f'Observation {args.littler_root}/{obs_dir}/{obs_file} does not exist!')
+					run(f'{met_root}/bin/ascii2nc -format little_r {args.littler_root}/{obs_dir}/{obs_file} ob.nc')
+		elif args.prepbufr_root:
+			pass
 
-	if not check_files(('ob.nc')):
-		cli.error('Failed to prepare netCDF observation file!')
+		if not check_files(('ob.nc')):
+			cli.error('Failed to prepare netCDF observation file!')
+	run(f'ls -l {met_work_dir}/ob.nc')
+
+	cli.stage('Prepare configuration file.')
+
+	expected_files = ['foo']
+	if not check_files(expected_files) or args.force:
+		run(f'cp -f {met_root}/share/met/config/PointStatConfig_default PointStatConfig')
 
 	cli.notice('Succeeded.')
 

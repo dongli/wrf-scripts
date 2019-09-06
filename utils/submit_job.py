@@ -90,6 +90,7 @@ mpiexec -np {ntasks} -machinefile $PBS_NODEFILE {cmd}
 		try:
 			while proc.poll() == None:
 				sleep(10)
+				if not os.path.isfile(logfile): continue
 				res = subprocess.run(['tail', '-n', '1', logfile], stdout=subprocess.PIPE)
 				last_line = res.stdout.decode("utf-8").strip()
 				print(f'{cli.cyan("==>")} {last_line if len(last_line) <= 80 else last_line[:80]}')

@@ -81,9 +81,9 @@ def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
 			run(f'ln -sf {littler_root}/{start_time.format("YYYYMMDD")}/obs.gts.{start_time.format("YYYYMMDDHHmm")} {wrfda_work_dir}')
 		else:
 			cli.error(f'Failed! {littler_root}/{start_time.format("YYYYMMDD")}/obs.gts.{start_time.format("YYYYMMDDHHmm")} Not Found.')
-		submit_job(f'{wrfda_root}/var/obsproc/obsproc.exe', args.np, config, args, logfile='obsproc.out', wait=True)
+		submit_job(f'{wrfda_root}/var/obsproc/obsproc.exe', args.np, config, args, wait=True)
 		if not check_files(expected_files):
-			cli.error(f'Failed! Check output {wrfda_work_dir}/obsproc.out')
+			cli.error(f'Failed!')
 		cli.notice('Succeeded.')
 	else:
 		cli.notice('File obs_gts_* already exist.')
