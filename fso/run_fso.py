@@ -21,7 +21,7 @@ parser.add_argument('-g', '--geog-root', dest='geog_root', help='GEOG data root 
 parser.add_argument('-b', '--bkg-root', dest='bkg_root', help='Background root directory')
 parser.add_argument('-l', '--littler-root', dest='littler_root', help='LITTLE_R data root directory')
 parser.add_argument('-p', '--prepbufr-root', dest='prepbufr_root', help='PrepBUFR data root directory')
-parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
+parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.', required=True)
 parser.add_argument('-n', '--num-proc', dest='np', help='MPI process number to run WRF.', default=2, type=int)
 parser.add_argument(      '--ntasks-per-node', dest='ntasks_per_node', help='Override the default setting.', default=None, type=int)
 parser.add_argument(      '--slurm', help='Use SLURM job management system to run MPI jobs.', action='store_true')
