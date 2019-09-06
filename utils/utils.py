@@ -11,6 +11,7 @@ from upp_version import upp_version
 from submit_job import submit_job
 from kill_job import kill_job
 from job_running import job_running
+from job_pending import job_pending
 from ftp_exist import ftp_exist
 from ftp_get import ftp_get
 from ftp_list import ftp_list

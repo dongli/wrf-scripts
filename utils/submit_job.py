@@ -5,6 +5,7 @@ from time import sleep
 import mach
 from run import run
 from job_running import job_running
+from job_pending import job_pending
 from kill_job import kill_job
 import cli
 import signal
@@ -44,7 +45,10 @@ mpiexec -np {ntasks} {cmd}
 				last_line = None
 				while job_running(args, job_id):
 					sleep(10)
-					if not os.path.isfile(logfile): continue
+					if not os.path.isfile(logfile):
+                                            if job_pending(args, job_id):
+                                                cli.notice(f'Job {job_id} is still pending.')
+                                            continue
 					line = subprocess.run(['tail', '-n', '1', logfile], stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
 					if last_line != line and line != '':
 						last_line = line
@@ -76,7 +80,10 @@ mpiexec -np {ntasks} -machinefile $PBS_NODEFILE {cmd}
 				last_line = None
 				while job_running(args, job_id):
 					sleep(10)
-					if not os.path.isfile(logfile): continue
+					if not os.path.isfile(logfile):
+                                            if job_pending(args, job_id):
+                                                cli.notice(f'Job {job_id} is still pending.')
+                                            continue
 					line = subprocess.run(['tail', '-n', '1', logfile], stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
 					if last_line != line and line != '':
 						last_line = line
