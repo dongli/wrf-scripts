@@ -32,6 +32,9 @@ def run_real(work_root, wps_work_dir, wrf_root, config, args):
 			dataset = Dataset(glob('met_em.*.nc')[0])
 		except:
 			cli.error('Failed to open one of met_em.*.nc file!')
+		# Check met_em file.
+		if not 'num_st_layers' in dataset.dimensions or  dataset.dimensions['num_st_layers'].size == 0:
+			cli.error('Failed to run ungrib and metgrid due to num_metgrid_soil_levels is zero!')
 		namelist_input = f90nml.read('./namelist.input')
 		namelist_input['domains']['num_metgrid_levels'] = dataset.dimensions['num_metgrid_levels'].size
 		namelist_input['physics']['num_land_cat'] = dataset.getncattr('NUM_LAND_CAT')
