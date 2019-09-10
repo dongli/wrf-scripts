@@ -48,7 +48,11 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 	def is_bkg_exist(bkg_start_time):
 		bkg_dir = eval_bkg_dir(bkg_start_time, bkg_start_time)
 		if 'background' in config['custom'] and 'file_pattern' in config['custom']['background']:
-			file_name = Template(config['custom']['background']['file_pattern']).render(bkg_start_time=bkg_start_time, bkg_time=bkg_start_time)
+			if type(config['custom']['background']['file_pattern']) == list:
+				file_pattern = config['custom']['background']['file_pattern'][0]
+			else:
+				file_pattern = config['custom']['background']['file_pattern']
+			file_name = Template(file_pattern).render(bkg_start_time=bkg_start_time, bkg_time=bkg_start_time)
 		elif bkg_type == 'gfs':
 			file_name = 'gfs.t{:02d}z.pgrb2.*.f*'.format(bkg_start_time.hour)
 		return len(glob(f'{bkg_dir}/{file_name}')) != 0
@@ -83,9 +87,14 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 			for bkg_time in bkg_times:
 				try:
 					bkg_dir = eval_bkg_dir(bkg_start_time, bkg_time)
-					bkg_file = glob(bkg_dir + '/' + Template(config['custom']['background']['file_pattern']).render(bkg_start_time=bkg_start_time, bkg_time=bkg_time))[0]
-					for file_process in config['custom']['background']['file_processes']:
-						run(Template(file_process).render(bkg_file=bkg_file, bkg_file_basename=os.path.basename(bkg_file), bkg_start_time=bkg_start_time, bkg_time=bkg_time))
+					if type(config['custom']['background']['file_pattern']) == list:
+						file_patterns = config['custom']['background']['file_pattern']
+					else:
+						file_patterns = [config['custom']['background']['file_pattern']]
+					for file_pattern in file_patterns:
+						bkg_file = glob(bkg_dir + '/' + Template(file_pattern).render(bkg_start_time=bkg_start_time, bkg_time=bkg_time))[0]
+						for file_process in config['custom']['background']['file_processes']:
+							run(Template(file_process).render(bkg_file=bkg_file, bkg_file_basename=os.path.basename(bkg_file), bkg_start_time=bkg_start_time, bkg_time=bkg_time))
 				except:
 					continue
 			os.chdir(wps_work_dir)
@@ -101,7 +110,8 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 			else:
 				cli.error(f'There is no GFS data in {bkg_dir}!')
 			run(f'{wps_root}/link_grib.csh {bkg_dir}/*.{res}.*')
-		submit_job(f'{wps_root}/ungrib/src/ungrib.exe', args.np, config, args, logfile='ungrib.log', wait=True)
+		# When the surface and vertical levels are separated, we can only use 1 process to run ungrib.exe.
+		submit_job(f'{wps_root}/ungrib/src/ungrib.exe', 1, config, args, logfile='ungrib.log', wait=True)
 		if not check_files(expected_files):
 			cli.error(f'Failed! Check output {wps_work_dir}/ungrib.out.')
 		cli.notice('Succeeded.')
