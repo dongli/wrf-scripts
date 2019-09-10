@@ -11,11 +11,11 @@ import cli
 import signal
 signal.signal(signal.SIGINT, signal.default_int_handler)
 
-def submit_job(cmd, ntasks, config, args, logfile='rsl.out.0000', wait=False):
+def submit_job(cmd, ntasks, config, args, logfile='rsl.out.0000', wait=False, queue_idx=0):
 	if args.ntasks_per_node != None:
 		ntasks_per_node = args.ntasks_per_node
 	else:
-		ntasks_per_node = mach.ntasks_per_node
+		ntasks_per_node = mach.ntasks_per_node[queue_idx]
 	if ntasks_per_node != None and ntasks < ntasks_per_node:
 		cli.warning(f'Change ntasks_per_node  from {ntasks_per_node} to {ntasks}.')
 		ntasks_per_node = ntasks
@@ -25,7 +25,7 @@ def submit_job(cmd, ntasks, config, args, logfile='rsl.out.0000', wait=False):
 #!/bin/bash
 #SBATCH --job-name {config["tag"]}
 #SBATCH --comment WRF
-#SBATCH --partition {mach.queue}
+#SBATCH --partition {mach.queue[queue_idx]}
 #SBATCH --time 24:00:00
 #SBATCH --ntasks {ntasks}
 #SBATCH --ntasks-per-node {ntasks_per_node}
@@ -36,7 +36,12 @@ mpiexec -np {ntasks} {cmd}
 		f.close()
 		stdout = run('sbatch < submit.sh', stdout=True)
 		match = re.search('Submitted batch job (\w+)', stdout)
-		if not match: cli.error(f'Failed to parse job id from {stdout}')
+		if not match:
+			if queue_idx < len(mach.queue) - 1:
+				cli.warning(f'Failed to submit to queue {mach.queue[queue_idx]}, try queue {mach.queue[queue_idx+1]}.')
+				submit_job(cmd, ntasks, config, args, logfile, wait, queue_idx+1)
+			else:
+				cli.error(f'Failed to submit job!')
 		job_id = match[1]
 		cli.notice(f'Job {job_id} submitted running {ntasks} tasks.')
 		if wait:
