@@ -93,11 +93,11 @@ output = tempfile.NamedTemporaryFile(mode='w')
 output.write(header)
 
 def handle_real_missing_value(x):
-	if float(x) == real_missing_value: x = 'NULL'
+	if x.strip() == '' or float(x) == real_missing_value: x = 'NULL'
 	return x
 
 def handle_int_missing_value(x):
-	if int(x) == int_missing_value: x = 'NULL'
+	if x.strip() == '' or int(x) == int_missing_value: x = 'NULL'
 	return x
 
 while True:
@@ -112,44 +112,49 @@ while True:
 			n = int(line.strip())
 			for j in range(n):
 				line = gts_omb_oma_01.readline()
-				tmp = [x.strip() for x in line.split()]
-				k = 2
-				lat      = handle_real_missing_value(tmp[k]); k += 1
-				lon      = handle_real_missing_value(tmp[k]); k += 1 
-				p        = handle_real_missing_value(tmp[k]); k += 1 
-				u        = handle_real_missing_value(tmp[k]); k += 1 
-				u_impact = handle_real_missing_value(tmp[k]); k += 1 
-				u_qc     = handle_int_missing_value (tmp[k]); k += 1 
-				u_obserr = handle_real_missing_value(tmp[k]); k += 1 
-				u_incr   = handle_real_missing_value(tmp[k]); k += 1 
-				v        = handle_real_missing_value(tmp[k]); k += 1 
-				v_impact = handle_real_missing_value(tmp[k]); k += 1 
-				v_qc     = handle_int_missing_value (tmp[k]); k += 1 
-				v_obserr = handle_real_missing_value(tmp[k]); k += 1 
-				v_incr   = handle_real_missing_value(tmp[k]); k += 1 
-				t        = handle_real_missing_value(tmp[k]); k += 1 
-				t_impact = handle_real_missing_value(tmp[k]); k += 1 
-				t_qc     = handle_int_missing_value (tmp[k]); k += 1 
-				t_obserr = handle_real_missing_value(tmp[k]); k += 1 
-				t_incr   = handle_real_missing_value(tmp[k]); k += 1 
-				if obs_type in ('synop', 'metar', 'ships', 'buoy', 'sondesfc'):
-					p        = handle_real_missing_value(tmp[k]); k += 1 
-					p_impact = handle_real_missing_value(tmp[k]); k += 1 
-					p_qc     = handle_int_missing_value (tmp[k]); k += 1 
-					p_obserr = handle_real_missing_value(tmp[k]); k += 1 
-					p_incr   = handle_real_missing_value(tmp[k]); k += 1 
-				elif obs_type in ('sound', 'airep'):
-					p_impact = 'NULL'
-					p_qc     = 'NULL'
-					p_obserr = 'NULL'
-					p_incr   = 'NULL'
-				else:
-					print(f'[Error]: Unsupported obs_type {obs_type}!')
-				q        = handle_real_missing_value(tmp[k]); k += 1 
-				q_impact = handle_real_missing_value(tmp[k]); k += 1 
-				q_qc     = handle_int_missing_value (tmp[k]); k += 1 
-				q_obserr = handle_real_missing_value(tmp[k]); k += 1 
-				q_incr   = handle_real_missing_value(tmp[k]); k += 1 
+				k = 21
+				try:
+					lat      = handle_real_missing_value(line[k:k+9 ]); k += 9
+					lon      = handle_real_missing_value(line[k:k+9 ]); k += 9
+					p        = handle_real_missing_value(line[k:k+17]); k += 17
+					u        = handle_real_missing_value(line[k:k+17]); k += 17
+					u_impact = handle_real_missing_value(line[k:k+17]); k += 17
+					u_qc     = handle_int_missing_value (line[k:k+8 ]); k += 8
+					u_obserr = handle_real_missing_value(line[k:k+17]); k += 17
+					u_incr   = handle_real_missing_value(line[k:k+17]); k += 17
+					v        = handle_real_missing_value(line[k:k+17]); k += 17
+					v_impact = handle_real_missing_value(line[k:k+17]); k += 17
+					v_qc     = handle_int_missing_value (line[k:k+8 ]); k += 8
+					v_obserr = handle_real_missing_value(line[k:k+17]); k += 17
+					v_incr   = handle_real_missing_value(line[k:k+17]); k += 17
+					t        = handle_real_missing_value(line[k:k+17]); k += 17
+					t_impact = handle_real_missing_value(line[k:k+17]); k += 17
+					t_qc     = handle_int_missing_value (line[k:k+8 ]); k += 8
+					t_obserr = handle_real_missing_value(line[k:k+17]); k += 17
+					t_incr   = handle_real_missing_value(line[k:k+17]); k += 17
+					if obs_type in ('synop', 'metar', 'ships', 'buoy', 'sondesfc'):
+						p        = handle_real_missing_value(line[k:k+17]); k += 17
+						p_impact = handle_real_missing_value(line[k:k+17]); k += 17
+						p_qc     = handle_int_missing_value (line[k:k+8 ]); k += 8
+						p_obserr = handle_real_missing_value(line[k:k+17]); k += 17
+						p_incr   = handle_real_missing_value(line[k:k+17]); k += 17
+					elif obs_type in ('sound', 'airep', 'profiler'):
+						p_impact = 'NULL'
+						p_qc     = 'NULL'
+						p_obserr = 'NULL'
+						p_incr   = 'NULL'
+					else:
+						print(f'[Error]: Unsupported obs_type {obs_type}!')
+					q        = handle_real_missing_value(line[k:k+17]); k += 17 
+					q_impact = handle_real_missing_value(line[k:k+17]); k += 17
+					q_qc     = handle_int_missing_value (line[k:k+8 ]); k += 8
+					q_obserr = handle_real_missing_value(line[k:k+17]); k += 17
+					q_incr   = handle_real_missing_value(line[k:k+17]); k += 17
+				except Exception as e:
+					print('[Error]: Failed to parse line:')
+					print(line)
+					print(e)
+					exit(0)
 
 				# Write output to tempfile.
 				output.write(obs_type + '\t')
