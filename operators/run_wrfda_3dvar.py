@@ -8,7 +8,7 @@ import re
 import sys
 import config_wrfda
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
-from utils import cli, check_files, run, submit_job, parse_config
+from utils import cli, check_files, search_files, run, submit_job, parse_config
 
 scripts_root = os.path.dirname(os.path.realpath(__file__))
 
@@ -101,7 +101,14 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None, forc
 
 	expected_files = [f'wrfvar_output', 'statistics']
 	if not check_files(expected_files):
-		cli.error(f'Failed! See {wrfda_work_dir}/rsl.error.0000.')
+		# Check if the failure is caused by parallel computing? Such as cv_options is zero in some process.
+		if search_files('rsl.error.*', 'Invalid CV option chosen:  cv_options =    0'):
+			cli.warning('Failed to run da_wrfvar.exe in parallel. Try to run in serial.')
+			submit_job(f'{wrfda_root}/var/build/da_wrfvar.exe', 1, config, args, wait=True)
+			if not check_files(expected_files):
+				cli.error(f'Still failed! See {wrfda_work_dir}/rsl.error.0000.')
+		else:
+			cli.error(f'Failed! See {wrfda_work_dir}/rsl.error.0000.')
 	else:
 		print(open('statistics').read())
 		run(f'ncl -Q {scripts_root}/plots/plot_cost_grad_fn.ncl')

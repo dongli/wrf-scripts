@@ -7,7 +7,7 @@ import os
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, parse_config, run, copy_netcdf_file, wrf_version, Version
-sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/..')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../operators')
 import wrf_operators as wrf
 
 parser = argparse.ArgumentParser(description="Run WRF FSO.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018-2019 All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
