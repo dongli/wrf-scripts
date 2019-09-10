@@ -40,6 +40,7 @@ mpiexec -np {ntasks} {cmd}
 			if queue_idx < len(mach.queue) - 1:
 				cli.warning(f'Failed to submit to queue {mach.queue[queue_idx]}, try queue {mach.queue[queue_idx+1]}.')
 				submit_job(cmd, ntasks, config, args, logfile, wait, queue_idx+1)
+				return
 			else:
 				cli.error(f'Failed to submit job!')
 		job_id = match[1]
