@@ -7,7 +7,7 @@ import pendulum
 import re
 import sys
 import config_wrfda
-sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, check_files, run, submit_job, parse_config
 
 scripts_root = os.path.dirname(os.path.realpath(__file__))

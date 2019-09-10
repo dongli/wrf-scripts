@@ -9,7 +9,7 @@ from netCDF4 import Dataset
 import re
 from shutil import copyfile
 import sys
-sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, check_files, run, submit_job, parse_config
 
 def run_real(work_root, wps_work_dir, wrf_root, config, args):

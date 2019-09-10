@@ -9,7 +9,7 @@ import re
 from shutil import copy
 import sys
 script_root = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(f'{script_root}/utils')
+sys.path.append(f'{script_root}/../utils')
 from utils import cli, check_files, edit_file, run, parse_config, submit_job
 
 def run_wps_geogrid(work_root, wps_root, config, args):

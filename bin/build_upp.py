@@ -5,7 +5,7 @@ import re
 import os
 import pexpect
 import sys
-sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import edit_file, run, cli, check_files, upp_version, Version
 
 def build_upp(wrf_root, upp_root, args):

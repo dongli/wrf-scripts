@@ -8,7 +8,7 @@ from jinja2 import Template
 import re
 from shutil import copy
 import sys
-sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, check_files, wrf_version, Version, run, submit_job, parse_config
 
 def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):

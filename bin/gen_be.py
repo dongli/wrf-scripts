@@ -9,7 +9,7 @@ import json
 import re
 from shutil import copyfile
 import sys
-sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, edit_file, check_files, run, parse_config
 
 def gen_be(wrf_root, wrfda_root, work_dir, config, args):

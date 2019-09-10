@@ -9,7 +9,7 @@ import re
 import requests
 import os
 import sys
-sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import parse_time, parse_forecast_hours, edit_file, run, cli, check_files, check_file_size, is_downloading
 
 def get_gdas(output_root, start_time, end_time, args):

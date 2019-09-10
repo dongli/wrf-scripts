@@ -6,7 +6,7 @@ from jinja2 import Template
 import os
 import sys
 script_root = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(f'{script_root}/utils')
+sys.path.append(f'{script_root}/../utils')
 from utils import cli, parse_config, edit_file, check_files, run
 
 def run_met(work_root, met_root, config, args):

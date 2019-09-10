@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 script_root = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(f'{script_root}/utils')
+sys.path.append(f'{script_root}/../utils')
 from utils import cli, parse_config, edit_file, run
 
 def run_upp(work_root, upp_root, config, args):

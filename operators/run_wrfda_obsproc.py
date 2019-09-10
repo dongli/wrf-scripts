@@ -9,7 +9,7 @@ import pendulum
 import f90nml
 import sys
 script_root = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(f'{script_root}/utils')
+sys.path.append(f'{script_root}/../utils')
 from utils import cli, check_files, run, parse_config, submit_job
 
 def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):

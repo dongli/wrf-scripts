@@ -20,14 +20,14 @@ pip3 install -r requirements.txt
 ## 编译WRF
 
 ```
-$ ./build_wrf.py --codes <WRF程序目录> --compiler-suite gnu [--force]
+$ ./bin/build_wrf.py --codes <WRF程序目录> --compiler-suite gnu [--force]
 ```
 其中`<WRF程序目录>`应该包含WRF、WPS、WRFDA源程序目录。
 
 ## 编译GSI
 
 ```
-$ ./build_gsi.py --codes <WRF和GSI程序目录> --compiler-suite gnu [--force]
+$ ./bin/build_gsi.py --codes <WRF和GSI程序目录> --compiler-suite gnu [--force]
 ```
 其中`<WRF和GSI程序目录>`应该包含WRF、GSI源程序目录。
 
@@ -64,7 +64,7 @@ $ ./build_gsi.py --codes <WRF和GSI程序目录> --compiler-suite gnu [--force]
 ```
 然后运行`config_wrf.py`
 ```
-$ ./config_wrf.py --codes <WRF程序目录> --geog-root <GEOG静态数据目录> --config-json <JSON配置文件路径> [--force]
+$ ./operators/config_wrf.py --codes <WRF程序目录> --geog-root <GEOG静态数据目录> --config-json <JSON配置文件路径> [--force]
 [Notice]: Edit namelist.wps.
 [Notice]: Succeeded.
 ```
@@ -72,7 +72,7 @@ $ ./config_wrf.py --codes <WRF程序目录> --geog-root <GEOG静态数据目录>
 ## 运行WPS
 
 ```
-$ ./run_wps.py --codes <WRF程序目录> --config-json <JSON配置文件路径> -b <GFS驱动场根目录> [--force]
+$ ./operators/run_wps.py --codes <WRF程序目录> --config-json <JSON配置文件路径> -b <GFS驱动场根目录> [--force]
 [Notice]: Run geogrid.exe ...
 ==> rm -f geo_em.d*.nc
 ==> ./geogrid.exe &> geogrid.out

@@ -9,7 +9,7 @@ from netCDF4 import Dataset
 import re
 from shutil import copy
 import sys
-sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, parse_config, wrf_version, Version
 
 def config_wrf(work_root, wrf_root, wrfda_root, config, args):

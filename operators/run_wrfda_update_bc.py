@@ -5,7 +5,7 @@ from glob import glob
 import os
 import f90nml
 import sys
-sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, check_files, run, parse_config, submit_job
 
 def run_wrfda_update_bc(work_root, wrfda_root, update_lowbc, config, args):

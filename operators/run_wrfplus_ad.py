@@ -10,7 +10,7 @@ from time import sleep
 from shutil import copyfile
 from netCDF4 import Dataset
 import sys
-sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, check_files, run, submit_job, parse_config, wrf_version, Version
 
 def run_wrfplus_ad(work_root, wrfplus_root, config, args):

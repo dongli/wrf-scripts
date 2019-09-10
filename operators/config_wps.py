@@ -11,7 +11,7 @@ from shutil import copy
 from pprint import pprint
 import sys
 script_root = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(f'{script_root}/utils')
+sys.path.append(f'{script_root}/../utils')
 from utils import cli, parse_config, wrf_version, Version, run
 
 def config_wps(work_root, wps_root, geog_root, config, args):

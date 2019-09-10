@@ -5,7 +5,7 @@ import re
 import os
 import pexpect
 import sys
-sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import gsi_version, Version, edit_file, run, cli, check_files
 
 def build_gsi(wrf_root, gsi_root, args):

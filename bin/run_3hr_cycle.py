@@ -4,7 +4,7 @@ import argparse
 import pendulum
 import os
 import sys
-sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, parse_config, run, copy_netcdf_file, wrf_version, Version
 import wrf_operators as wrf
 

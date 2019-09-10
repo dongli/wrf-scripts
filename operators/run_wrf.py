@@ -10,7 +10,7 @@ from time import sleep
 from shutil import copyfile
 from netCDF4 import Dataset
 import sys
-sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, check_files, run, submit_job, parse_config
 
 def copy_wrfda_output(dom_str, start_time_str, wrfda_work_dir):

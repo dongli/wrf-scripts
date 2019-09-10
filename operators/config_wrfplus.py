@@ -7,7 +7,7 @@ import f90nml
 import re
 from shutil import copy
 import sys
-sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, parse_config, wrf_version, Version
 
 def config_wrfplus(work_root, wrfplus_root, config, args):

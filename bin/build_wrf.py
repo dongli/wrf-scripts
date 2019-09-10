@@ -7,7 +7,7 @@ import pexpect
 import platform
 import sys
 import subprocess
-sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/utils')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import wrf_version, Version, edit_file, run, cli, check_files
 
 def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
