@@ -44,26 +44,28 @@ def run_wrfplus_ad(work_root, wrfplus_root, config, args):
 	expected_files.append(f'init_sens_d01_{start_time_str}')
 	if not check_files(expected_files) or args.force:
 		run('rm -f wrfout_*')
-		try:
-			run(f'ln -sf {wrfplus_root}/run/LANDUSE.TBL .')
-			run(f'ln -sf {wrfplus_root}/run/VEGPARM.TBL .')
-			run(f'ln -sf {wrfplus_root}/run/SOILPARM.TBL .')
-			run(f'ln -sf {wrfplus_root}/run/GENPARM.TBL .')
-			run(f'ln -sf {wrfplus_root}/run/RRTM_DATA_DBL RRTM_DATA')
-			run(f'ln -sf {wrfplus_root}/run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA')
-			if version >= Version('4.0'):
-				cmd = f'{wrfplus_root}/run/wrfplus.exe'
-			else:
-				cmd = f'{wrfplus_root}/run/wrf.exe'
+		run(f'ln -sf {wrfplus_root}/run/LANDUSE.TBL .')
+		run(f'ln -sf {wrfplus_root}/run/VEGPARM.TBL .')
+		run(f'ln -sf {wrfplus_root}/run/SOILPARM.TBL .')
+		run(f'ln -sf {wrfplus_root}/run/GENPARM.TBL .')
+		run(f'ln -sf {wrfplus_root}/run/RRTM_DATA_DBL RRTM_DATA')
+		run(f'ln -sf {wrfplus_root}/run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA')
+		if version >= Version('4.0'):
+			cmd = f'{wrfplus_root}/run/wrfplus.exe'
+		else:
+			cmd = f'{wrfplus_root}/run/wrf.exe'
+		retries = 0
+		while True:
 			submit_job(cmd, args.np, config, args, wait=True)
-		except KeyboardInterrupt:
-			cli.warning('Ended by user!')
-			proc.kill()
-			sys.exit()
-		if os.path.isfile(f'gradient_wrfplus_d01_{start_time_str}'):
-			run(f'mv gradient_wrfplus_d01_{start_time_str} init_sens_d01_{start_time_str}')
-		if not check_files(expected_files):
-			cli.error(f'Failed! Check output {os.path.abspath(wrfplus_work_dir)}/rsl.error.0000.')
+			if os.path.isfile(f'gradient_wrfplus_d01_{start_time_str}'):
+				run(f'mv gradient_wrfplus_d01_{start_time_str} init_sens_d01_{start_time_str}')
+			if not check_files(expected_files):
+				if retries == 10:
+					cli.error(f'Failed! Check output {os.path.abspath(wrfplus_work_dir)}/rsl.error.0000.')
+				retries = retries + 1
+				cli.warning('Failed to run wrfplus, retry it!')
+			else:
+				break
 		cli.notice('Succeeded.')
 	else:
 		cli.notice('File wrfout_* already exist.')

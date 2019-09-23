@@ -81,7 +81,7 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 	expected_files = [f'FILE:{time.format("YYYY-MM-DD_HH")}' for time in bkg_times]
 	if not check_files(expected_files) or args.force:
 		run('rm -f GRIBFILE.* FILE:*')
-		if 'background' in config['custom'] and 'file_processes' in config['custom']['background']:
+		if 'background' in config['custom']:
 			if not os.path.isdir(f'{wps_work_dir}/background'): os.mkdir(f'{wps_work_dir}/background')
 			os.chdir(f'{wps_work_dir}/background')
 			for bkg_time in bkg_times:
@@ -93,8 +93,17 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 						file_patterns = [config['custom']['background']['file_pattern']]
 					for file_pattern in file_patterns:
 						bkg_file = glob(bkg_dir + '/' + Template(file_pattern).render(bkg_start_time=bkg_start_time, bkg_time=bkg_time))[0]
-						for file_process in config['custom']['background']['file_processes']:
-							run(Template(file_process).render(bkg_file=bkg_file, bkg_file_basename=os.path.basename(bkg_file), bkg_start_time=bkg_start_time, bkg_time=bkg_time))
+						bkg_file_basename = os.path.basename(bkg_file)
+						# Process background file when there is file_processes in config.
+						if 'file_processes' in config['custom']['background']:
+							for file_process in config['custom']['background']['file_processes']:
+								run(Template(file_process).render(
+									bkg_file=bkg_file,
+									bkg_file_basename=bkg_file_basename,
+									bkg_start_time=bkg_start_time,
+									bkg_time=bkg_time
+								))
+						run(f'ln -sf {bkg_file} {bkg_time.format("YYYYMMDDHH")}_{bkg_file_basename}')
 				except:
 					continue
 			os.chdir(wps_work_dir)

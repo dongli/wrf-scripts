@@ -67,9 +67,16 @@ def run_wrf(work_root, wrf_root, config, args):
 		run(f'ln -sf {wrf_root}/run/VEGPARM.TBL .')
 		run(f'ln -sf {wrf_root}/run/SOILPARM.TBL .')
 		run(f'ln -sf {wrf_root}/run/GENPARM.TBL .')
-		submit_job(f'{wrf_root}/run/wrf.exe', args.np, config, args, wait=True)
-		if not check_files(expected_files):
-			cli.error(f'Failed! Check output {os.path.abspath(wrf_work_dir)}/rsl.error.0000.')
+		retries = 0
+		while True:
+			submit_job(f'{wrf_root}/run/wrf.exe', args.np, config, args, wait=True)
+			if not check_files(expected_files):
+				if retries == 10:
+					cli.error(f'Failed! Check output {os.path.abspath(wrf_work_dir)}/rsl.error.0000.')
+				retries = retries + 1
+				cli.warning('Failed to run wrf, retry it!')
+			else:
+				break
 		cli.notice('Succeeded.')
 	else:
 		cli.notice('File wrfout_* already exist.')
