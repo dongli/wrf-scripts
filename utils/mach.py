@@ -11,6 +11,7 @@ else:
 	queue = os.environ['WRF_SCRIPTS_QUEUE']
 	ntasks_per_node = os.environ['WRF_SCRIPTS_NTASKS_PER_NODE']
 
-# Allow user to set multiple queues with descending priority.
-queue = queue.split(',')
-ntasks_per_node = [int(x) for x in ntasks_per_node.split(',')]
+if queue != None:
+	# Allow user to set multiple queues with descending priority.
+	queue = queue.split(',')
+	ntasks_per_node = [int(x) for x in ntasks_per_node.split(',')]

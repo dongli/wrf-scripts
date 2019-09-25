@@ -1,4 +1,8 @@
 import sys
+import logging
+import pendulum
+
+logging.basicConfig(filename=f'wrf-scripts.log.{pendulum.now().format("YYYY-MM-DDTHH:mm:ss")}', format='%(message)s', level=logging.DEBUG)
 
 color_map = {
 	'red': 31,
@@ -37,12 +41,15 @@ def {name}(message=None):
 
 def notice(message):
 	print(f'[{green("Notice")}]: {message}')
+	logging.info(f'[Notice]: {message}')
 
 def warning(message):
 	print(f'[{yellow("Warning")}]: {message}')
+	logging.warning(f'[Warning]: {message}')
 
 def error(message):
 	print(f'[{red("Error")}]: {message}')
+	logging.error(f'[Error]: {message}')
 	exit(1)
 
 def banner(message):
@@ -50,6 +57,10 @@ def banner(message):
 	print('===================================================================================')
 	print(message)
 	print()
+	logging.info('')
+	logging.info('===================================================================================')
+	logging.info(message)
+	logging.info('')
 
 stage_num = 0
 def stage(message):
@@ -58,3 +69,6 @@ def stage(message):
 	print()
 	print(f'[{purple("Stage")} {stage_num}]: {message}')
 	print()
+	logging.info('')
+	logging.info(f'[{Stage} {stage_num}]: {message}')
+	logging.info('')

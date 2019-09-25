@@ -52,9 +52,9 @@ mpiexec -np {ntasks} {cmd}
 				while job_running(args, job_id):
 					sleep(10)
 					if not os.path.isfile(logfile):
-                                            if job_pending(args, job_id):
-                                                cli.notice(f'Job {job_id} is still pending.')
-                                            continue
+						if job_pending(args, job_id):
+							cli.notice(f'Job {job_id} is still pending.')
+						continue
 					line = subprocess.run(['tail', '-n', '1', logfile], stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
 					if last_line != line and line != '':
 						last_line = line
