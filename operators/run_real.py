@@ -49,13 +49,10 @@ def run_real(work_root, wps_work_dir, wrf_root, config, args):
 		for i in range(max_dom):
 			if not os.path.isfile('wrfinput_d{0:02d}'.format(i + 1)):
 				# Check if the failure is caused by parallel computing?
-				if search_files('rsl.error.*', 'Mismatch between namelist and wrf input files'):
-					cli.warning('Failed to run real.exe in parallel. Try to run in serial.')
-					submit_job(f'{wrf_root}/run/real.exe', 1, config, args, wait=True)
-					if not os.path.isfile('wrfinput_d{0:02d}'.format(i + 1)):
-						cli.error(f'Still failed to generate wrfinput_d{0:02d}! See {wrf_work_dir}/rsl.error.0000.'.format(i + 1))
-				else:
-					cli.error(f'Failed to generate wrfinput_d{0:02d}! See {wrf_work_dir}/rsl.error.0000.'.format(i + 1))
+				cli.warning('Failed to run real.exe in parallel. Try to run in serial.')
+				submit_job(f'{wrf_root}/run/real.exe', 1, config, args, wait=True)
+				if not os.path.isfile('wrfinput_d{0:02d}'.format(i + 1)):
+					cli.error(f'Still failed to generate wrfinput_d{0:02d}! See {wrf_work_dir}/rsl.error.0000.'.format(i + 1))
 			run('mv wrfinput_d{0:02d} wrfinput_d{0:02d}_{1}'.format(i + 1, start_time_str))
 		if os.path.isfile('wrfbdy_d01'):
 			run(f'mv wrfbdy_d01 wrfbdy_d01_{start_time_str}')
