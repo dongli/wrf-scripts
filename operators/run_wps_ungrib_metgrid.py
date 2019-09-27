@@ -104,8 +104,9 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 									bkg_time=bkg_time
 								))
 						run(f'ln -sf {bkg_file} {bkg_time.format("YYYYMMDDHH")}_{bkg_file_basename}')
-				except:
-					continue
+				except Exception as e:
+					print(bkg_dir + '/' + Template(file_pattern).render(bkg_start_time=bkg_start_time, bkg_time=bkg_time))
+					cli.error(f'Failed to link background file! {e}')
 			os.chdir(wps_work_dir)
 			run(f'{wps_root}/link_grib.csh {wps_work_dir}/background/*')
 		else:
