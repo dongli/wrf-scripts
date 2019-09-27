@@ -70,5 +70,5 @@ def stage(message):
 	print(f'[{purple("Stage")} {stage_num}]: {message}')
 	print()
 	logging.info('')
-	logging.info(f'[{Stage} {stage_num}]: {message}')
+	logging.info(f'[Stage {stage_num}]: {message}')
 	logging.info('')
