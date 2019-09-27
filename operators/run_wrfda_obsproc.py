@@ -13,15 +13,6 @@ sys.path.append(f'{script_root}/../utils')
 from utils import cli, check_files, run, parse_config, submit_job
 
 def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
-	if not 'wrfda' in config:
-		cli.error('There is no wrfda in configuration file!')
-	if not 'obsproc' in config['wrfda']:
-		config['wrfda']['obsproc'] = {
-			'time_window': 120 if config['wrfda']['type'] == '3dvar' else 360,
-			'output_format': 2
-		}
-	wrfda_config = config['wrfda']
-
 	start_time = config['custom']['start_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
@@ -51,26 +42,35 @@ def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
 		moad_cen_lat = config['geogrid']['ref_lat']
 		standard_lon = config['geogrid']['ref_lon']
 
-	output_format = wrfda_config['obsproc_output_format'] if 'obsproc_output_format' in wrfda_config else 2
-	time_window   = wrfda_config['time_window']   if 'time_window'   in wrfda_config else 360
+	try:
+		output_format = config['custom']['obsproc']['output_format']
+	except:
+		output_format = 2
+	try:
+		time_window = config['custom']['wrfda']['time_window']
+	except:
+		time_window = 360
 
-	if config['wrfda']['type'] == '3dvar':
-		namelist_obsproc = f90nml.read(f'{wrfda_root}/var/obsproc/namelist.obsproc.3dvar.wrfvar-tut')
+	if 'wrfda' in config['custom'] and 'type' in config['custom']['wrfda']:
+		if config['custom']['wrfda']['type'] == '3dvar':
+			namelist_obsproc = f90nml.read(f'{wrfda_root}/var/obsproc/namelist.obsproc.3dvar.wrfvar-tut')
+		else:
+			cli.error('Currently, we only support 3DVar...')
 	else:
-		cli.error('Currently, we only support 3DVar...')
-	namelist_obsproc['record1']['obs_gts_filename']  = 'obs.gts.{}'.format(start_time.format('YYYYMMDDHHmm'))
-	namelist_obsproc['record2']['time_window_min']   = start_time.subtract(minutes=time_window/2).format('YYYY-MM-DD_HH:mm:ss')
-	namelist_obsproc['record2']['time_analysis']     = start_time.format('YYYY-MM-DD_HH:mm:ss')
-	namelist_obsproc['record2']['time_window_max']   = start_time.add(minutes=time_window/2).format('YYYY-MM-DD_HH:mm:ss')
+		namelist_obsproc = f90nml.read(f'{wrfda_root}/var/obsproc/namelist.obsproc.3dvar.wrfvar-tut')
+	namelist_obsproc['record1']['obs_gts_filename' ] = 'obs.gts.{}'.format(start_time.format('YYYYMMDDHHmm'))
+	namelist_obsproc['record2']['time_window_min'  ] = start_time.subtract(minutes=time_window/2).format('YYYY-MM-DD_HH:mm:ss')
+	namelist_obsproc['record2']['time_analysis'    ] = start_time.format('YYYY-MM-DD_HH:mm:ss')
+	namelist_obsproc['record2']['time_window_max'  ] = start_time.add(minutes=time_window/2).format('YYYY-MM-DD_HH:mm:ss')
 	namelist_obsproc['record3']['max_number_of_obs'] = 1200000
-	namelist_obsproc['record7']['PHIC']              = phic
-	namelist_obsproc['record7']['XLONC']             = xlonc
-	namelist_obsproc['record7']['MOAD_CEN_LAT']      = moad_cen_lat
-	namelist_obsproc['record7']['STANDARD_LON']      = standard_lon
-	namelist_obsproc['record8']['NESTIX']            = config['geogrid']['e_sn']
-	namelist_obsproc['record8']['NESTJX']            = config['geogrid']['e_we']
-	namelist_obsproc['record8']['DIS']               = config['geogrid']['dx']
-	namelist_obsproc['record9']['OUTPUT_OB_FORMAT']  = output_format
+	namelist_obsproc['record7']['PHIC'             ] = phic
+	namelist_obsproc['record7']['XLONC'            ] = xlonc
+	namelist_obsproc['record7']['MOAD_CEN_LAT'     ] = moad_cen_lat
+	namelist_obsproc['record7']['STANDARD_LON'     ] = standard_lon
+	namelist_obsproc['record8']['NESTIX'           ] = config['geogrid']['e_sn']
+	namelist_obsproc['record8']['NESTJX'           ] = config['geogrid']['e_we']
+	namelist_obsproc['record8']['DIS'              ] = config['geogrid']['dx']
+	namelist_obsproc['record9']['OUTPUT_OB_FORMAT' ] = output_format
 	namelist_obsproc.write('./namelist.obsproc', force=True)
 
 	cli.stage(f'Run obsproc.exe at {wrfda_work_dir} ...')

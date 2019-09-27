@@ -13,12 +13,7 @@ script_root = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(f'{script_root}/../utils')
 from utils import cli, parse_config, wrf_version, Version
 
-def config_wrfda(work_root, wrfda_root, config, args):
-	if not 'wrfda' in config:
-		cli.error('There is no "wrfda" in configuration file!')
-	wrfda_config = config['wrfda']
-	phys_config = config['physics'] if 'physics' in config else {}
-
+def config_wrfda(work_root, wrfda_root, config, args, wrf_work_dir=None):
 	start_time = config['custom']['start_time']
 	end_time = config['custom']['end_time']
 	datetime_fmt  = 'YYYY-MM-DD_HH:mm:ss'
@@ -26,7 +21,7 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	max_dom = config['domains']['max_dom']
 
 	# Need to take some parameters from wrfinput file.
-	wrf_work_dir = work_root + '/wrf'
+	if not wrf_work_dir: wrf_work_dir = work_root + '/wrf'
 	if not os.path.isdir(wrf_work_dir): cli.error(f'{wrf_work_dir} does not exist!')
 
 	if max_dom > 1:
@@ -49,7 +44,10 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	hypsometric_opt = wrfinput.getncattr('HYPSOMETRIC_OPT')
 	wrfinput.close()
 
-	time_window  = config['wrfda']['time_window'] if 'time_window' in config['wrfda'] else 360
+	try:
+		time_window = config['custom']['wrfda']['time_window']
+	except:
+		time_window = 360
 	# Read in namelist template (not exact Fortran namelist format, we need to change it).
 	template = open(f'{wrfda_root}/var/README.namelist').read()
 	template = re.sub(r'^[^&]*', '', template, flags=re.DOTALL)
@@ -57,16 +55,11 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	template = re.sub(r'\([^\)]*\)', '', template)
 	namelist_input = f90nml.read(StringIO(template))
 	namelist_input['wrfvar1']['var4d_lbc'] = False
-	namelist_input['wrfvar3']['ob_format'] = wrfda_config['ob_format']
-	namelist_input['wrfvar6']['orthonorm_gradient'] = True
-	namelist_input['wrfvar6']['use_lanczos'] = True
-	namelist_input['wrfvar6']['write_lanczos'] = True
 	namelist_input['wrfvar18']['analysis_date'] = start_time_str
 	namelist_input['wrfvar21']['time_window_min'] = start_time.subtract(minutes=time_window/2).format(datetime_fmt)
 	namelist_input['wrfvar22']['time_window_max'] = start_time.add(minutes=time_window/2).format(datetime_fmt)
 	# Fix bugs
 	namelist_input['wrfvar2']['qc_rej_both'] = False
-	namelist_input['wrfvar7']['cv_options'] = wrfda_config['cv_options']
 	namelist_input['wrfvar14']['rtminit_satid'] = -1
 	namelist_input['wrfvar14']['rtminit_sensor'] = -1
 	if version == Version('3.6.1'):
@@ -86,18 +79,18 @@ def config_wrfda(work_root, wrfda_root, config, args):
 	for key, value in tmp.items():
 		if not key in namelist_input:
 			namelist_input[key] = value
-	namelist_input['time_control']['run_hours']              = config['custom']['forecast_hours']
-	namelist_input['time_control']['start_year']             = [int(start_time.format("Y")) for i in range(max_dom)]
-	namelist_input['time_control']['start_month']            = [int(start_time.format("M")) for i in range(max_dom)]
-	namelist_input['time_control']['start_day']              = [int(start_time.format("D")) for i in range(max_dom)]
-	namelist_input['time_control']['start_hour']             = [int(start_time.format("H")) for i in range(max_dom)]
-	namelist_input['time_control']['end_year']               = [int(end_time.format("Y")) for i in range(max_dom)]
-	namelist_input['time_control']['end_month']              = [int(end_time.format("M")) for i in range(max_dom)]
-	namelist_input['time_control']['end_day']                = [int(end_time.format("D")) for i in range(max_dom)]
-	namelist_input['time_control']['end_hour']               = [int(end_time.format("H")) for i in range(max_dom)]
-	namelist_input['time_control']['frames_per_outfile']     = [1 for i in range(max_dom)]
-	for key, value in config['domains'].items():
-		namelist_input['domains'][key] = value
+	namelist_input['time_control']['run_hours'         ] = config['custom']['forecast_hours']
+	namelist_input['time_control']['start_year'        ] = [int(start_time.format("Y")) for i in range(max_dom)]
+	namelist_input['time_control']['start_month'       ] = [int(start_time.format("M")) for i in range(max_dom)]
+	namelist_input['time_control']['start_day'         ] = [int(start_time.format("D")) for i in range(max_dom)]
+	namelist_input['time_control']['start_hour'        ] = [int(start_time.format("H")) for i in range(max_dom)]
+	namelist_input['time_control']['end_year'          ] = [int(end_time.format("Y")) for i in range(max_dom)]
+	namelist_input['time_control']['end_month'         ] = [int(end_time.format("M")) for i in range(max_dom)]
+	namelist_input['time_control']['end_day'           ] = [int(end_time.format("D")) for i in range(max_dom)]
+	namelist_input['time_control']['end_hour'          ] = [int(end_time.format("H")) for i in range(max_dom)]
+	namelist_input['time_control']['frames_per_outfile'] = [1 for i in range(max_dom)]
+	for key, value in config['time_control'].items(): namelist_input['time_control'][key] = value
+	for key, value in config['domains'     ].items(): namelist_input['domains'     ][key] = value
 	# WRFDA only take grids parameters one domain at a time.
 	namelist_input['domains']['max_dom']                     = 1
 	for key in ('e_we', 'e_sn', 'e_vert', 'dx', 'dy', 'grid_id', 'parent_id', 'i_parent_start', 'j_parent_start', 'parent_grid_ratio', 'parent_time_step_ratio'):
@@ -105,14 +98,15 @@ def config_wrfda(work_root, wrfda_root, config, args):
 			namelist_input['domains'][key] = config['domains'][key][dom_idx]
 	namelist_input['domains']['hypsometric_opt'] = hypsometric_opt
 	# Sync physics parameters.
-	for key, value in phys_config.items():
-		namelist_input['physics'][key] = value
+	if 'physics' in config:
+		for key, value in config['physics'].items():
+			namelist_input['physics'][key] = value
 	namelist_input['physics']['num_land_cat'] = num_land_cat
 	if version == Version('3.9.1'):
 		namelist_input['dynamics']['gwd_opt'] = 0
 	# Write customized parameters.
-	for section in ['wrfvar1', 'wrfvar2', 'wrfvar7', 'wrfvar11', 'wrfvar12', 'wrfvar13']:
-		if not section in config: continue
+	for tag in range(1, 23):
+		section = f'wrfvar{tag}'
 		for key, value in config[section].items():
 			namelist_input[section][key] = value
 

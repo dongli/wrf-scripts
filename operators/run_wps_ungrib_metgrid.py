@@ -52,7 +52,7 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 				file_pattern = config['custom']['background']['file_pattern'][0]
 			else:
 				file_pattern = config['custom']['background']['file_pattern']
-			file_name = Template(file_pattern).render(bkg_start_time=bkg_start_time, bkg_time=bkg_start_time)
+			file_name = Template(file_pattern).render(bkg_start_time=bkg_start_time, bkg_time=bkg_start_time, bkg_forecast_hour=0)
 		elif bkg_type == 'gfs':
 			file_name = 'gfs.t{:02d}z.pgrb2.*.f*'.format(bkg_start_time.hour)
 		return len(glob(f'{bkg_dir}/{file_name}')) != 0
@@ -92,7 +92,8 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 					else:
 						file_patterns = [config['custom']['background']['file_pattern']]
 					for file_pattern in file_patterns:
-						bkg_file = glob(bkg_dir + '/' + Template(file_pattern).render(bkg_start_time=bkg_start_time, bkg_time=bkg_time))[0]
+						rendered_file_pattern = Template(file_pattern).render(bkg_start_time=bkg_start_time, bkg_time=bkg_time, bkg_forecast_hour=(bkg_time-bkg_start_time).in_hours())
+						bkg_file = glob(bkg_dir + '/' + rendered_file_pattern)[0]
 						bkg_file_basename = os.path.basename(bkg_file)
 						# Process background file when there is file_processes in config.
 						if 'file_processes' in config['custom']['background']:
@@ -105,8 +106,9 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 								))
 						run(f'ln -sf {bkg_file} {bkg_time.format("YYYYMMDDHH")}_{bkg_file_basename}')
 				except Exception as e:
-					print(bkg_dir + '/' + Template(file_pattern).render(bkg_start_time=bkg_start_time, bkg_time=bkg_time))
-					cli.error(f'Failed to link background file! {e}')
+					print(e)
+					print(bkg_dir + '/' + rendered_file_pattern)
+					cli.error(f'Failed to link background file!')
 			os.chdir(wps_work_dir)
 			run(f'{wps_root}/link_grib.csh {wps_work_dir}/background/*')
 		else:
