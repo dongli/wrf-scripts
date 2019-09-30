@@ -10,6 +10,22 @@ from utils import edit_file, run, cli, check_files, upp_version, Version
 
 def build_upp(wrf_root, upp_root, args):
 	if wrf_root != None: os.environ['WRF_DIR'] = wrf_root
+
+	if not 'HDF5' in os.environ:
+		res = subprocess.run(['which', 'h5dump'], stdout=subprocess.PIPE)
+		if res.returncode == 0:
+			os.environ['HDF5'] = os.path.dirname(os.path.dirname(res.stdout.decode('utf-8')))
+			cli.notice(f'Set HDF5 to {os.environ["HDF5"]}')
+	if not 'HDF5' in os.environ:
+		cli.warning('HDF5 environment variable is not set')
+
+	if not 'NETCDF' in os.environ:
+		res = subprocess.run(['which', 'ncdump'], stdout=subprocess.PIPE)
+		if res.returncode == 0:
+			os.environ['NETCDF'] = os.path.dirname(os.path.dirname(res.stdout.decode('utf-8')))
+			cli.notice(f'Set NETCDF to {os.environ["NETCDF"]}')
+	if not 'NETCDF' in os.environ:
+		cli.warning('NETCDF environment variable is not set!')
 	
 	os.chdir(upp_root)
 	if args.force: run('./clean -a &> /dev/null')
