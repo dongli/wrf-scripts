@@ -10,8 +10,22 @@ from utils import gsi_version, Version, edit_file, run, cli, check_files
 
 def build_gsi(wrf_root, gsi_root, args):
 	# Check environment.
-	if not os.getenv('NETCDF'):
-		cli.error('Shell variable NETCDF is not set!')
+	if not 'HDF5' in os.environ:
+		res = subprocess.run(['which', 'h5dump'], stdout=subprocess.PIPE)
+		if res.returncode == 0:
+			os.environ['HDF5'] = os.path.dirname(os.path.dirname(res.stdout.decode('utf-8')))
+			cli.notice(f'Set HDF5 to {os.environ["HDF5"]}')
+	if not 'HDF5' in os.environ:
+		cli.warning('HDF5 environment variable is not set')
+
+	if not 'NETCDF' in os.environ:
+		res = subprocess.run(['which', 'ncdump'], stdout=subprocess.PIPE)
+		if res.returncode == 0:
+			os.environ['NETCDF'] = os.path.dirname(os.path.dirname(res.stdout.decode('utf-8')))
+			cli.notice(f'Set NETCDF to {os.environ["NETCDF"]}')
+	if not 'NETCDF' in os.environ:
+		cli.warning('NETCDF environment variable is not set!')
+
 	if not os.getenv('LAPACK_PATH') and args.compiler_suite != 'intel':
 		cli.error('Shell variable LAPACK_PATH is not set!')
 
