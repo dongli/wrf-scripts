@@ -2,7 +2,17 @@
   "tag": "test",
   "custom": {
     "start_time": "2019050200",
-    "forecast_hours": 12
+    "forecast_hours": 6,
+    "background": {
+      "dir_pattern": "gfs.{{ bkg_start_time.format('YYYYMMDDHH') }}"
+    },
+    "wrfda": {
+      "type": "3dvar",
+      "time_window": 360
+    },
+    "obsproc": {
+      "output_format": 2
+    }
   },
   "domains": {
     "e_we": [649, 631],
@@ -22,7 +32,7 @@
     "truelat1": 30.0,
     "truelat2": 60.0,
     "stand_lon": 110.0,
-    "geog_data_res": ["usgs_30s+default", "usgs_30s+default"]
+    "geog_data_res": ["default", "default"]
   },
   "physics": {
     "mp_physics": [8, 8],
@@ -76,11 +86,10 @@
     "v_sca_adv_order": 3,
     "iso_temp": 0
   },
-  "wrfda": {
-    "type": "3dvar",
-    "ob_format": 2,
-    "time_window": 360,
-    "obsproc_output_format": 2,
+  "wrfvar3": {
+    "ob_format": 2
+  },
+  "wrfvar7": {
     "cv_options": 7
   }
 }

@@ -13,10 +13,6 @@ from utils import cli, check_files, search_files, run, submit_job, parse_config
 scripts_root = os.path.dirname(os.path.realpath(__file__))
 
 def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None, force=False):
-	if not 'wrfda' in config:
-		cli.error('There is no "wrfda" in configuration file!')
-	wrfda_config = config['wrfda']
-
 	start_time = config['custom']['start_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
@@ -49,16 +45,16 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None, forc
 		cli.error('namelist.input has not been generated! Run config_wrfda.py.')
 
 	# BE matrix
-	if 'cv_options' in wrfda_config:
-		if wrfda_config['cv_options'] == 5:
+	if 'cv_options' in config['wrfvar7']:
+		if config['wrfvar7']['cv_options'] == 5:
 			if not os.path.isfile(f'{be_work_dir}/be.dat.cv5'):
 				cli.error(f'BE matrix {be_work_dir}/be.dat.cv5 does not exist!')
 			run(f'ln -sf {be_work_dir}/be.dat.cv5 be.dat')
-		elif wrfda_config['cv_options'] == 6:
+		elif config['wrfvar7']['cv_options'] == 6:
 			if not os.path.isfile(f'{be_work_dir}/be.dat.cv6'):
 				cli.error(f'BE matrix {be_work_dir}/be.dat.cv6 does not exist!')
 			run(f'ln -sf {be_work_dir}/be.dat.cv6 be.dat')
-		elif wrfda_config['cv_options'] == 7:
+		elif config['wrfvar7']['cv_options'] == 7:
 			if not os.path.isfile(f'{be_work_dir}/be.dat.cv7'):
 				cli.error(f'BE matrix {be_work_dir}/be.dat.cv7 does not exist!')
 			run(f'ln -sf {be_work_dir}/be.dat.cv7 be.dat')
@@ -73,8 +69,8 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None, forc
 	run(f'ln -sf {wrf_work_dir}/wrfinput_{dom_str}_{start_time_str} {wrfda_work_dir}/fg')
 
 	# Observation data
-	if wrfda_config['type'] == '3dvar':
-		if 'wrfvar4' in config and config['wrfvar4']['use_radarobs']:
+	if config['custom']['wrfda']['type'] == '3dvar':
+		if 'use_radarobs' in config['wrfvar4'] and config['wrfvar4']['use_radarobs']:
 			# Radar data
 			run(f'rm -f ob.*')
 			for obs_radar_file in glob(f'{args.littler_root}/{start_time.format("YYYYMMDD")}/obs.radar.*'):
@@ -85,12 +81,15 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None, forc
 				cli.notice('Use previous analysis data as the background.')
 				run(f'mv wrfvar_output_{start_time_str} wrfvar_output_conv_{start_time_str}')
 				run(f'ln -sf wrfvar_output_conv_{start_time_str} fg')
-		elif wrfda_config['ob_format'] == 2 and os.path.isfile(f'{obsproc_work_dir}/obs_gts_{start_time.format(datetime_fmt)}.3DVAR'):
+		elif config['wrfvar3']['ob_format'] == 2 and os.path.isfile(f'{obsproc_work_dir}/obs_gts_{start_time.format(datetime_fmt)}.3DVAR'):
 			# LITTLE_R conventional data
 			run(f'ln -sf {obsproc_work_dir}/obs_gts_{start_time.format(datetime_fmt)}.3DVAR ob.ascii')
-		elif wrfda_config['ob_format'] == 1 and wrfda_config['prepbufr_source'] == 'gdas':
+		elif config['wrfvar3']['ob_format'] == 1 and config['custom']['wrfda']['prepbufr_source'] == 'gdas':
 			# PREPBUFR conventional data
-			run(f'ln -sf {args.prepbufr_root}/gdas.{start_time.format("YYYYMMDD")}/gdas.t{start_time.hour:02}z.prepbufr.nr ob.bufr')
+			gdas_file_path = f'{args.prepbufr_root}/gdas.{start_time.format("YYYYMMDD")}/gdas.t{start_time.hour:02}z.prepbufr.nr'
+			if not os.path.isfile(gdas_file_path):
+				cli.error(f'{gdas_file_path} does not exist!')
+			run(f'ln -sf {gdas_file_path} ob.bufr')
 
 	if os.path.isfile(f'{wrfda_work_dir}/wrfvar_output_{start_time_str}') and not args.force:
 		cli.notice(f'{wrfda_work_dir}/wrfvar_output_{start_time_str} already exists.')
@@ -111,7 +110,7 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None, forc
 			cli.error(f'Failed! See {wrfda_work_dir}/rsl.error.0000.')
 	else:
 		print(open('statistics').read())
-		run(f'ncl -Q {scripts_root}/plots/plot_cost_grad_fn.ncl')
+		run(f'ncl -Q {scripts_root}/../plots/plot_cost_grad_fn.ncl')
 		run(f'cp wrfvar_output wrfvar_output_{start_time_str}')
 		cli.notice('Succeeded.')
 

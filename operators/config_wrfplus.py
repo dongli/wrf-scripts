@@ -11,8 +11,6 @@ sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, parse_config, wrf_version, Version
 
 def config_wrfplus(work_root, wrfplus_root, config, args):
-	phys_config = config['physics'] if 'physics' in config else {}
-
 	start_time = config['custom']['start_time']
 	end_time = config['custom']['end_time']
 	max_dom = config['domains']['max_dom']
@@ -34,50 +32,50 @@ def config_wrfplus(work_root, wrfplus_root, config, args):
 	cli.notice('Edit namelist.input for WRF.')
 	copy(f'{wrfplus_root}/test/em_real/namelist.input', 'namelist.input')
 	namelist_input = f90nml.read('namelist.input')
-	namelist_input['time_control']['run_hours']              = config['custom']['forecast_hours']
-	namelist_input['time_control']['start_year']             = [int(start_time.format("Y")) for i in range(max_dom)]
-	namelist_input['time_control']['start_month']            = [int(start_time.format("M")) for i in range(max_dom)]
-	namelist_input['time_control']['start_day']              = [int(start_time.format("D")) for i in range(max_dom)]
-	namelist_input['time_control']['start_hour']             = [int(start_time.format("H")) for i in range(max_dom)]
-	namelist_input['time_control']['end_year']               = [int(end_time.format("Y")) for i in range(max_dom)]
-	namelist_input['time_control']['end_month']              = [int(end_time.format("M")) for i in range(max_dom)]
-	namelist_input['time_control']['end_day']                = [int(end_time.format("D")) for i in range(max_dom)]
-	namelist_input['time_control']['end_hour']               = [int(end_time.format("H")) for i in range(max_dom)]
-	namelist_input['time_control']['interval_seconds']       = wrf_namelist_input['time_control']['interval_seconds']
-	namelist_input['time_control']['history_interval']       = wrf_namelist_input['time_control']['history_interval']
-	namelist_input['time_control']['frames_per_outfile']     = [1 for i in range(max_dom)]
-	namelist_input['time_control']['io_form_auxinput7']      = 2
-	namelist_input['time_control']['iofields_filename']      = f'{wrfplus_root}/var/run/plus.io_config'
-	namelist_input['time_control']['ignore_iofields_warning']= True
+	namelist_input['time_control']['run_hours'              ] = config['custom']['forecast_hours']
+	namelist_input['time_control']['start_year'             ] = [int(start_time.format("Y")) for i in range(max_dom)]
+	namelist_input['time_control']['start_month'            ] = [int(start_time.format("M")) for i in range(max_dom)]
+	namelist_input['time_control']['start_day'              ] = [int(start_time.format("D")) for i in range(max_dom)]
+	namelist_input['time_control']['start_hour'             ] = [int(start_time.format("H")) for i in range(max_dom)]
+	namelist_input['time_control']['end_year'               ] = [int(end_time.format("Y")) for i in range(max_dom)]
+	namelist_input['time_control']['end_month'              ] = [int(end_time.format("M")) for i in range(max_dom)]
+	namelist_input['time_control']['end_day'                ] = [int(end_time.format("D")) for i in range(max_dom)]
+	namelist_input['time_control']['end_hour'               ] = [int(end_time.format("H")) for i in range(max_dom)]
+	namelist_input['time_control']['interval_seconds'       ] = wrf_namelist_input['time_control']['interval_seconds']
+	namelist_input['time_control']['history_interval'       ] = wrf_namelist_input['time_control']['history_interval']
+	namelist_input['time_control']['frames_per_outfile'     ] = [1 for i in range(max_dom)]
+	namelist_input['time_control']['io_form_auxinput7'      ] = 2
+	namelist_input['time_control']['iofields_filename'      ] = f'{wrfplus_root}/var/run/plus.io_config'
+	namelist_input['time_control']['ignore_iofields_warning'] = True
 	# Copy from WRF namelist.input.
 	for key in ('time_step', 'max_dom', 'e_we', 'e_sn', 'e_vert', 'p_top_requested', 'num_metgrid_levels', 'num_metgrid_soil_levels', 'dx', 'dy'):
 		if key in wrf_namelist_input['domains']:
 			namelist_input['domains'][key] = wrf_namelist_input['domains'][key]
 	for key, value in config['domains'].items():
 		namelist_input['domains'][key] = value
-	namelist_input['physics']     ['mp_physics']             = 98
-	namelist_input['physics']     ['mp_zero_out']            = 2
-	namelist_input['physics']     ['ra_lw_physics']          = 0
-	namelist_input['physics']     ['ra_sw_physics']          = 0
-	namelist_input['physics']     ['sf_sfclay_physics']      = 0
-	namelist_input['physics']     ['sf_surface_physics']     = wrf_namelist_input['physics']['sf_surface_physics']
-	namelist_input['physics']     ['bl_pbl_physics']         = 98
-	namelist_input['physics']     ['cu_physics']             = 0
-	namelist_input['physics']     ['num_land_cat']           = wrf_namelist_input['physics']['num_land_cat'] if 'num_land_cat' in wrf_namelist_input['physics'] else 21
-	namelist_input['dynamics']    ['dyn_opt']                = 302
-	namelist_input['dynamics']    ['w_damping']              = 0
-	namelist_input['dynamics']    ['diff_opt']               = 0
-	namelist_input['dynamics']    ['km_opt']                 = 1
-	namelist_input['dynamics']    ['damp_opt']               = 0
-	namelist_input['dynamics']    ['dampcoef']               = 0.2
-	namelist_input['dynamics']    ['time_step_sound']        = 6
+	namelist_input['physics']['mp_physics'        ] = 98
+	namelist_input['physics']['mp_zero_out'       ] = 2
+	namelist_input['physics']['ra_lw_physics'     ] = 0
+	namelist_input['physics']['ra_sw_physics'     ] = 0
+	namelist_input['physics']['sf_sfclay_physics' ] = 0
+	namelist_input['physics']['sf_surface_physics'] = wrf_namelist_input['physics']['sf_surface_physics']
+	namelist_input['physics']['bl_pbl_physics'    ] = 98
+	namelist_input['physics']['cu_physics'        ] = 0
+	namelist_input['physics']['num_land_cat'      ] = wrf_namelist_input['physics']['num_land_cat'] if 'num_land_cat' in wrf_namelist_input['physics'] else 21
+	namelist_input['dynamics']['dyn_opt'        ] = 302
+	namelist_input['dynamics']['w_damping'      ] = 0
+	namelist_input['dynamics']['diff_opt'       ] = 0
+	namelist_input['dynamics']['km_opt'         ] = 1
+	namelist_input['dynamics']['damp_opt'       ] = 0
+	namelist_input['dynamics']['dampcoef'       ] = 0.2
+	namelist_input['dynamics']['time_step_sound'] = 6
 	if version == Version('3.9.1'):
 		namelist_input['dynamics']['gwd_opt'] = 0
 	# Delete some parameters.
 	if 'eta_levels' in namelist_input['domains']:  del namelist_input['domains']['eta_levels']
 	if 'iso_temp'   in namelist_input['dynamics']: del namelist_input['dynamics']['iso_temp']
 	namelist_input.write('./namelist.input', force=True)
-	
+
 	cli.notice('Succeeded.')
 
 if __name__ == '__main__':

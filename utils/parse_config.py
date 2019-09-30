@@ -78,9 +78,15 @@ def parse_config(config_json):
 		else:
 			config['domains']['time_step'] = 5
 
-	if not 'ob_format' in config['wrfda']:
-		config['wrfda']['ob_format'] = 2
-	if config['wrfda']['ob_format'] == 1 and not 'prepbufr_source' in config['wrfda']:
-		config['wrfda']['prepbufr_source'] = 'gdas'
+	if not 'time_control' in config: config['time_control'] = {}
+
+	# wrfvar* sections
+	for tag in range(1, 23):
+		section = f'wrfvar{tag}'
+		if not section in config: config[section] = {}
+	if not 'ob_format' in config['wrfvar3']:
+		config['wrfvar3']['ob_format'] = 2
+	if config['wrfvar3']['ob_format'] == 1 and not 'prepbufr_source' in config['custom']['wrfda']:
+		config['custom']['wrfda']['prepbufr_source'] = 'gdas'
 
 	return config

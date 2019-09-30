@@ -112,7 +112,7 @@ if not version in (Version('3.6.1'), Version('3.8.1'), Version('3.9.1')):
 
 config = parse_config(args.config_json)
 
-if config['wrfda']['ob_format'] == 1:
+if config['wrfvar3']['ob_format'] == 1:
 	if not args.prepbufr_root:
 		if os.getenv('PREPBUFR_ROOT'):
 			args.prepbufr_root = os.getenv('PREPBUFR_ROOT')
@@ -121,7 +121,7 @@ if config['wrfda']['ob_format'] == 1:
 	args.prepbufr_root = os.path.abspath(args.prepbufr_root)
 	if not os.path.isdir(args.prepbufr_root):
 		cli.error(f'Directory {args.prepbufr_root} does not exist!')
-elif config['wrfda']['ob_format'] == 2:
+elif config['wrfvar3']['ob_format'] == 2:
 	if not args.littler_root:
 		if os.getenv('LITTLER_ROOT'):
 			args.littler_root = os.getenv('LITTLER_ROOT')
@@ -162,8 +162,11 @@ cli.banner('                   Run forecast with xa as initial condition')
 if not os.path.isdir(args.work_root + '/fa/wrf'): os.mkdir(args.work_root + '/fa/wrf')
 run(f'cp {args.work_root}/fb/wrf/wrfout_d01_{start_time_str} {args.work_root}/fa/wrf/wrfinput_d01_{start_time_str}')
 run(f'cp {args.work_root}/fb/wrf/wrfbdy_d01 {args.work_root}/fa/wrf/wrfbdy_d01_{start_time_str}')
+config['wrfvar6']['orthonorm_gradient'] = True
+config['wrfvar6']['use_lanczos'] = True
+config['wrfvar6']['write_lanczos'] = True
 wrf.config_wrfda(args.work_root + '/fa', args.wrfda_root, config, args)
-if config['wrfda']['ob_format'] == 2:
+if config['wrfvar3']['ob_format'] == 2:
 	wrf.run_wrfda_obsproc(args.work_root + '/fa', args.wrfda_root, args.littler_root, config, args)
 wrf.run_wrfda_3dvar(args.work_root + '/fa', args.wrfda_root, config, args)
 wrf.run_wrfda_update_bc(args.work_root + '/fa', args.wrfda_root, False, config, args)
@@ -233,7 +236,15 @@ cli.banner('                   Calculate forecast sensitivity')
 
 if not os.path.isdir(f'{args.work_root}/sens'): os.mkdir(args.work_root + '/sens')
 
-wrf.config_wrfda_sens(args.work_root + '/sens', args.wrfda_root, config, args, args.work_root + '/fa/wrf')
+config['wrfvar6']['write_lanczos'] = False
+config['wrfvar6']['read_lanczos'] = True
+config['wrfvar17']['adj_sens'] = True
+config['wrfvar17']['sensitivity_option'] = 0
+config['wrfvar17']['analysis_type'] = 'QC-OBS'
+config['time_control']['io_form_auxinput17'] = 2
+config['time_control']['auxinput17_inname'] = './gr01'
+config['time_control']['iofields_filename'] = f'{args.wrfda_root}/var/run/fso.io_config'
+wrf.config_wrfda(args.work_root + '/sens', args.wrfda_root, config, args, args.work_root + '/fa/wrf')
 
 cli.notice('Add two init_sens_d01 data.')
 os.chdir(args.work_root + '/sens/wrfda')
@@ -254,7 +265,7 @@ sa.close()
 sb.close()
 ad.close()
 run(f'ln -sf ad_d01_{start_time_str} gr01')
-if config['wrfda']['ob_format'] == 2:
+if config['wrfvar3']['ob_format'] == 2:
 	if not os.path.isdir('obsproc'): os.makedirs('obsproc')
 	run(f'ln -sf {args.work_root}/fa/wrfda/obsproc/obs_gts_{start_time_str}.3DVAR obsproc')
 run(f'ln -sf {args.work_root}/fa/lanczos_eigenpairs.* ..')
