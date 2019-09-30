@@ -108,10 +108,19 @@ while True:
 		num_platform = int(num_platform)
 		print(obs_type, num_platform)
 		for i in range(num_platform):
+			pos = gts_omb_oma_01.tell()
 			line = gts_omb_oma_01.readline()
-			n = int(line.strip())
+			try:
+				n = int(line.strip())
+			except:
+				gts_omb_oma_01.seek(pos)
+				break
 			for j in range(n):
+				pos = gts_omb_oma_01.tell()
 				line = gts_omb_oma_01.readline()
+				if len(line) < 10:
+					gts_omb_oma_01.seek(pos)
+					break
 				k = 21
 				try:
 					lat      = handle_real_missing_value(line[k:k+9 ]); k += 9
@@ -138,7 +147,7 @@ while True:
 						p_qc     = handle_int_missing_value (line[k:k+8 ]); k += 8
 						p_obserr = handle_real_missing_value(line[k:k+17]); k += 17
 						p_incr   = handle_real_missing_value(line[k:k+17]); k += 17
-					elif obs_type in ('sound', 'airep', 'profiler'):
+					elif obs_type in ('sound', 'airep', 'profiler', 'pilot', 'qscat'):
 						p_impact = 'NULL'
 						p_qc     = 'NULL'
 						p_obserr = 'NULL'
