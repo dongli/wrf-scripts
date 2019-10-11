@@ -7,7 +7,7 @@ def run(cmd, bg=False, raise_error=False, stdout=False, echo=True):
 	if bg:
 		return subprocess.Popen(cmd.split())
 	elif raise_error or stdout:
-		res = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
+		res = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		if raise_error:
 			try:
 				res.check_returncode()

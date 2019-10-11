@@ -4,65 +4,52 @@ import argparse
 import pendulum
 import os
 import re
-from subprocess import run, PIPE
 import tempfile
+import sys
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
+from utils import cli, parse_time, run
 
 real_missing_value = -888888.0
 int_missing_value = -88
 
 parser = argparse.ArgumentParser(description='Write FSO results to ODB file.', formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-w', '--work-root', dest='work_root', help='Work root directory')
+parser.add_argument('-t', '--datetime', help='Set the validating date time', type=parse_time)
 parser.add_argument('-o', '--output-prefix', dest='output_prefix', help='Output prefix for ODB files')
 args = parser.parse_args()
 
 if not args.output_prefix:
 	args.output_prefix = f'{args.work_root}/sens/wrfda/fso_result.odb'
 
-rsl_out = open(f'{args.work_root}/sens/wrfda/rsl.out.0000', 'r')
-lines = ''.join(rsl_out.readlines())
+obs_type_impact = {
+	'synop'   : 0,
+	'metar'   : 0,
+	'ships'   : 0,
+	'buoy'    : 0,
+	'sondesfc': 0,
+	'sound'   : 0,
+	'profiler': 0,
+	'airep'   : 0,
+	'pilot'   : 0,
+	'qscat'   : 0
+}
+var_type_impact = {
+	'u': 0,
+	'v': 0,
+	't': 0,
+	'q': 0,
+	'p': 0
+}
 
-header = ''
-header += 'obs_type@fso_obs_impact:STRING\t'
-header += 'obs_impact@fso_obs_impact:REAL\n'
-
-output = tempfile.NamedTemporaryFile(mode='w')
-output.write(header)
-
-for obs_type in ('sound', 'synop', 'pilot', 'satem', 'geoamv', 'polaramv', 'airep', 'gpspw', 'gpsrf', 'metar', 'ships', 'ssmi_rv', 'qscat', 'profiler', 'buoy', 'bogus', 'pseudo', 'mtgirs', 'tamdar'):
-	match = re.search(f'\s*{obs_type}\s+([-+]?\d+\.\d+E[-+]?\d+)', lines)
-	if match:
-		output.write(f'{obs_type}\t{match[1]}\n')
-
-output.flush()
-print(f'[Notice]: Write {args.output_prefix}.obs_impact.')
-res = run(f'odb import -d TAB {output.name} {args.output_prefix}.obs_impact', shell=True, stdout=PIPE, stderr=PIPE)
-if res.returncode != 0:
-	print(res.stderr.decode('utf-8'))
-
-header = ''
-header += 'var_type@fso_var_impact:STRING\t'
-header += 'var_impact@fso_var_impact:REAL\n'
-
-output = tempfile.NamedTemporaryFile(mode='w')
-output.write(header)
-
-for var_type in ('u', 'v', 't', 'p', 'q'):
-	match = re.search(f'\s*{var_type}\s+([-+]?\d+\.\d+E[-+]?\d+)', lines, re.I)
-	if match:
-		output.write(f'{var_type}\t{match[1]}\n')
-
-output.flush()
-print(f'[Notice]: Write {args.output_prefix}.var_impact.')
-res = run(f'odb import -d TAB {output.name} {args.output_prefix}.var_impact', shell=True, stdout=PIPE, stderr=PIPE)
-if res.returncode != 0:
-	print(res.stderr.decode('utf-8'))
-
-gts_omb_oma_01 = open(f'{args.work_root}/sens/wrfda/gts_omb_oma_01', 'r')
+# gts_omb_oma_01 = open(f'{args.work_root}/sens/wrfda/gts_omb_oma_01', 'r')
+gts_omb_oma_01 = open(f'./gts_omb_oma_01', 'r')
 
 header = ''
 header += 'obs_type@detail_impact:STRING\t'
 header += 'lon@detail_impact:REAL\t'
 header += 'lat@detail_impact:REAL\t'
+header += 'date@detail_impact:INTEGER\t'
+header += 'time@detail_impact:INTEGER\t'
 header += 'u@detail_impact:REAL\t'
 header += 'u_impact@detail_impact:REAL\t'
 header += 'u_qc@detail_impact:INTEGER\t'
@@ -153,22 +140,46 @@ while True:
 						p_obserr = 'NULL'
 						p_incr   = 'NULL'
 					else:
-						print(f'[Error]: Unsupported obs_type {obs_type}!')
+						cli.error(f'Unsupported obs_type {obs_type}!')
 					q        = handle_real_missing_value(line[k:k+17]); k += 17 
 					q_impact = handle_real_missing_value(line[k:k+17]); k += 17
 					q_qc     = handle_int_missing_value (line[k:k+8 ]); k += 8
 					q_obserr = handle_real_missing_value(line[k:k+17]); k += 17
 					q_incr   = handle_real_missing_value(line[k:k+17]); k += 17
 				except Exception as e:
-					print('[Error]: Failed to parse line:')
 					print(line)
 					print(e)
-					exit(0)
+					cli.error('Failed to parse line!')
+
+				# Accumulate impacts of different observation and variable types.
+				if obs_type in ('synop', 'metar', 'ships', 'buoy', 'sondesfc'):
+					obs_type_impact[obs_type] = obs_type_impact[obs_type] + float(u_impact) + float(v_impact) + float(t_impact) + float(q_impact) + float(p_impact)
+					var_type_impact['u'] = var_type_impact['u'] + float(u_impact)
+					var_type_impact['v'] = var_type_impact['v'] + float(v_impact)
+					var_type_impact['t'] = var_type_impact['t'] + float(t_impact)
+					var_type_impact['q'] = var_type_impact['q'] + float(q_impact)
+					var_type_impact['p'] = var_type_impact['p'] + float(p_impact)
+				elif obs_type in ('sound', 'airep'):
+					obs_type_impact[obs_type] = obs_type_impact[obs_type] + float(u_impact) + float(v_impact) + float(t_impact) + float(q_impact)
+					var_type_impact['u'] = var_type_impact['u'] + float(u_impact)
+					var_type_impact['v'] = var_type_impact['v'] + float(v_impact)
+					var_type_impact['t'] = var_type_impact['t'] + float(t_impact)
+					var_type_impact['q'] = var_type_impact['q'] + float(q_impact)
+				elif obs_type in ('profiler', 'pilot', 'qscat'):
+					obs_type_impact[obs_type] = obs_type_impact[obs_type] + float(u_impact) + float(v_impact)
+					var_type_impact['u'] = var_type_impact['u'] + float(u_impact)
+					var_type_impact['v'] = var_type_impact['v'] + float(v_impact)
 
 				# Write output to tempfile.
 				output.write(obs_type + '\t')
 				output.write(lon      + '\t')
 				output.write(lat      + '\t')
+				if args.datetime:
+					output.write(args.datetime.format('YYYYMMDD') + '\t')
+					output.write(args.datetime.format('HHmmss') + '\t')
+				else:
+					output.write('NULL\t')
+					output.write('NULL\t')
 				output.write(u        + '\t')
 				output.write(u_impact + '\t')
 				output.write(u_qc     + '\t')
@@ -199,7 +210,36 @@ while True:
 		break
 
 output.flush()
-print(f'[Notice]: Write {args.output_prefix}.detail_impact.')
-res = run(f'odb import -d TAB {output.name} {args.output_prefix}.detail_impact', shell=True, stdout=PIPE, stderr=PIPE)
-if res.returncode != 0:
-	print(res.stderr.decode('utf-8'))
+cli.notice(f'Write {args.output_prefix}.detail_impact.')
+run(f'odb import -d TAB {output.name} {args.output_prefix}.detail_impact', stdout=True)
+
+# Impacts per observation types
+header = ''
+header += 'obs_type@fso_obs_impact:STRING\t'
+header += 'obs_impact@fso_obs_impact:REAL\n'
+
+output = tempfile.NamedTemporaryFile(mode='w')
+output.write(header)
+
+for obs_type, impact in obs_type_impact.items():
+	output.write(f'{obs_type}\t{impact}\n')
+
+output.flush()
+cli.notice(f'Write {args.output_prefix}.obs_impact.')
+run(f'odb import -d TAB {output.name} {args.output_prefix}.obs_impact', stdout=True)
+
+# Impacts per variable types.
+header = ''
+header += 'var_type@fso_var_impact:STRING\t'
+header += 'var_impact@fso_var_impact:REAL\n'
+
+output = tempfile.NamedTemporaryFile(mode='w')
+output.write(header)
+
+for var_type, impact in var_type_impact.items():
+	output.write(f'{var_type}\t{impact}\n')
+
+output.flush()
+cli.notice(f'Write {args.output_prefix}.var_impact.')
+run(f'odb import -d TAB {output.name} {args.output_prefix}.var_impact', stdout=True)
+
