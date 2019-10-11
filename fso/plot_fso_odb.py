@@ -99,6 +99,7 @@ plt.gca().set_xlabel('Observation Impact')
 plt.gca().set_ylabel('Observation Type')
 plt.gca().yaxis.tick_right()
 plt.grid(True, color='gray', zorder=1)
+plt.ticklabel_format(axis='x', style='sci', scilimits=(-2,2))
 pdf.savefig()
 
 fig = plt.figure(figsize=(6, 4))
@@ -107,6 +108,7 @@ plt.gca().set_xlabel('Observation Impact')
 plt.gca().set_ylabel('Variable Type')
 plt.gca().yaxis.tick_right()
 plt.grid(True, color='gray', zorder=1)
+plt.ticklabel_format(axis='x', style='sci', scilimits=(-2,2))
 pdf.savefig()
 
 for var_type, levels in sound_lev_impact.items():
@@ -120,6 +122,7 @@ for var_type, levels in sound_lev_impact.items():
 	plt.gca().yaxis.tick_right()
 	plt.gca().invert_yaxis()
 	plt.grid(True, color='gray', zorder=1)
+	plt.ticklabel_format(axis='x', style='sci', scilimits=(-2,2))
 	pdf.savefig()
 
 # for var_type, levels in profiler_lev_impact.items():
@@ -133,6 +136,7 @@ for var_type, levels in sound_lev_impact.items():
 # 	plt.gca().yaxis.tick_right()
 # 	plt.gca().invert_yaxis()
 # 	plt.grid(True, color='gray', zorder=1)
+#		plt.ticklabel_format(axis='x', style='sci', scilimits=(-2,2))
 # 	pdf.savefig()
 
 pdf.close()
