@@ -15,7 +15,7 @@ cdef extern from 'write_geogrid.h':
 def write_2d_array(np.ndarray[float, ndim=2, mode='c'] topo_array not None):
     cdef int nz = 1
     cdef int isigned = 1
-    cdef int endian = 1
+    cdef int endian = 0
     cdef float scalefactor = 1.0
     cdef int wordsize = 2
     write_geogrid(
