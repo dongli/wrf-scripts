@@ -27,7 +27,16 @@ def build_upp(wrf_root, upp_root, args):
 			cli.notice(f'Set NETCDF to {os.environ["NETCDF"]}')
 	if not 'NETCDF' in os.environ:
 		cli.warning('NETCDF environment variable is not set!')
-	
+
+	if not 'JASPERINC' in os.environ or not 'JASPERLIB' in os.environ:
+		if 'JASPER_ROOT' in os.environ:
+			os.environ['JASPERINC'] = os.environ['JASPER_ROOT'] + '/include'
+			os.environ['JASPERLIB'] = os.environ['JASPER_ROOT'] + '/lib'
+			cli.notice(f'Set JASPERINC to {os.environ["JASPERINC"]}.')
+			cli.notice(f'Set JASPERLIB to {os.environ["JASPERLIB"]}.')
+		else:
+			cli.error('JASPERINC and JASPERLIB environment variables are not set!')
+
 	os.chdir(upp_root)
 	if args.force: run('./clean -a &> /dev/null')
 	expected_exe_files = ('bin/copygb.exe', 'bin/ndate.exe', 'bin/unipost.exe')
