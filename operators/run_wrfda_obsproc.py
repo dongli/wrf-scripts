@@ -10,7 +10,7 @@ import f90nml
 import sys
 script_root = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(f'{script_root}/../utils')
-from utils import cli, check_files, run, parse_config, submit_job
+from utils import cli, check_files, run, parse_config, submit_job, has_key, get_value
 
 def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
 	start_time = config['custom']['start_time']
@@ -42,17 +42,11 @@ def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
 		moad_cen_lat = config['geogrid']['ref_lat']
 		standard_lon = config['geogrid']['ref_lon']
 
-	try:
-		output_format = config['custom']['obsproc']['output_format']
-	except:
-		output_format = 2
-	try:
-		time_window = config['custom']['wrfda']['time_window']
-	except:
-		time_window = 360
+	output_format = get_value(config, 'custom', 'obsproc', 'output_format', default=2)
+	time_window   = get_value(config, 'custom', 'da', 'time_window', default=360)
 
-	if 'wrfda' in config['custom'] and 'type' in config['custom']['wrfda']:
-		if config['custom']['wrfda']['type'] == '3dvar':
+	if has_key(config, ('custom', 'da', 'type')):
+		if config['custom']['da']['type'] == '3dvar':
 			namelist_obsproc = f90nml.read(f'{wrfda_root}/var/obsproc/namelist.obsproc.3dvar.wrfvar-tut')
 		else:
 			cli.error('Currently, we only support 3DVar...')

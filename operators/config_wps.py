@@ -12,15 +12,18 @@ from pprint import pprint
 import sys
 script_root = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(f'{script_root}/../utils')
-from utils import cli, parse_config, wrf_version, Version, run
+from utils import cli, parse_config, wrf_version, Version, run, has_key
 
 def config_wps(work_root, wps_root, geog_root, config, args):
-	start_time = config['custom']['start_time']
-	end_time = config['custom']['end_time']
-	max_dom = config['domains']['max_dom']
+	if has_key(config, ('custom', 'start_time')):
+		start_time = config['custom']['start_time']
+		start_time_str = start_time.format('YYYY-MM-DD_HH:mm:ss')
+		if not has_key(config, ('custom', 'end_time')): cli.error('custom->end_time does not exist in config file!')
+		end_time = config['custom']['end_time']
+		end_time_str = end_time.format('YYYY-MM-DD_HH:mm:ss')
 
-	start_time_str = start_time.format('YYYY-MM-DD_HH:mm:ss')
-	end_time_str = end_time.format('YYYY-MM-DD_HH:mm:ss')
+	if not has_key(config, ('domains', 'max_dom')): cli.error('domains->max_dom does not exist in config file!')
+	max_dom = config['domains']['max_dom']
 
 	wps_work_dir = work_root + '/wps'
 	if not os.path.isdir(wps_work_dir): os.makedirs(wps_work_dir)
@@ -33,18 +36,20 @@ def config_wps(work_root, wps_root, geog_root, config, args):
 	cli.notice('Edit namelist.wps for WPS.')
 	copy(f'{wps_root}/namelist.wps', 'namelist.wps')
 	namelist_wps = f90nml.read('namelist.wps')
-	namelist_wps['share']  ['max_dom']              = max_dom
-	namelist_wps['share']  ['start_date']           = [start_time_str for i in range(max_dom)]
-	namelist_wps['share']  ['end_date']             = [end_time_str if i == 0 else start_time_str for i in range(max_dom)]
-	if 'background' in config['custom'] and 'interval_seconds' in config['custom']['background']:
-		namelist_wps['share']  ['interval_seconds']   = config['custom']['background']['interval_seconds']
-	namelist_wps['geogrid']['geog_data_path']       = geog_root
+	namelist_wps['share']['max_dom'] = max_dom
+	if has_key(config, ('custom', 'start_time')):
+		namelist_wps['share']['start_date'] = [start_time_str for i in range(max_dom)]
+	if has_key(config, ('custom', 'end_time')):
+		namelist_wps['share']['end_date'] = [end_time_str if i == 0 else start_time_str for i in range(max_dom)]
+	if has_key(config, ('custom', 'background')) and has_key(config, ('custom', 'background', 'interval_seconds')):
+		namelist_wps['share']['interval_seconds'] = config['custom']['background']['interval_seconds']
+	namelist_wps['geogrid']['geog_data_path'] = geog_root
 	for key, value in config['geogrid'].items():
 		namelist_wps['geogrid'][key] = value
 	namelist_wps['geogrid']['opt_geogrid_tbl_path'] = wps_work_dir
 	namelist_wps['metgrid']['opt_metgrid_tbl_path'] = wps_work_dir
 	namelist_wps.write('./namelist.wps', force=True)
-	run(f'ncl {script_root}/plots/plot_domains.ncl > /dev/null')
+	run(f'ncl {script_root}/../plots/plot_domains.ncl > /dev/null')
 	cli.notice(f'Check {wps_work_dir}/wps_show_dom.pdf for domains.')
 
 	cli.notice('Succeeded.')

@@ -11,7 +11,7 @@ from shutil import copyfile
 import sys
 script_root = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(f'{script_root}/../utils')
-from utils import cli, parse_config, wrf_version, Version
+from utils import cli, parse_config, wrf_version, Version, has_key, get_value
 
 def config_wrfda(work_root, wrfda_root, config, args, wrf_work_dir=None):
 	start_time = config['custom']['start_time']
@@ -25,9 +25,9 @@ def config_wrfda(work_root, wrfda_root, config, args, wrf_work_dir=None):
 	if not os.path.isdir(wrf_work_dir): cli.error(f'{wrf_work_dir} does not exist!')
 
 	if max_dom > 1:
-		if not 'run_wrfda_on_dom' in config['custom']:
-			cli.error('You need to set run_wrfda_on_dom to set which domain to work on!')
-		dom_idx = config['custom']['run_wrfda_on_dom']
+		if not has_key(config, ('custom', 'da', 'dom')):
+			cli.error('You need to set custom->da->dom to set which domain to work on!')
+		dom_idx = config['custom']['da']['dom']
 		dom_str = 'd' + str(dom_idx + 1).zfill(2)
 		wrfda_work_dir = os.path.abspath(work_root) + f'/wrfda/{dom_str}'
 	else:
@@ -44,24 +44,21 @@ def config_wrfda(work_root, wrfda_root, config, args, wrf_work_dir=None):
 	hypsometric_opt = wrfinput.getncattr('HYPSOMETRIC_OPT')
 	wrfinput.close()
 
-	try:
-		time_window = config['custom']['wrfda']['time_window']
-	except:
-		time_window = 360
+	time_window = get_value(config, ('custom', 'da', 'time_window'), 360)
 	# Read in namelist template (not exact Fortran namelist format, we need to change it).
 	template = open(f'{wrfda_root}/var/README.namelist').read()
 	template = re.sub(r'^[^&]*', '', template, flags=re.DOTALL)
 	template = re.sub(r';.*', '', template)
 	template = re.sub(r'\([^\)]*\)', '', template)
 	namelist_input = f90nml.read(StringIO(template))
-	namelist_input['wrfvar1']['var4d_lbc'] = False
-	namelist_input['wrfvar18']['analysis_date'] = start_time_str
+	namelist_input['wrfvar1' ]['var4d_lbc'      ] = False
+	namelist_input['wrfvar18']['analysis_date'  ] = start_time_str
 	namelist_input['wrfvar21']['time_window_min'] = start_time.subtract(minutes=time_window/2).format(datetime_fmt)
 	namelist_input['wrfvar22']['time_window_max'] = start_time.add(minutes=time_window/2).format(datetime_fmt)
 	# Fix bugs
-	namelist_input['wrfvar2']['qc_rej_both'] = False
-	namelist_input['wrfvar14']['rtminit_satid'] = -1
-	namelist_input['wrfvar14']['rtminit_sensor'] = -1
+	namelist_input['wrfvar2' ]['qc_rej_both'    ] = False
+	namelist_input['wrfvar14']['rtminit_satid'  ] = -1
+	namelist_input['wrfvar14']['rtminit_sensor' ] = -1
 	if version == Version('3.6.1'):
 		namelist_input['wrfvar4']['use_iasiobs'] = False
 		del namelist_input['wrfvar4']['use_iasisobs']
@@ -92,7 +89,7 @@ def config_wrfda(work_root, wrfda_root, config, args, wrf_work_dir=None):
 	for key, value in config['time_control'].items(): namelist_input['time_control'][key] = value
 	for key, value in config['domains'     ].items(): namelist_input['domains'     ][key] = value
 	# WRFDA only take grids parameters one domain at a time.
-	namelist_input['domains']['max_dom']                     = 1
+	namelist_input['domains']['max_dom'] = 1
 	for key in ('e_we', 'e_sn', 'e_vert', 'dx', 'dy', 'grid_id', 'parent_id', 'i_parent_start', 'j_parent_start', 'parent_grid_ratio', 'parent_time_step_ratio'):
 		if key in config['domains']:
 			namelist_input['domains'][key] = config['domains'][key][dom_idx]

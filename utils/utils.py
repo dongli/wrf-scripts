@@ -16,3 +16,4 @@ from job_pending import job_pending
 from ftp_exist import ftp_exist
 from ftp_get import ftp_get
 from ftp_list import ftp_list
+from dict_helpers import has_key, get_value
