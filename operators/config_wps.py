@@ -49,7 +49,7 @@ def config_wps(work_root, wps_root, geog_root, config, args):
 	namelist_wps['geogrid']['opt_geogrid_tbl_path'] = wps_work_dir
 	namelist_wps['metgrid']['opt_metgrid_tbl_path'] = wps_work_dir
 	namelist_wps.write('./namelist.wps', force=True)
-	run(f'ncl {script_root}/../plots/plot_domains.ncl > /dev/null')
+	run(f'ncl -Q {script_root}/../plots/plot_domains.ncl')
 	cli.notice(f'Check {wps_work_dir}/wps_show_dom.pdf for domains.')
 
 	cli.notice('Succeeded.')
