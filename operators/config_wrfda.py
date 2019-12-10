@@ -13,7 +13,7 @@ script_root = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(f'{script_root}/../utils')
 from utils import cli, parse_config, wrf_version, Version, has_key, get_value
 
-def config_wrfda(work_root, wrfda_root, config, args, wrf_work_dir=None):
+def config_wrfda(work_root, wrfda_root, config, args, wrf_work_dir=None, tag=None):
 	start_time = config['custom']['start_time']
 	end_time = config['custom']['end_time']
 	datetime_fmt  = 'YYYY-MM-DD_HH:mm:ss'
@@ -21,19 +21,29 @@ def config_wrfda(work_root, wrfda_root, config, args, wrf_work_dir=None):
 	max_dom = config['domains']['max_dom']
 
 	# Need to take some parameters from wrfinput file.
-	if not wrf_work_dir: wrf_work_dir = work_root + '/wrf'
+	if not wrf_work_dir:
+		if tag != None:
+			wrf_work_dir = f'{work_root}/wrf_{tag}'
+		else:
+			wrf_work_dir = f'{work_root}/wrf'
 	if not os.path.isdir(wrf_work_dir): cli.error(f'{wrf_work_dir} does not exist!')
 
 	if max_dom > 1:
-		if not has_key(config, ('custom', 'da', 'dom')):
+		if not has_key(config, ('custom', 'wrfda', 'dom')):
 			cli.error('You need to set custom->da->dom to set which domain to work on!')
-		dom_idx = config['custom']['da']['dom']
+		dom_idx = config['custom']['wrfda']['dom']
 		dom_str = 'd' + str(dom_idx + 1).zfill(2)
-		wrfda_work_dir = os.path.abspath(work_root) + f'/wrfda/{dom_str}'
+		if tag != None:
+			wrfda_work_dir = f'{work_root}/wrfda_{tag}/{dom_str}'
+		else:
+			wrfda_work_dir = f'{work_root}/wrfda/{dom_str}'
 	else:
 		dom_idx = 0
 		dom_str = 'd01'
-		wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
+		if tag != None:
+			wrfda_work_dir = f'{work_root}/wrfda_{tag}'
+		else:
+			wrfda_work_dir = f'{work_root}/wrfda'
 	if not os.path.isdir(wrfda_work_dir): os.makedirs(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 
@@ -44,7 +54,7 @@ def config_wrfda(work_root, wrfda_root, config, args, wrf_work_dir=None):
 	hypsometric_opt = wrfinput.getncattr('HYPSOMETRIC_OPT')
 	wrfinput.close()
 
-	time_window = get_value(config, ('custom', 'da', 'time_window'), 360)
+	time_window = get_value(config, ('custom', 'wrfda', 'time_window'), 360)
 	# Read in namelist template (not exact Fortran namelist format, we need to change it).
 	template = open(f'{wrfda_root}/var/README.namelist').read()
 	template = re.sub(r'^[^&]*', '', template, flags=re.DOTALL)

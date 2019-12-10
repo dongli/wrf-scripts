@@ -12,14 +12,17 @@ import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, check_files, search_files, run, submit_job, parse_config
 
-def run_real(work_root, wps_work_dir, wrf_root, config, args):
+def run_real(work_root, wps_work_dir, wrf_root, config, args, tag):
 	start_time = config['custom']['start_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
 	max_dom = config['domains']['max_dom']
 
 	if not os.path.isdir(wps_work_dir): cli.error(f'WPS work directory {wps_work_dir} does not exist!')
-	wrf_work_dir = os.path.abspath(work_root) + '/wrf'
+	if tag != None:
+		wrf_work_dir = f'{work_root}/wrf_{tag}'
+	else:
+		wrf_work_dir = f'{work_root}/wrf'
 	if not os.path.isdir(wrf_work_dir): os.mkdir(wrf_work_dir)
 	os.chdir(wrf_work_dir)
 

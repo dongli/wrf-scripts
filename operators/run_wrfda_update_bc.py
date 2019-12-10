@@ -8,20 +8,30 @@ import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, check_files, run, parse_config, submit_job
 
-def run_wrfda_update_bc(work_root, wrfda_root, update_lowbc, config, args):
+def run_wrfda_update_bc(work_root, wrfda_root, update_lowbc, config, args, wrf_work_dir=None, tag=None):
 	start_time = config['custom']['start_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
 	max_dom = config['domains']['max_dom']
 
-	wrf_work_dir = os.path.abspath(work_root) + '/wrf'
+	if not wrf_work_dir:
+		if tag != None:
+			wrf_work_dir = f'{work_root}/wrf_{tag}'
+		else:
+			wrf_work_dir = f'{work_root}/wrf'
 
 	if max_dom > 1:
-		dom_str = 'd' + str(config['custom']['run_wrfda_on_dom'] + 1).zfill(2)
-		wrfda_work_dir = os.path.abspath(work_root) + f'/wrfda/{dom_str}'
+		dom_str = 'd' + str(config['custom']['wrfda']['dom'] + 1).zfill(2)
+		if tag != None:
+			wrfda_work_dir = f'{work_root}/wrfda_{tag}/{dom_str}'
+		else:
+			wrfda_work_dir = f'{work_root}/wrfda/{dom_str}'
 	else:
 		dom_str = 'd01'
-		wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
+		if tag != None:
+			wrfda_work_dir = f'{work_root}/wrfda_{tag}'
+		else:
+			wrfda_work_dir = f'{work_root}/wrfda'
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 

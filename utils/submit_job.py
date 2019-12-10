@@ -12,6 +12,7 @@ import signal
 signal.signal(signal.SIGINT, signal.default_int_handler)
 
 def submit_job(cmd, ntasks, config, args, logfile='rsl.out.0000', wait=False, queue_idx=0):
+	if logfile: run(f'rm -f {logfile}')
 	if args.ntasks_per_node != None:
 		ntasks_per_node = args.ntasks_per_node
 	else:

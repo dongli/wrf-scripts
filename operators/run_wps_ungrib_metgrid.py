@@ -9,13 +9,12 @@ import re
 from shutil import copy
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
-from utils import cli, check_files, wrf_version, Version, run, submit_job, parse_config
+from utils import cli, check_files, wrf_version, Version, run, submit_job, parse_config, has_key, get_value
 
 def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
-	if 'background' in config['custom'] and 'type' in config['custom']['background']:
-		bkg_type = config['custom']['background']['type']
-	else:
-		bkg_type = 'gfs'
+	bkg_type = get_value(config['custom'], ['background', 'type'], default='gfs')
+	if bkg_type == 'gfs' and not has_key(config['custom'], ['background', 'file_pattern']):
+		config['custom']['background']['file_pattern'] = 'gfs.t{{ bkg_start_time.format("HH") }}z.pgrb2.*.f{{ "%03d" % bkg_forecast_hour }}'
 
 	wps_work_dir = os.path.abspath(work_root) + '/wps'
 	if not os.path.isdir(wps_work_dir):
@@ -28,7 +27,7 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 		cli.error('WPS (>= 4.0) is needed to process new GFS data since 2019-06-12!')
 
 	cli.stage(f'Run ungrib.exe at {wps_work_dir} ...')
-	if 'background' in config['custom'] and 'vtable' in config['custom']['background']:
+	if has_key(config['custom'], ['background', 'vtable']):
 		if os.path.isfile(config["custom"]["background"]["vtable"]):
 			run(f'ln -sf {config["custom"]["Background"]["vtable"]} {wps_work_dir}/Vtable')
 		else:
@@ -39,7 +38,7 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 		run(f'ln -sf {wps_root}/ungrib/Variable_Tables/Vtable.{bkg_type.upper()} {wps_work_dir}/Vtable')
 
 	def eval_bkg_dir(bkg_start_time, bkg_time):
-		if 'background' in config['custom'] and 'dir_pattern' in config['custom']['background']:
+		if has_key(config['custom'], ['background', 'dir_pattern']):
 			return bkg_root + '/' + Template(config['custom']['background']['dir_pattern']).render(bkg_start_time=bkg_start_time, bkg_time=bkg_time)
 		elif bkg_type == 'gfs':
 			return bkg_root + '/gfs.' + bkg_start_time.format('YYYYMMDD') + '/' + bkg_start_time.format('HH')
@@ -47,7 +46,7 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 	# Find out suitable background data that cover forecast time period.
 	def is_bkg_exist(bkg_start_time):
 		bkg_dir = eval_bkg_dir(bkg_start_time, bkg_start_time)
-		if 'background' in config['custom'] and 'file_pattern' in config['custom']['background']:
+		if has_key(config['custom'], ['background', 'file_pattern']):
 			if type(config['custom']['background']['file_pattern']) == list:
 				file_pattern = config['custom']['background']['file_pattern'][0]
 			else:

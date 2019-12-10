@@ -12,7 +12,7 @@ import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, parse_config, wrf_version, Version
 
-def config_wrf(work_root, wrf_root, wrfda_root, config, args):
+def config_wrf(work_root, wrf_root, wrfda_root, config, args, tag=None):
 	phys_config = config['physics'] if 'physics' in config else {}
 
 	start_time = config['custom']['start_time']
@@ -22,7 +22,10 @@ def config_wrf(work_root, wrf_root, wrfda_root, config, args):
 	start_time_str = start_time.format('YYYY-MM-DD_HH:mm:ss')
 	end_time_str = end_time.format('YYYY-MM-DD_HH:mm:ss')
 
-	wrf_work_dir = work_root + '/wrf'
+	if tag != None:
+		wrf_work_dir = f'{work_root}/wrf_{tag}'
+	else:
+		wrf_work_dir = f'{work_root}/wrf'
 	if not os.path.isdir(wrf_work_dir): os.mkdir(wrf_work_dir)
 	os.chdir(wrf_work_dir)
 

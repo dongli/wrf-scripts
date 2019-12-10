@@ -12,23 +12,37 @@ from utils import cli, check_files, search_files, run, submit_job, parse_config
 
 scripts_root = os.path.dirname(os.path.realpath(__file__))
 
-def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None, force=False):
+def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None, force=False, tag=None, fg=None):
 	start_time = config['custom']['start_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
 	max_dom = config['domains']['max_dom']
 
-	if not wrf_work_dir: wrf_work_dir = os.path.abspath(work_root) + '/wrf'
+	if not wrf_work_dir:
+		if tag != None:
+			wrf_work_dir = f'{work_root}/wrf_{tag}'
+		else:
+			wrf_work_dir = f'{work_root}/wrf'
 	if not os.path.isdir(wrf_work_dir): cli.error(f'{wrf_work_dir} does not exist!')
 
-	obsproc_work_dir = os.path.abspath(work_root) + '/wrfda/obsproc'
+	if tag != None:
+		obsproc_work_dir = f'{work_root}/wrfda_{tag}/obsproc'
+	else:
+		obsproc_work_dir = f'{work_root}/wrfda/obsproc'
+	if not os.path.isdir(obsproc_work_dir): cli.error(f'{obsproc_work_dir} does not exist!')
 
 	if max_dom > 1:
-		dom_str = 'd' + str(config['custom']['run_wrfda_on_dom'] + 1).zfill(2)
-		wrfda_work_dir = os.path.abspath(work_root) + f'/wrfda/{dom_str}'
+		dom_str = 'd' + str(config['custom']['wrfda']['dom'] + 1).zfill(2)
+		if tag != None:
+			wrfda_work_dir = f'{work_root}/wrfda_{tag}/{dom_str}'
+		else:
+			wrfda_work_dir = f'{work_root}/wrfda/{dom_str}'
 	else:
 		dom_str = 'd01'
-		wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
+		if tag != None:
+			wrfda_work_dir = f'{work_root}/wrfda_{tag}'
+		else:
+			wrfda_work_dir = f'{work_root}/wrfda'
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 
@@ -66,7 +80,10 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None, forc
 	if not check_files(expected_files):
 		cli.error('real.exe or da_update_bc.exe wasn\'t executed successfully!')
 	# TODO: Assume there is only one domain to be assimilated.
-	run(f'ln -sf {wrf_work_dir}/wrfinput_{dom_str}_{start_time_str} {wrfda_work_dir}/fg')
+	if fg != None:
+		run(f'ln -sf {fg} {wrfda_work_dir}/fg')
+	else:
+		run(f'ln -sf {wrf_work_dir}/wrfinput_{dom_str}_{start_time_str} {wrfda_work_dir}/fg')
 
 	# Observation data
 	if config['custom']['wrfda']['type'] == '3dvar':

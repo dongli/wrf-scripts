@@ -2,9 +2,11 @@
 
 import argparse
 import pendulum
+import copy
 import os
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../operators')
 from utils import cli, parse_config, run, copy_netcdf_file, wrf_version, Version
 import wrf_operators as wrf
 
@@ -21,6 +23,7 @@ parser.add_argument('-l', '--littler-root', dest='littler_root', help='LITTLE_R 
 parser.add_argument('-p', '--prepbufr-root', dest='prepbufr_root', help='PrepBUFR data root directory')
 parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
 parser.add_argument('-n', '--num-proc', dest='np', help='MPI process number to run WRF.', default=2, type=int)
+parser.add_argument(      '--ntasks-per-node', dest='ntasks_per_node', help='Override the default setting.', default=None, type=int)
 parser.add_argument(      '--slurm', help='Use SLURM job management system to run MPI jobs.', action='store_true')
 parser.add_argument('-v', '--verbose', help='Print out work log', action='store_true')
 parser.add_argument('-f', '--force', help='Force to run', action='store_true')
@@ -104,7 +107,7 @@ version = wrf_version(args.wrf_root)
 
 config = parse_config(args.config_json)
 
-if config['wrfda']['ob_format'] == 1:
+if config['wrfvar3']['ob_format'] == 1:
 	if not args.prepbufr_root:
 		if os.getenv('PREPBUFR_ROOT'):
 			args.prepbufr_root = os.getenv('PREPBUFR_ROOT')
@@ -113,7 +116,7 @@ if config['wrfda']['ob_format'] == 1:
 	args.prepbufr_root = os.path.abspath(args.prepbufr_root)
 	if not os.path.isdir(args.prepbufr_root):
 		cli.error(f'Directory {args.prepbufr_root} does not exist!')
-elif config['wrfda']['ob_format'] == 2:
+elif config['wrfvar3']['ob_format'] == 2:
 	if not args.littler_root:
 		if os.getenv('LITTLER_ROOT'):
 			args.littler_root = os.getenv('LITTLER_ROOT')
@@ -132,59 +135,113 @@ datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 start_time_str = start_time.format(datetime_fmt)
 end_time_str = end_time.format(datetime_fmt)
 
-if start_time.hour == 0:
-	config['custom']['start_time'] = config['custom']['start_time'].subtract(hours=6)
-	config['custom']['forecast_hours'] += 6
-
 # Change work_root to specific date directory.
 args.work_root += '/' + start_time.format('YYYYMMDDHH')
-wrf.config_wps(args.work_root, args.wps_root, args.geog_root, config, args)
-for i in range(config['domains']['max_dom']):
-	run(f'ln -sf {os.path.dirname(args.work_root)}/wps/geo_em.d{str(i+1).zfill(2)}.nc {args.work_root}/wps/')
-wrf.run_wps_ungrib_metgrid(args.work_root, args.wps_root, args.bkg_root, config, args)
 
-wrf.config_wrf(args.work_root, args.wrf_root, args.wrfda_root, config, args)
-wrf.run_real(args.work_root, args.work_root + '/wps', args.wrf_root, config, args)
+def wrfda_conv(config, tag=None, fg_d01=None, fg_d02=None):
+	# Run conventional data assimilation.
+	config['custom']['wrfda']['dom'] = 0
+	wrf.config_wrfda(args.work_root, args.wrfda_root, config, args, tag=tag)
+	wrf.run_wrfda_obsproc(args.work_root, args.wrfda_root, args.littler_root, config, args, tag=tag)
+	wrf.run_wrfda_3dvar(args.work_root, args.wrfda_root, config, args, tag=tag, fg=fg_d01)
+	wrf.run_wrfda_update_bc(args.work_root, args.wrfda_root, False, config, args, tag=tag)
 
-# Run conventional data assimilation.
-config['custom']['run_wrfda_on_dom'] = 0
-wrf.config_wrfda(args.work_root, args.wrfda_root, config, args)
-wrf.run_wrfda_obsproc(args.work_root, args.wrfda_root, args.littler_root, config, args)
-wrf.run_wrfda_3dvar(args.work_root, args.wrfda_root, config, args)
-wrf.run_wrfda_update_bc(args.work_root, args.wrfda_root, False, config, args)
+	config['custom']['wrfda']['dom'] = 1
+	wrf.config_wrfda(args.work_root, args.wrfda_root, config, args, tag=tag)
+	wrf.run_wrfda_obsproc(args.work_root, args.wrfda_root, args.littler_root, config, args, tag=tag)
+	wrf.run_wrfda_3dvar(args.work_root, args.wrfda_root, config, args, tag=tag, fg=fg_d02)
 
-config['custom']['run_wrfda_on_dom'] = 1
-wrf.config_wrfda(args.work_root, args.wrfda_root, config, args)
-wrf.run_wrfda_obsproc(args.work_root, args.wrfda_root, args.littler_root, config, args)
-wrf.run_wrfda_3dvar(args.work_root, args.wrfda_root, config, args)
+
+if start_time.hour == 0:
+	coldrun_config = copy.deepcopy(config)
+	coldrun_config['custom']['start_time'] = config['custom']['start_time'].subtract(hours=6)
+
+	coldrun_config['custom']['forecast_hours'] = 24
+	wrf.config_wps(args.work_root, args.wps_root, args.geog_root, coldrun_config, args)
+	for i in range(coldrun_config['domains']['max_dom']):
+		run(f'ln -sf {os.path.dirname(args.work_root)}/wps/geo_em.d{str(i+1).zfill(2)}.nc {args.work_root}/wps/')
+	wrf.run_wps_ungrib_metgrid(args.work_root, args.wps_root, args.bkg_root, coldrun_config, args)
+
+	coldrun_config['custom']['forecast_hours'] = 6
+	wrf.config_wrf(args.work_root, args.wrf_root, args.wrfda_root, coldrun_config, args, tag='coldrun')
+	wrf.run_real(args.work_root, args.work_root + '/wps', args.wrf_root, coldrun_config, args, tag='coldrun')
+
+	wrfda_conv(coldrun_config, 'coldrun')
+
+	# Run WRF for 6 hours.
+	wrf.run_wrf(args.work_root, args.wrf_root, coldrun_config, args, tag='coldrun')
+
+	fg_d01 = f'{args.work_root}/wrf_coldrun/wrfout_d01_{start_time_str}'
+	fg_d02 = f'{args.work_root}/wrf_coldrun/wrfout_d02_{start_time_str}'
+else:
+	prev_time = start_time.subtract(hours=3)
+	prev_work_root = os.path.dirname(args.work_root) + '/' + prev_time.format('YYYYMMDDHH')
+	fg_d01 = f'{prev_work_root}/wrf/wrfout_d01_{start_time_str}'
+	fg_d02 = f'{prev_work_root}/wrf/wrfout_d02_{start_time_str}'
+	
+wrfda_conv(config, fg_d01=fg_d01, fg_d02=fg_d02)
 
 # Run radar data assimilation.
-config['custom']['run_wrfda_on_dom'] = 0
+cli.banner('Run radar DA')
+config['custom']['wrfda']['dom'] = 1
 if not 'wrfvar4' in config: config['wrfvar4'] = {}
 config['wrfvar1']['write_increments'] = True
 config['wrfvar2']['calc_w_increment'] = True
-config['wrfvar4']['use_radarobs'] = True
-config['wrfvar4']['use_radar_rv'] = True
-config['wrfvar4']['use_radar_rqv'] = True
-config['wrfvar4']['use_radar_rhv'] = True
+config['wrfvar2']['dt_cloud_model'] = False
+config['wrfvar4']['thin_conv'] = True
+config['wrfvar4']['thin_rainobs'] = False
+config['wrfvar4']['thin_mesh_conv'] = 20
 config['wrfvar4']['use_synopobs'] = False
 config['wrfvar4']['use_shipsobs'] = False
 config['wrfvar4']['use_metarobs'] = False
 config['wrfvar4']['use_soundobs'] = False
 config['wrfvar4']['use_pilotobs'] = False
 config['wrfvar4']['use_airepobs'] = False
+config['wrfvar4']['use_satemobs'] = False
 config['wrfvar4']['use_geoamvobs'] = False
 config['wrfvar4']['use_polaramvobs'] = False
-config['wrfvar4']['use_bogusobs'] = False
-config['wrfvar4']['use_buoyobs'] = False
-config['wrfvar4']['use_profilerobs'] = False
-config['wrfvar4']['use_satemobs'] = False
+config['wrfvar4']['use_gpsztdobs'] = False
 config['wrfvar4']['use_gpspwobs'] = False
 config['wrfvar4']['use_gpsrefobs'] = False
-config['wrfvar4']['use_3dvar_phy'] = False
+config['wrfvar4']['use_profilerobs'] = False
+config['wrfvar4']['use_buoyobs'] = False
+config['wrfvar4']['use_ssmiretrievalobs'] = False
+config['wrfvar4']['use_ssmitbobs'] = False
+config['wrfvar4']['use_ssmt1obs'] = False
+config['wrfvar4']['use_ssmt2obs'] = False
+config['wrfvar4']['use_qscatobs'] = False
+config['wrfvar4']['use_bogusobs'] = False
 config['wrfvar4']['use_airsretobs'] = False
-wrf.config_wrfda(args.work_root, args.wrfda_root, config, args)
-wrf.run_wrfda_3dvar(args.work_root, args.wrfda_root, config, args, force=True)
+config['wrfvar4']['use_radarobs'] = True
+config['wrfvar4']['use_radar_rv'] = True
+config['wrfvar4']['use_radar_rf'] = False
+config['wrfvar4']['use_radar_rqv'] = True
+config['wrfvar4']['use_radar_rhv'] = True
+config['wrfvar4']['use_3dvar_phy'] = False
+config['wrfvar4']['use_obs_errfac'] = False
+config['wrfvar7']['cv_options'] = 7
+config['wrfvar7']['cloud_cv_options'] = 3
+config['wrfvar7']['as1'] = [0.25, 0.75, 1.5]
+config['wrfvar7']['as2'] = [0.25, 0.75, 1.5]
+config['wrfvar7']['as3'] = [0.25, 0.75, 1.5]
+config['wrfvar7']['as4'] = [0.25, 0.75, 1.5]
+config['wrfvar7']['as5'] = [0.25, 0.75, 1.5]
+config['wrfvar7']['rf_passes'] = 4
+config['wrfvar7']['var_scaling1'] = 2.0
+config['wrfvar7']['var_scaling2'] = 2.0
+config['wrfvar7']['var_scaling3'] = 2.0
+config['wrfvar7']['var_scaling4'] = 2.0
+config['wrfvar7']['var_scaling5'] = 2.0
+config['wrfvar7']['len_scaling1'] = 0.5
+config['wrfvar7']['len_scaling2'] = 0.5
+config['wrfvar7']['len_scaling3'] = 0.5
+config['wrfvar7']['len_scaling4'] = 0.5
+config['wrfvar7']['len_scaling5'] = 0.5
+config['wrfvar7']['je_factor'] = 1.0
+config['wrfvar12']['balance_type'] = 1
+wrf.config_wrfda(args.work_root, args.wrfda_root, config, args, wrf_work_dir=f'{args.work_root}/wrf', tag='radar')
+wrf.run_wrfda_3dvar(args.work_root, args.wrfda_root, config, args, wrf_work_dir=f'{args.work_root}/wrf', tag='radar', fg=f'{args.work_root}/wrfda/d02/wrfvar_output')
 
-# wrf.run_wrf(args.work_root, args.wrf_root, config, args)
-
+cli.banner('Run WRF warm forecast')
+wrf.config_wrf(args.work_root, args.wrf_root, args.wrfda_root, config, args)
+wrf.run_wrf(args.work_root, args.wrf_root, config, args)

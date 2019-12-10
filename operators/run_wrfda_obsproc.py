@@ -12,14 +12,21 @@ script_root = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(f'{script_root}/../utils')
 from utils import cli, check_files, run, parse_config, submit_job, has_key, get_value
 
-def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
+def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args, wrf_work_dir=None, tag=None):
 	start_time = config['custom']['start_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
 
-	wrf_work_dir = os.path.abspath(work_root) + '/wrf'
+	if not wrf_work_dir:
+		if tag != None:
+			wrf_work_dir = f'{work_root}/wrf_{tag}'
+		else:
+			wrf_work_dir = f'{work_root}/wrf'
 
-	wrfda_work_dir = os.path.abspath(work_root) + '/wrfda/obsproc'
+	if tag != None:
+		wrfda_work_dir = f'{work_root}/wrfda_{tag}/obsproc'
+	else:
+		wrfda_work_dir = f'{work_root}/wrfda/obsproc'
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 
@@ -42,8 +49,8 @@ def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args):
 		moad_cen_lat = config['geogrid']['ref_lat']
 		standard_lon = config['geogrid']['ref_lon']
 
-	output_format = get_value(config, 'custom', 'obsproc', 'output_format', default=2)
-	time_window   = get_value(config, 'custom', 'da', 'time_window', default=360)
+	output_format = get_value(config, ['custom', 'obsproc', 'output_format'], default=2)
+	time_window   = get_value(config, ['custom', 'wrfda', 'time_window'], default=360)
 
 	if has_key(config, ('custom', 'da', 'type')):
 		if config['custom']['da']['type'] == '3dvar':

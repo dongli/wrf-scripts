@@ -56,7 +56,7 @@ def parse_config(config_json):
 		config['domains']['j_parent_start'] = [1]
 	else:
 		if has_key(config, ('custom', 'start_time')):
-			check_mandatory_params(config['domains'], ('parent_time_step_ratio'))
+			check_mandatory_params(config['domains'], ['parent_time_step_ratio'])
 		check_mandatory_params(config['domains'], ('i_parent_start', 'j_parent_start'))
 	# Change to array.
 	change_to_array(config, ('domains', 'dx'                    ))

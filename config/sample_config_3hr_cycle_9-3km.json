@@ -4,7 +4,7 @@
     "start_time": "2019050200",
     "forecast_hours": 6,
     "background": {
-      "dir_pattern": "gfs.{{ bkg_start_time.format('YYYYMMDDHH') }}"
+      "dir_pattern": "{{ bkg_start_time.format('YYYYMMDDHH') }}"
     },
     "wrfda": {
       "type": "3dvar",

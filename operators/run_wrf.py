@@ -23,7 +23,7 @@ def copy_wrfda_output(dom_str, start_time_str, wrfda_work_dir):
 		run(f'ln -sf {wrfda_work_dir}/wrfbdy_d01_{start_time_str}.lateral_updated wrfbdy_d01')
 	return True
 
-def run_wrf(work_root, wrf_root, config, args):
+def run_wrf(work_root, wrf_root, config, args, tag):
 	start_time = config['custom']['start_time']
 	end_time = config['custom']['end_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
@@ -33,7 +33,10 @@ def run_wrf(work_root, wrf_root, config, args):
 
 	wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
 
-	wrf_work_dir = os.path.abspath(work_root) + '/wrf'
+	if tag != None:
+		wrf_work_dir = f'{work_root}/wrf_{tag}'
+	else:
+		wrf_work_dir = f'{work_root}/wrf'
 	if not os.path.isdir(wrf_work_dir): os.mkdir(wrf_work_dir)
 	os.chdir(wrf_work_dir)
 
