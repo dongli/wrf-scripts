@@ -23,7 +23,7 @@ def copy_wrfda_output(dom_str, start_time_str, wrfda_work_dir):
 		run(f'ln -sf {wrfda_work_dir}/wrfbdy_d01_{start_time_str}.lateral_updated wrfbdy_d01')
 	return True
 
-def run_wrf(work_root, wrf_root, config, args, tag):
+def run_wrf(work_root, wrf_root, config, args, wrfda_work_dir=None, tag=None):
 	start_time = config['custom']['start_time']
 	end_time = config['custom']['end_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
@@ -31,13 +31,18 @@ def run_wrf(work_root, wrf_root, config, args, tag):
 	end_time_str = end_time.format(datetime_fmt)
 	max_dom = config['domains']['max_dom']
 
-	wrfda_work_dir = os.path.abspath(work_root) + '/wrfda'
+	if not wrfda_work_dir:
+		if tag != None:
+			wrfda_work_dir = f'{work_root}/wrfda_{tag}'
+		else:
+			wrfda_work_dir = f'{work_root}/wrfda'
+	if not os.path.isdir(wrfda_work_dir): cli.error(f'run_wrf: {wrfda_work_dir} does not exist!')
 
 	if tag != None:
 		wrf_work_dir = f'{work_root}/wrf_{tag}'
 	else:
 		wrf_work_dir = f'{work_root}/wrf'
-	if not os.path.isdir(wrf_work_dir): os.mkdir(wrf_work_dir)
+	if not os.path.isdir(wrf_work_dir): cli.error(f'run_wrf: {wrf_work_dir} does not exist!')
 	os.chdir(wrf_work_dir)
 
 	all_wrfda_ok = True
@@ -74,10 +79,10 @@ def run_wrf(work_root, wrf_root, config, args, tag):
 		while True:
 			submit_job(f'{wrf_root}/run/wrf.exe', args.np, config, args, wait=True)
 			if not check_files(expected_files):
-				if retries == 10:
+				if retries == 0:
 					cli.error(f'Failed! Check output {os.path.abspath(wrf_work_dir)}/rsl.error.0000.')
 				retries = retries + 1
-				cli.warning('Failed to run wrf, retry it!')
+				cli.warning(f'Failed to run wrf, retry it! {retries}')
 			else:
 				break
 		cli.notice('Succeeded.')

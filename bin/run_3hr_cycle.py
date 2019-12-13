@@ -7,7 +7,7 @@ import os
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../operators')
-from utils import cli, parse_config, run, copy_netcdf_file, wrf_version, Version
+from utils import cli, parse_time, parse_config, run, copy_netcdf_file, wrf_version, Version
 import wrf_operators as wrf
 
 parser = argparse.ArgumentParser(description="Run WRF 3-hour cycle forecast.\n\nNWP operation software.\nCopyright (C) 2018-2019 All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
@@ -21,10 +21,11 @@ parser.add_argument('-g', '--geog-root', dest='geog_root', help='GEOG data root 
 parser.add_argument('-b', '--bkg-root', dest='bkg_root', help='Background root directory')
 parser.add_argument('-l', '--littler-root', dest='littler_root', help='LITTLE_R data root directory')
 parser.add_argument('-p', '--prepbufr-root', dest='prepbufr_root', help='PrepBUFR data root directory')
-parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.')
-parser.add_argument('-n', '--num-proc', dest='np', help='MPI process number to run WRF.', default=2, type=int)
-parser.add_argument(      '--ntasks-per-node', dest='ntasks_per_node', help='Override the default setting.', default=None, type=int)
-parser.add_argument(      '--slurm', help='Use SLURM job management system to run MPI jobs.', action='store_true')
+parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file')
+parser.add_argument('-t', '--start-time', dest='start_time', help='Start forecast time', type=parse_time)
+parser.add_argument('-n', '--num-proc', dest='np', help='MPI process number to run WRF', default=2, type=int)
+parser.add_argument(      '--ntasks-per-node', dest='ntasks_per_node', help='Override the default setting', default=None, type=int)
+parser.add_argument(      '--slurm', help='Use SLURM job management system to run MPI jobs', action='store_true')
 parser.add_argument('-v', '--verbose', help='Print out work log', action='store_true')
 parser.add_argument('-f', '--force', help='Force to run', action='store_true')
 args = parser.parse_args()
@@ -106,6 +107,9 @@ if not os.path.isdir(args.bkg_root):
 version = wrf_version(args.wrf_root)
 
 config = parse_config(args.config_json)
+if args.start_time:
+	config['custom']['start_time'] = args.start_time
+	config['custom']['end_time'] = args.start_time.add(hours=config['custom']['forecast_hours'])
 
 if config['wrfvar3']['ob_format'] == 1:
 	if not args.prepbufr_root:
@@ -138,48 +142,66 @@ end_time_str = end_time.format(datetime_fmt)
 # Change work_root to specific date directory.
 args.work_root += '/' + start_time.format('YYYYMMDDHH')
 
-def wrfda_conv(config, tag=None, fg_d01=None, fg_d02=None):
+def wrfda_conv(config, wrf_work_dir=None, tag=None, fg_d01=None, fg_d02=None, wrfbdy=None):
 	# Run conventional data assimilation.
+	if not wrf_work_dir: wrf_work_dir = os.path.dirname(fg_d01) if fg_d01 else None
 	config['custom']['wrfda']['dom'] = 0
-	wrf.config_wrfda(args.work_root, args.wrfda_root, config, args, tag=tag)
+	wrf.config_wrfda(args.work_root, args.wrfda_root, config, args, wrf_work_dir=wrf_work_dir, tag=tag, fg=fg_d01)
 	wrf.run_wrfda_obsproc(args.work_root, args.wrfda_root, args.littler_root, config, args, tag=tag)
-	wrf.run_wrfda_3dvar(args.work_root, args.wrfda_root, config, args, tag=tag, fg=fg_d01)
-	wrf.run_wrfda_update_bc(args.work_root, args.wrfda_root, False, config, args, tag=tag)
+	wrf.run_wrfda_3dvar(args.work_root, args.wrfda_root, config, args, wrf_work_dir=wrf_work_dir, tag=tag, fg=fg_d01)
+	wrf.run_wrfda_update_bc(args.work_root, args.wrfda_root, False, config, args, wrf_work_dir=wrf_work_dir, wrfbdy=wrfbdy, tag=tag)
 
+	if not wrf_work_dir: wrf_work_dir = os.path.dirname(fg_d02) if fg_d02 else None
 	config['custom']['wrfda']['dom'] = 1
-	wrf.config_wrfda(args.work_root, args.wrfda_root, config, args, tag=tag)
+	wrf.config_wrfda(args.work_root, args.wrfda_root, config, args, wrf_work_dir=wrf_work_dir, tag=tag, fg=fg_d02)
 	wrf.run_wrfda_obsproc(args.work_root, args.wrfda_root, args.littler_root, config, args, tag=tag)
-	wrf.run_wrfda_3dvar(args.work_root, args.wrfda_root, config, args, tag=tag, fg=fg_d02)
-
+	wrf.run_wrfda_3dvar(args.work_root, args.wrfda_root, config, args, wrf_work_dir=wrf_work_dir, tag=tag, fg=fg_d02)
 
 if start_time.hour == 0:
+	cli.banner('Run WRF cold run')
+
 	coldrun_config = copy.deepcopy(config)
 	coldrun_config['custom']['start_time'] = config['custom']['start_time'].subtract(hours=6)
 
-	coldrun_config['custom']['forecast_hours'] = 24
+	# NOTE: Generate more 6hr for next warm run.
+	coldrun_config['custom']['forecast_hours'] = 12
+	coldrun_config['custom']['end_time'] = coldrun_config['custom']['start_time'].add(hours=coldrun_config['custom']['forecast_hours'])
 	wrf.config_wps(args.work_root, args.wps_root, args.geog_root, coldrun_config, args)
 	for i in range(coldrun_config['domains']['max_dom']):
 		run(f'ln -sf {os.path.dirname(args.work_root)}/wps/geo_em.d{str(i+1).zfill(2)}.nc {args.work_root}/wps/')
 	wrf.run_wps_ungrib_metgrid(args.work_root, args.wps_root, args.bkg_root, coldrun_config, args)
 
-	coldrun_config['custom']['forecast_hours'] = 6
+	coldrun_config['custom']['end_time'] = coldrun_config['custom']['start_time'].add(hours=coldrun_config['custom']['forecast_hours'])
 	wrf.config_wrf(args.work_root, args.wrf_root, args.wrfda_root, coldrun_config, args, tag='coldrun')
 	wrf.run_real(args.work_root, args.work_root + '/wps', args.wrf_root, coldrun_config, args, tag='coldrun')
 
-	wrfda_conv(coldrun_config, 'coldrun')
+	# Reconfigure WRF for cold run.
+	coldrun_config['custom']['forecast_hours'] = 6
+	coldrun_config['custom']['end_time'] = coldrun_config['custom']['start_time'].add(hours=coldrun_config['custom']['forecast_hours'])
+	wrf.config_wrf(args.work_root, args.wrf_root, args.wrfda_root, coldrun_config, args, tag='coldrun')
+
+	wrfda_conv(coldrun_config, tag='coldrun')
 
 	# Run WRF for 6 hours.
 	wrf.run_wrf(args.work_root, args.wrf_root, coldrun_config, args, tag='coldrun')
 
 	fg_d01 = f'{args.work_root}/wrf_coldrun/wrfout_d01_{start_time_str}'
 	fg_d02 = f'{args.work_root}/wrf_coldrun/wrfout_d02_{start_time_str}'
+	wrfbdy = f'{args.work_root}/wrf_coldrun/wrfbdy_d01'
 else:
+	wrf.config_wps(args.work_root, args.wps_root, args.geog_root, config, args)
+	for i in range(config['domains']['max_dom']):
+		run(f'ln -sf {os.path.dirname(args.work_root)}/wps/geo_em.d{str(i+1).zfill(2)}.nc {args.work_root}/wps/')
+	wrf.run_wps_ungrib_metgrid(args.work_root, args.wps_root, args.bkg_root, config, args)
+	wrf.config_wrf(args.work_root, args.wrf_root, args.wrfda_root, config, args)
+	wrf.run_real(args.work_root, args.work_root + '/wps', args.wrf_root, config, args)
 	prev_time = start_time.subtract(hours=3)
 	prev_work_root = os.path.dirname(args.work_root) + '/' + prev_time.format('YYYYMMDDHH')
 	fg_d01 = f'{prev_work_root}/wrf/wrfout_d01_{start_time_str}'
 	fg_d02 = f'{prev_work_root}/wrf/wrfout_d02_{start_time_str}'
-	
-wrfda_conv(config, fg_d01=fg_d01, fg_d02=fg_d02)
+	wrfbdy = None
+
+wrfda_conv(config, wrf_work_dir=f'{args.work_root}/wrf', fg_d01=fg_d01, fg_d02=fg_d02, wrfbdy=wrfbdy)
 
 # Run radar data assimilation.
 cli.banner('Run radar DA')
@@ -239,9 +261,11 @@ config['wrfvar7']['len_scaling4'] = 0.5
 config['wrfvar7']['len_scaling5'] = 0.5
 config['wrfvar7']['je_factor'] = 1.0
 config['wrfvar12']['balance_type'] = 1
-wrf.config_wrfda(args.work_root, args.wrfda_root, config, args, wrf_work_dir=f'{args.work_root}/wrf', tag='radar')
-wrf.run_wrfda_3dvar(args.work_root, args.wrfda_root, config, args, wrf_work_dir=f'{args.work_root}/wrf', tag='radar', fg=f'{args.work_root}/wrfda/d02/wrfvar_output')
+fg_d02 = f'{args.work_root}/wrfda/d02/wrfvar_output'
+wrf.config_wrfda(args.work_root, args.wrfda_root, config, args, tag='radar', fg=fg_d02)
+wrf.run_wrfda_3dvar(args.work_root, args.wrfda_root, config, args, tag='radar', fg=fg_d02)
+run(f'ln -sf {args.work_root}/wrfda/d01 {args.work_root}/wrfda_radar/')
 
 cli.banner('Run WRF warm forecast')
 wrf.config_wrf(args.work_root, args.wrf_root, args.wrfda_root, config, args)
-wrf.run_wrf(args.work_root, args.wrf_root, config, args)
+wrf.run_wrf(args.work_root, args.wrf_root, config, args, wrfda_work_dir=f'{args.work_root}/wrfda_radar')

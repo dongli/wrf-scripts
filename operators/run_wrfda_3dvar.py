@@ -23,13 +23,11 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None, forc
 			wrf_work_dir = f'{work_root}/wrf_{tag}'
 		else:
 			wrf_work_dir = f'{work_root}/wrf'
-	if not os.path.isdir(wrf_work_dir): cli.error(f'{wrf_work_dir} does not exist!')
 
 	if tag != None:
 		obsproc_work_dir = f'{work_root}/wrfda_{tag}/obsproc'
 	else:
 		obsproc_work_dir = f'{work_root}/wrfda/obsproc'
-	if not os.path.isdir(obsproc_work_dir): cli.error(f'{obsproc_work_dir} does not exist!')
 
 	if max_dom > 1:
 		dom_str = 'd' + str(config['custom']['wrfda']['dom'] + 1).zfill(2)
@@ -45,6 +43,8 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None, forc
 			wrfda_work_dir = f'{work_root}/wrfda'
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
+
+	cli.stage(f'Run da_wrfvar.exe at {wrfda_work_dir} ...')
 
 	be_work_dir = os.path.dirname(os.path.abspath(work_root)) + '/be/' + dom_str
 
@@ -76,13 +76,14 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None, forc
 		run(f'ln -sf {wrfda_root}/var/run/be.dat.cv3 be.dat')
 
 	# First guess
-	expected_files = ['{}/wrfinput_d{:02d}_{}'.format(wrf_work_dir, i + 1, start_time_str) for i in range(max_dom)]
-	if not check_files(expected_files):
-		cli.error('real.exe or da_update_bc.exe wasn\'t executed successfully!')
 	# TODO: Assume there is only one domain to be assimilated.
 	if fg != None:
 		run(f'ln -sf {fg} {wrfda_work_dir}/fg')
 	else:
+		expected_files = ['{}/wrfinput_d{:02d}_{}'.format(wrf_work_dir, i + 1, start_time_str) for i in range(max_dom)]
+		if not check_files(expected_files):
+			print(expected_files)
+			cli.error('real.exe or da_update_bc.exe wasn\'t executed successfully!')
 		run(f'ln -sf {wrf_work_dir}/wrfinput_{dom_str}_{start_time_str} {wrfda_work_dir}/fg')
 
 	# Observation data
@@ -112,8 +113,7 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None, forc
 		cli.notice(f'{wrfda_work_dir}/wrfvar_output_{start_time_str} already exists.')
 		return
 
-	cli.stage(f'Run da_wrfvar.exe at {wrfda_work_dir} ...')
-	submit_job(f'{wrfda_root}/var/build/da_wrfvar.exe', args.np, config, args, wait=True)
+	submit_job(f'{wrfda_root}/var/build/da_wrfvar.exe', min(20, args.np), config, args, wait=True)
 
 	expected_files = [f'wrfvar_output', 'statistics']
 	if not check_files(expected_files):

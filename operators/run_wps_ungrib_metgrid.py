@@ -12,6 +12,8 @@ sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, check_files, wrf_version, Version, run, submit_job, parse_config, has_key, get_value
 
 def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
+	start_time = config['custom']['start_time']
+
 	bkg_type = get_value(config['custom'], ['background', 'type'], default='gfs')
 	if bkg_type == 'gfs' and not has_key(config['custom'], ['background', 'file_pattern']):
 		config['custom']['background']['file_pattern'] = 'gfs.t{{ bkg_start_time.format("HH") }}z.pgrb2.*.f{{ "%03d" % bkg_forecast_hour }}'
@@ -23,7 +25,7 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 
 	version = wrf_version(wps_root)
 
-	if config['custom']['start_time'] >= pendulum.datetime(2019, 6, 11) and version < Version('4.0'):
+	if start_time >= pendulum.datetime(2019, 6, 11) and version < Version('4.0'):
 		cli.error('WPS (>= 4.0) is needed to process new GFS data since 2019-06-12!')
 
 	cli.stage(f'Run ungrib.exe at {wps_work_dir} ...')
@@ -57,11 +59,11 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 		return len(glob(f'{bkg_dir}/{file_name}')) != 0
 
 	found = False
-	for date in (config['custom']['start_time'], config['custom']['start_time'].subtract(days=1)):
+	for date in (start_time, start_time.subtract(days=1)):
 		if found: break
 		for hour in (18, 12, 6, 0):
 			bkg_start_time = pendulum.datetime(date.year, date.month, date.day, hour)
-			if ((config['custom']['start_time'] - date).days == 1 or config['custom']['start_time'].hour >= hour) and is_bkg_exist(bkg_start_time):
+			if ((start_time - date).days == 1 or start_time.hour >= hour) and is_bkg_exist(bkg_start_time):
 				found = True
 				break
 	if not found: cli.error('Background data is not available!')
@@ -70,10 +72,9 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 	# Generate the background times.
 	interval_seconds = int(re.search('interval_seconds\s*=\s*(\d+)', open('./namelist.wps').read())[1])
 	bkg_times = []
-	bkg_time = bkg_start_time
+	bkg_time = start_time
 	while bkg_time <= config['custom']['end_time']:
-		if bkg_time >= config['custom']['start_time']:
-			bkg_times.append(bkg_time)
+		bkg_times.append(bkg_time)
 		bkg_time = bkg_time.add(seconds=interval_seconds)
 	if len(bkg_times) == 0: cli.error('Failed to set background times, check start_time and forecast_hours.')
 

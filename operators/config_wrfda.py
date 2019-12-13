@@ -13,7 +13,7 @@ script_root = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(f'{script_root}/../utils')
 from utils import cli, parse_config, wrf_version, Version, has_key, get_value
 
-def config_wrfda(work_root, wrfda_root, config, args, wrf_work_dir=None, tag=None):
+def config_wrfda(work_root, wrfda_root, config, args, wrf_work_dir=None, tag=None, fg=None):
 	start_time = config['custom']['start_time']
 	end_time = config['custom']['end_time']
 	datetime_fmt  = 'YYYY-MM-DD_HH:mm:ss'
@@ -26,7 +26,6 @@ def config_wrfda(work_root, wrfda_root, config, args, wrf_work_dir=None, tag=Non
 			wrf_work_dir = f'{work_root}/wrf_{tag}'
 		else:
 			wrf_work_dir = f'{work_root}/wrf'
-	if not os.path.isdir(wrf_work_dir): cli.error(f'{wrf_work_dir} does not exist!')
 
 	if max_dom > 1:
 		if not has_key(config, ('custom', 'wrfda', 'dom')):
@@ -49,10 +48,18 @@ def config_wrfda(work_root, wrfda_root, config, args, wrf_work_dir=None, tag=Non
 
 	version = wrf_version(wrfda_root)
 
-	wrfinput = Dataset(f'{wrf_work_dir}/wrfinput_{dom_str}_{start_time_str}')
-	num_land_cat = wrfinput.getncattr('NUM_LAND_CAT')
-	hypsometric_opt = wrfinput.getncattr('HYPSOMETRIC_OPT')
-	wrfinput.close()
+	if os.path.isfile(f'{wrf_work_dir}/wrfinput_{dom_str}'):
+		f = Dataset(f'{wrf_work_dir}/wrfinput_{dom_str}')
+	elif os.path.isfile(f'{wrf_work_dir}/wrfout_{dom_str}_{start_time_str}'):
+		f = Dataset(f'{wrf_work_dir}/wrfout_{dom_str}_{start_time_str}')
+	elif fg:
+		f = Dataset(fg)
+	else:
+		print(fg)
+		cli.error(f'config_wrfda: Cannot find wrfinput or wrfout in {wrf_work_dir} or wrfvar!')
+	num_land_cat = f.getncattr('NUM_LAND_CAT')
+	hypsometric_opt = f.getncattr('HYPSOMETRIC_OPT')
+	f.close()
 
 	time_window = get_value(config, ('custom', 'wrfda', 'time_window'), 360)
 	# Read in namelist template (not exact Fortran namelist format, we need to change it).

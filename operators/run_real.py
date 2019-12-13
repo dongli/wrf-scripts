@@ -12,7 +12,7 @@ import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, check_files, search_files, run, submit_job, parse_config
 
-def run_real(work_root, wps_work_dir, wrf_root, config, args, tag):
+def run_real(work_root, wps_work_dir, wrf_root, config, args, tag=None):
 	start_time = config['custom']['start_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
@@ -28,9 +28,10 @@ def run_real(work_root, wps_work_dir, wrf_root, config, args, tag):
 
 	cli.stage(f'Run real.exe at {wrf_work_dir} ...')
 	expected_files = ['wrfinput_d{:02d}_{}'.format(i + 1, start_time_str) for i in range(max_dom)]
+	expected_files.append('wrfbdy_d01')
 	if not check_files(expected_files) or args.force:
 		run('rm -f wrfinput_* met_em.*.nc')
-		run(f'ln -s {wps_work_dir}/met_em.*.nc .')
+		run(f'ln -sf {wps_work_dir}/met_em.*.nc .')
 		try:
 			dataset = Dataset(glob('met_em.*.nc')[0])
 		except:
@@ -56,12 +57,12 @@ def run_real(work_root, wps_work_dir, wrf_root, config, args, tag):
 				submit_job(f'{wrf_root}/run/real.exe', 1, config, args, wait=True)
 				if not os.path.isfile('wrfinput_d{0:02d}'.format(i + 1)):
 					cli.error(f'Still failed to generate wrfinput_d{0:02d}! See {wrf_work_dir}/rsl.error.0000.'.format(i + 1))
-			run('mv wrfinput_d{0:02d} wrfinput_d{0:02d}_{1}'.format(i + 1, start_time_str))
+			run('ln -sf wrfinput_d{0:02d} wrfinput_d{0:02d}_{1}'.format(i + 1, start_time_str))
 		if os.path.isfile('wrfbdy_d01'):
-			run(f'mv wrfbdy_d01 wrfbdy_d01_{start_time_str}')
+			run(f'ln -sf wrfbdy_d01 wrfbdy_d01_{start_time_str}')
 		cli.notice('Succeeded.')
 	else:
-		run('ls -l wrfinput_* wrfbdy_* 2> /dev/null')
+		run('ls -l wrfinput_* wrfbdy_*')
 		cli.notice('File wrfinput_* already exist.')
 
 if __name__ == '__main__':

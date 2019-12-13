@@ -8,7 +8,7 @@ import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, check_files, run, parse_config, submit_job
 
-def run_wrfda_update_bc(work_root, wrfda_root, update_lowbc, config, args, wrf_work_dir=None, tag=None):
+def run_wrfda_update_bc(work_root, wrfda_root, update_lowbc, config, args, wrf_work_dir=None, wrfbdy=None, tag=None):
 	start_time = config['custom']['start_time']
 	datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 	start_time_str = start_time.format(datetime_fmt)
@@ -35,13 +35,16 @@ def run_wrfda_update_bc(work_root, wrfda_root, update_lowbc, config, args, wrf_w
 	if not os.path.isdir(wrfda_work_dir): os.mkdir(wrfda_work_dir)
 	os.chdir(wrfda_work_dir)
 
+	if not wrfbdy: wrfbdy = f'{wrf_work_dir}/wrfbdy_{dom_str}'
+
 	cli.stage(f'Run WRFDA update_bc at {wrfda_work_dir} ...')
 
-	expected_files = [f'{wrf_work_dir}/wrfbdy_{dom_str}_{start_time_str}', f'wrfvar_output_{start_time_str}', 'fg']
+	expected_files = [wrfbdy, f'wrfvar_output_{start_time_str}', 'fg']
 	if not check_files(expected_files):
-		cli.error('da_wrfvar.exe or real.exe wasn\'t executed successfully!')
-	run(f'cp {wrf_work_dir}/wrfbdy_{dom_str}_{start_time_str} wrfbdy_{dom_str}')
-	run(f'cp wrfvar_output_{start_time_str} wrfvar_output')
+		print(expected_files)
+		cli.error('run_wrfda_update_bc: da_wrfvar.exe or real.exe wasn\'t executed successfully!')
+	run(f'ln -sf {wrfbdy} wrfbdy_{dom_str}')
+	run(f'ln -sf wrfvar_output_{start_time_str} wrfvar_output')
 
 	parame_in = f90nml.read(f'{wrfda_root}/var/test/update_bc/parame.in')
 	parame_in['control_param']['wrf_input'] = './fg'
