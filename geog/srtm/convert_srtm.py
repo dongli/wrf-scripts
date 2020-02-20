@@ -14,7 +14,7 @@ try:
 except:
 	owd = os.getcwd()
 	os.chdir(script_root)
-	os.system(f'{sys.executable} setup.py build_ext --inplace')
+	os.system(f'{sys.executable} setup.py build_ext --inplace --include-dirs={np.get_include()}')
 	os.system(f'rm -rf build write_geogrid.c')
 	import write_geogrid
 	os.chdir(owd)
