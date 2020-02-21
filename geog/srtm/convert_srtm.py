@@ -3,10 +3,13 @@
 from argparse import ArgumentParser
 from osgeo import gdal
 import numpy as np
+from glob import glob
 import os
 import sys
 script_root = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(script_root)
+sys.path.append(f'{script_root}/../../utils')
+from utils import run, cli
 
 # Use WPS write_geogrid.c to write specified binary data format.
 try:
@@ -26,7 +29,11 @@ import matplotlib.pyplot as plt
 parser = ArgumentParser('Convert SRTM tiles to WPS compatible files.')
 parser.add_argument('--srtm-dir', dest='srtm_dir', help='Directory of SRTM ZIP files')
 parser.add_argument('--srtm-tif', dest='srtm_tif', help='Single SRTM TIFF file')
+parser.add_argument('--output-dir', dest='output_dir', help='Directory of output converted SRTM files')
 args = parser.parse_args()
+
+if not os.path.isdir(args.output_dir): os.makedirs(args.output_dir)
+os.chdir(args.output_dir)
 
 def geo_name(srtm_tif):
 	i = int(srtm_tif[5:7])
@@ -37,20 +44,22 @@ def geo_name(srtm_tif):
 	je_sn = js_sn + 6000 - 1
 	return '{:06}-{:06}.{:06}-{:06}'.format(is_ew, ie_ew, js_sn, je_sn)
 
-def write(topo):
+def write(srtm_tif, topo):
 	topo[topo == -32768] = -9999
 	topo = np.flip(topo, axis=0)
 	write_geogrid.write_2d_array(topo.astype('float32'))
-	os.system(f'mv 00001-06000.00001-06000 {geo_name(args.srtm_tif)}')
+	os.system(f'mv 00001-06000.00001-06000 {geo_name(os.path.basename(srtm_tif))}')
 
 if args.srtm_dir:
-	for zip_file_name in glob(f'{args.srtm_dir}/srtm_*.zip'):
-		file_prefix = zip_file_name.replace('.zip', '')
+	for zip_file_name in sorted(glob(f'{args.srtm_dir}/srtm_*.zip')):
+		file_prefix = f'{args.output_dir}/{os.path.basename(zip_file_name).replace(".zip", "")}'
 		if not os.path.isfile(file_prefix + '.tif'):
-			cli.blue_arrow('Decompressing {zip_file_name} ...')
+			cli.notice(f'Decompressing {zip_file_name} ...')
 			run(f'unzip {zip_file_name}')
-		cli.blue_arrow(f'Read {file_prefix} ...')
-		tile = gdal.Open(file_prefix + '.tif')
+		run(f'rm -f readme.txt', echo=False)
+		cli.notice(f'Read {file_prefix} ...')
+		srtm_tif = file_prefix + '.tif'
+		tile = gdal.Open(srtm_tif)
 		num_lon = tile.RasterXSize
 		num_lat = tile.RasterYSize
 		gt = tile.GetGeoTransform()
@@ -59,10 +68,10 @@ if args.srtm_dir:
 		max_lon = gt[0] + num_lon * gt[1] + num_lat * gt[2]
 		max_lat = gt[3]
 		topo = tile.ReadAsArray()
-		write(topo)
+		write(srtm_tif, topo)
 elif args.srtm_tif:
 	tile = gdal.Open(args.srtm_tif)
 	num_lon = tile.RasterXSize
 	num_lat = tile.RasterYSize
 	topo = tile.ReadAsArray()
-	write(topo)
+	write(args.srtm_tif, topo)
