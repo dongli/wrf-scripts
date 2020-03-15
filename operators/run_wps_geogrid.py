@@ -18,12 +18,8 @@ def run_wps_geogrid(work_root, wps_root, config, args):
 	os.chdir(wps_work_dir)
 
 	cli.notice(f'Run geogrid.exe at {wps_work_dir} ...')
-	run(f'ln -sf {wps_root}/geogrid/GEOGRID.TBL.ARW {wps_work_dir}/GEOGRID.TBL')
-	# FIXME: Why I change GEOGRID.TBL?
-	# edit_file('GEOGRID.TBL', [
-	#	['rel_path=default:albedo_modis', 'rel_path=default:albedo_ncep'],
-	#	['rel_path=default:maxsnowalb_modis', 'rel_path=default:maxsnowalb']
-	#])
+	if not os.path.isfile('GEOGRID.TBL'):
+		run(f'ln -sf {wps_root}/geogrid/GEOGRID.TBL.ARW {wps_work_dir}/GEOGRID.TBL')
 	expected_files = ['geo_em.d{:02d}.nc'.format(i + 1) for i in range(config['domains']['max_dom'])]
 	if not check_files(expected_files):
 		run('rm -f geo_em.d*.nc')

@@ -2,7 +2,7 @@ import sys
 import logging
 import pendulum
 
-logging.basicConfig(filename=f'wrf-scripts.log.{pendulum.now().format("YYYY-MM-DDTHH:mm:ss")}', format='%(message)s', level=logging.DEBUG)
+# logging.basicConfig(filename=f'wrf-scripts.log.{pendulum.now().format("YYYY-MM-DDTHH:mm:ss")}', format='%(message)s', level=logging.DEBUG)
 
 color_map = {
 	'red': 31,
