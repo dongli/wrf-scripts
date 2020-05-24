@@ -37,7 +37,7 @@ def build_gsi(wrf_root, gsi_root, args):
 		if not os.path.isdir(args.wrf_root):
 			cli.error(f'WRF directory {args.wrf_root} does not exist!')
 		os.chdir(args.wrf_root)
-		expected_exe_files = ('main/wrf.exe', 'main/real.exe', 'main/ndown.exe', 'main/tc.exe')
+		expected_exe_files = ('main/wrf.exe')
 		if not check_files(expected_exe_files):
 			cli.error('WRF has not been built! Build it first.')
 
@@ -82,7 +82,7 @@ def build_gsi(wrf_root, gsi_root, args):
 			'lib/libw3nco_v2.0.6.a'
 		)
 	if not check_files(expected_exe_files):
-		cmake_args = f'-DBUILD_ENKF=ON -DBUILD_CORELIBS=ON -DUSE_WRF=ON -DBUILD_WRF=ON -DBUILD_GFS=OFF'
+		cmake_args = f'-DBUILD_ENKF=ON -DBUILD_CORELIBS=ON -DUSE_WRF=ON -DBUILD_WRF=ON -DBUILD_GFS=OFF '
 		if version == Version('3.6'):
 			cli.notice('Fix GSI 3.6!')
 			edit_file('../cmake/Modules/FindCORELIBS.cmake', [
