@@ -55,7 +55,6 @@ def config_wrfda(work_root, wrfda_root, config, args, wrf_work_dir=None, tag=Non
 	elif fg:
 		f = Dataset(fg)
 	else:
-		print(fg)
 		cli.error(f'config_wrfda: Cannot find wrfinput or wrfout in {wrf_work_dir} or wrfvar!')
 	num_land_cat = f.getncattr('NUM_LAND_CAT')
 	hypsometric_opt = f.getncattr('HYPSOMETRIC_OPT')

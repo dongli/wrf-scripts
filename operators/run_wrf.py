@@ -36,7 +36,8 @@ def run_wrf(work_root, wrf_root, config, args, wrfda_work_dir=None, tag=None):
 			wrfda_work_dir = f'{work_root}/wrfda_{tag}'
 		else:
 			wrfda_work_dir = f'{work_root}/wrfda'
-	if not os.path.isdir(wrfda_work_dir): cli.error(f'run_wrf: {wrfda_work_dir} does not exist!')
+	elif not os.path.isdir(wrfda_work_dir):
+		cli.error(f'run_wrf: {wrfda_work_dir} does not exist!')
 
 	if tag != None:
 		wrf_work_dir = f'{work_root}/wrf_{tag}'

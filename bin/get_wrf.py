@@ -15,8 +15,12 @@ if args.wrf_version:
 	cli.notice(f'Get WRF {args.wrf_version} ...')
 	wrf_version = Version(args.wrf_version)
 	if wrf_version >= Version('4.0'):
-		run(f'wget https://github.com/wrf-model/WRF/archive/v{wrf_version}.tar.gz -O wrf-{wrf_version}.tar.gz')
+		run(f'wget -c https://github.com/wrf-model/WRF/archive/v{wrf_version}.tar.gz -O wrf-{wrf_version}.tar.gz')
+	else:
+		run(f'wget -c https://github.com/wrf-model/WRF/archive/V{wrf_version}.tar.gz -O wrf-{wrf_version}.tar.gz')
+		run(f'wget -c https://www2.mmm.ucar.edu/wrf/src/WRFDA_V{wrf_version}.tar.gz')
+		run(f'wget -c https://www2.mmm.ucar.edu/wrf/src/WRFPLUS_V{wrf_version}.tar.gz')
 if args.wps_version:
 	wps_version = Version(args.wps_version)
 	if wps_version >= Version('4.0'):
-		run(f'wget https://github.com/wrf-model/WPS/archive/v{wps_version}.tar.gz -O wps-{wps_version}.tar.gz')
+		run(f'wget -c https://github.com/wrf-model/WPS/archive/v{wps_version}.tar.gz -O wps-{wps_version}.tar.gz')

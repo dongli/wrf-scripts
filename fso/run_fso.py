@@ -160,7 +160,7 @@ wrf.run_wrf(args.work_root + '/fb', args.wrf_root, spinup_config, args)
 # Run forecast with xa as initial condition.
 cli.banner('                   Run forecast with xa as initial condition')
 if not os.path.isdir(args.work_root + '/fa/wrf'): os.mkdir(args.work_root + '/fa/wrf')
-run(f'cp {args.work_root}/fb/wrf/wrfout_d01_{start_time_str} {args.work_root}/fa/wrf/wrfinput_d01_{start_time_str}')
+run(f'cp {args.work_root}/fb/wrf/wrfout_d01_{start_time_str} {args.work_root}/fa/wrf/wrfout_d01_{start_time_str}')
 run(f'cp {args.work_root}/fb/wrf/wrfbdy_d01 {args.work_root}/fa/wrf/wrfbdy_d01_{start_time_str}')
 config['wrfvar6']['orthonorm_gradient'] = True
 config['wrfvar6']['use_lanczos'] = True

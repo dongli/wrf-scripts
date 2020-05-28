@@ -15,6 +15,7 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 	start_time = config['custom']['start_time']
 
 	bkg_type = get_value(config['custom'], ['background', 'type'], default='gfs')
+	if not has_key(config['custom'], 'background'): config['custom']['background'] = {}
 	if bkg_type == 'gfs' and not has_key(config['custom'], ['background', 'file_pattern']):
 		config['custom']['background']['file_pattern'] = 'gfs.t{{ bkg_start_time.format("HH") }}z.pgrb2.*.f{{ "%03d" % bkg_forecast_hour }}'
 
@@ -130,6 +131,42 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 	else:
 		cli.notice('File FILE:* already exist.')
 	run('ls -l FILE:*')
+
+	cli.stage(f'Run metgrid.exe at {wps_work_dir} ...')
+	copy(f'{wps_root}/metgrid/METGRID.TBL.ARW', 'METGRID.TBL')
+	expected_files = ['met_em.d01.{}.nc'.format(time.format('YYYY-MM-DD_HH:mm:ss')) for time in bkg_times]
+	if not check_files(expected_files) or args.force:
+		# Remove possible existing met_em files.
+		run('rm -f met_em.*')
+		submit_job(f'{wps_root}/metgrid/src/metgrid.exe', args.np, config, args, logfile='metgrid.log.0000', wait=True)
+		if not check_files(expected_files):
+			cli.error(f'Failed! Check output {wps_work_dir}/metgrid.log.0000.')
+		cli.notice('Succeeded.')
+	else:
+		cli.notice('File met_em.* already exist.')
+	run('ls -l met_em.*')
+
+def run_wps_metgrid(work_root, wps_root, bkg_root, config, args):
+	start_time = config['custom']['start_time']
+
+	wps_work_dir = os.path.abspath(work_root) + '/wps'
+	if not os.path.isdir(wps_work_dir):
+		cli.error(f'Directory {wps_work_dir} does not exist! Run GEOGRID first.')
+	os.chdir(wps_work_dir)
+
+	version = wrf_version(wps_root)
+
+	if start_time >= pendulum.datetime(2019, 6, 11) and version < Version('4.0'):
+		cli.error('WPS (>= 4.0) is needed to process new GFS data since 2019-06-12!')
+
+	# Generate the background times.
+	interval_seconds = int(re.search('interval_seconds\s*=\s*(\d+)', open('./namelist.wps').read())[1])
+	bkg_times = []
+	bkg_time = start_time
+	while bkg_time <= config['custom']['end_time']:
+		bkg_times.append(bkg_time)
+		bkg_time = bkg_time.add(seconds=interval_seconds)
+	if len(bkg_times) == 0: cli.error('Failed to set background times, check start_time and forecast_hours.')
 
 	cli.stage(f'Run metgrid.exe at {wps_work_dir} ...')
 	copy(f'{wps_root}/metgrid/METGRID.TBL.ARW', 'METGRID.TBL')

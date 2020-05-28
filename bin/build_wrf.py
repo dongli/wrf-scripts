@@ -387,7 +387,7 @@ if __name__ == '__main__':
 	parser.add_argument('-g', '--use-grib', dest='use_grib', help='Use GRIB IO capability of WRF', action='store_true')
 	parser.add_argument(      '--openmp', help='Use OpenMP parallelism.', action='store_true')
 	parser.add_argument('-j', '--jobs', help='Set job size to compile.', type=int, default=2)
-	parser.add_argument('-s', '--compiler-suite', dest='compiler_suite', help='Compiler suite', choices=['gnu', 'pgi', 'intel'])
+	parser.add_argument('-s', '--compiler-suite', dest='compiler_suite', help='Compiler suite', choices=['gnu', 'pgi', 'intel'], required=True)
 	parser.add_argument('-f', '--force', help='Force to rebuild if already built', action='store_true')
 	parser.add_argument('-d', '--debug', help='Build WRF with debug compile options', action='store_true')
 	parser.add_argument('-v', '--verbose', help='Print out build log', action='store_true')
