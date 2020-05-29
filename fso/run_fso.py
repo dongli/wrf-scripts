@@ -6,7 +6,7 @@ from netCDF4 import Dataset
 import os
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
-from utils import cli, parse_config, run, copy_netcdf_file, wrf_version, Version
+from utils import cli, parse_config, has_key, run, copy_netcdf_file, wrf_version, Version
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../operators')
 import wrf_operators as wrf
 
@@ -141,6 +141,9 @@ if not os.path.isdir(args.work_root + '/fb'):  os.mkdir(args.work_root + '/fb')
 if not os.path.isdir(args.work_root + '/fa'):  os.mkdir(args.work_root + '/fa')
 if not os.path.isdir(args.work_root + '/ref'): os.mkdir(args.work_root + '/ref')
 
+if not has_key(config, ('wrfvar7', 'cv_options')):
+	cli.error('cv_options in wrfvar7 is not set!')
+
 wrf.config_wps(args.work_root, args.wps_root, args.geog_root, config, args)
 wrf.run_wps_geogrid(args.work_root, args.wps_root, config, args)
 
@@ -161,7 +164,7 @@ wrf.run_wrf(args.work_root + '/fb', args.wrf_root, spinup_config, args)
 cli.banner('                   Run forecast with xa as initial condition')
 if not os.path.isdir(args.work_root + '/fa/wrf'): os.mkdir(args.work_root + '/fa/wrf')
 run(f'cp {args.work_root}/fb/wrf/wrfout_d01_{start_time_str} {args.work_root}/fa/wrf/wrfout_d01_{start_time_str}')
-run(f'cp {args.work_root}/fb/wrf/wrfbdy_d01 {args.work_root}/fa/wrf/wrfbdy_d01_{start_time_str}')
+run(f'cp {args.work_root}/fb/wrf/wrfbdy_d01 {args.work_root}/fa/wrf/wrfbdy_d01')
 config['wrfvar6']['orthonorm_gradient'] = True
 config['wrfvar6']['use_lanczos'] = True
 config['wrfvar6']['write_lanczos'] = True

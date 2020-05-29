@@ -14,13 +14,17 @@ sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, check_files, run, submit_job, parse_config
 
 def copy_wrfda_output(dom_str, start_time_str, wrfda_work_dir):
-	if os.path.isfile(f'{wrfda_work_dir}/wrfvar_output_{start_time_str}'):
+	if os.path.isdir(wrfda_work_dir + '/' + dom_str):
+		work_dir = wrfda_work_dir + '/' + dom_str
+	else:
+		work_dir = wrfda_work_dir
+	if os.path.isfile(f'{work_dir}/wrfvar_output_{start_time_str}'):
 		cli.notice(f'Use assimilated input for domain {dom_str}.')
 	else:
 		return False
-	run(f'ln -sf {wrfda_work_dir}/wrfvar_output_{start_time_str} wrfinput_{dom_str}')
+	run(f'ln -sf {work_dir}/wrfvar_output_{start_time_str} wrfinput_{dom_str}')
 	if dom_str == 'd01':
-		run(f'ln -sf {wrfda_work_dir}/wrfbdy_d01_{start_time_str}.lateral_updated wrfbdy_d01')
+		run(f'ln -sf {work_dir}/wrfbdy_d01_{start_time_str}.lateral_updated wrfbdy_d01')
 	return True
 
 def run_wrf(work_root, wrf_root, config, args, wrfda_work_dir=None, tag=None):
@@ -49,7 +53,7 @@ def run_wrf(work_root, wrf_root, config, args, wrfda_work_dir=None, tag=None):
 	all_wrfda_ok = True
 	for dom_idx in range(max_dom):
 		dom_str = 'd' + str(dom_idx + 1).zfill(2)
-		if not copy_wrfda_output(dom_str, start_time_str, wrfda_work_dir + '/' + dom_str):
+		if not copy_wrfda_output(dom_str, start_time_str, wrfda_work_dir):
 			all_wrfda_ok = False
 			break
 	if not all_wrfda_ok:

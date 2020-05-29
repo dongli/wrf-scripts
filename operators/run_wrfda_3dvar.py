@@ -80,11 +80,11 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None, forc
 	if fg != None:
 		run(f'ln -sf {fg} {wrfda_work_dir}/fg')
 	else:
-		expected_files = ['{}/wrfinput_d{:02d}_{}'.format(wrf_work_dir, i + 1, start_time_str) for i in range(max_dom)]
+		expected_files = ['{}/wrfout_d{:02d}_{}'.format(wrf_work_dir, i + 1, start_time_str) for i in range(max_dom)]
 		if not check_files(expected_files):
 			print(expected_files)
 			cli.error('real.exe or da_update_bc.exe wasn\'t executed successfully!')
-		run(f'ln -sf {wrf_work_dir}/wrfinput_{dom_str}_{start_time_str} {wrfda_work_dir}/fg')
+		run(f'ln -sf {wrf_work_dir}/wrfout_{dom_str}_{start_time_str} {wrfda_work_dir}/fg')
 
 	# Observation data
 	if config['custom']['wrfda']['type'] == '3dvar':
