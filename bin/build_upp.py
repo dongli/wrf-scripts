@@ -37,10 +37,22 @@ def build_upp(wrf_root, upp_root, args):
 		else:
 			cli.error('JASPERINC and JASPERLIB environment variables are not set!')
 
-	os.chdir(upp_root)
-	if args.force: run('./clean -a &> /dev/null')
-	expected_exe_files = ('bin/copygb.exe', 'bin/ndate.exe', 'bin/unipost.exe')
+	version = upp_version(args.upp_root)
+
+	if version < Version('4.1'):
+		expected_exe_files = ('bin/copygb.exe', 'bin/ndate.exe', 'bin/unipost.exe')
+	else:
+		expected_exe_files = ('exec/unipost.exe')
+		if not check_files(expected_exe_files):
+			if not args.nceplibs_root:
+				args.nceplibs_root = f'{os.path.dirname(args.upp_root)}/NCEPLIBS'
+			if not os.path.isdir(args.nceplibs_root):
+				cli.error('NCEPLIBS is not ready!')
+		os.environ['NCEPLIBS_DIR'] = args.nceplibs_root
+
 	if not check_files(expected_exe_files):
+		os.chdir(upp_root)
+		if args.force: run('./clean -a &> /dev/null')
 		cli.notice('Configure UPP ...')
 		child = pexpect.spawn('./configure')
 		child.expect('Enter selection.*')
@@ -79,6 +91,7 @@ if __name__ == '__main__':
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, UPP)')
 	parser.add_argument('-w', '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRF)')
 	parser.add_argument('-u', '--upp-root', dest='upp_root', help='UPP root directory (e.g. UPP)')
+	parser.add_argument('-n', '--nceplibs-root', dest='nceplibs_root', help='NCEPLIBS root directory (e.g. NCEPLIBS')
 	parser.add_argument('-s', '--compiler-suite', dest='compiler_suite', help='Compiler suite', choices=['gnu', 'pgi', 'intel'])
 	parser.add_argument('-f', '--force', help='Force to rebuild if already built', action='store_true')
 	args = parser.parse_args()
