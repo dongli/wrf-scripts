@@ -3,6 +3,7 @@
 import argparse
 import copy
 from netCDF4 import Dataset
+from pprint import pprint
 import os
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
@@ -19,6 +20,7 @@ parser.add_argument(      '--wrfplus-root', dest='wrfplus_root', help='WRFPLUS r
 parser.add_argument('-w', '--work-root',  dest='work_root', help='Work root directory')
 parser.add_argument('-g', '--geog-root', dest='geog_root', help='GEOG data root directory (e.g. WPS_GEOG)')
 parser.add_argument('-b', '--bkg-root', dest='bkg_root', help='Background root directory')
+parser.add_argument('-r', '--ref-root', dest='ref_root', help='Reference root directory')
 parser.add_argument('-l', '--littler-root', dest='littler_root', help='LITTLE_R data root directory')
 parser.add_argument('-p', '--prepbufr-root', dest='prepbufr_root', help='PrepBUFR data root directory')
 parser.add_argument('-j', '--config-json', dest='config_json', help='Configuration JSON file.', required=True)
@@ -136,6 +138,9 @@ end_time = config['custom']['end_time']
 datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 start_time_str = start_time.format(datetime_fmt)
 end_time_str = end_time.format(datetime_fmt)
+if not args.ref_root:
+	cli.warning('Use background as reference.')
+	args.ref_root = args.bkg_root
 
 if not os.path.isdir(args.work_root + '/fb'):  os.mkdir(args.work_root + '/fb')
 if not os.path.isdir(args.work_root + '/fa'):  os.mkdir(args.work_root + '/fa')
@@ -180,9 +185,14 @@ wrf.run_wrf(args.work_root + '/fa', args.wrf_root, config, args)
 cli.banner('                   Interpolate reference at valid time')
 ref_config = copy.deepcopy(config)
 ref_config['custom']['start_time'] = config['custom']['end_time']
+ref_config['custom']['background'] = {
+	'type': 'gfs',
+	'file_pattern': 'gdas.t{{ bkg_start_time.format("HH") }}z.pgrb2.*.f{{ "%03d" % bkg_forecast_hour }}',
+	'dir_pattern': 'gdas.{{ bkg_start_time.format("YYYYMMDD") }}/{{ bkg_start_time.format("HH") }}'
+}
 wrf.config_wps(args.work_root + '/ref', args.wps_root, args.geog_root, ref_config, args)
 run(f'ln -sf {args.work_root}/wps/geo_em.d01.nc {args.work_root}/ref/wps')
-wrf.run_wps_ungrib_metgrid(args.work_root + '/ref', args.wps_root, args.bkg_root, ref_config, args)
+wrf.run_wps_ungrib_metgrid(args.work_root + '/ref', args.wps_root, args.ref_root, ref_config, args)
 wrf.config_wrf(args.work_root + '/ref', args.wrf_root, args.wrfda_root, ref_config, args)
 wrf.run_real(args.work_root + '/ref', args.work_root + '/ref/wps', args.wrf_root, ref_config, args)
  

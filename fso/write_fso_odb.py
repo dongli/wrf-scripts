@@ -41,11 +41,11 @@ var_type_impact = {
 	'p': 0
 }
 
-# gts_omb_oma_01 = open(f'{args.work_root}/sens/wrfda/gts_omb_oma_01', 'r')
-gts_omb_oma_01 = open(f'./gts_omb_oma_01', 'r')
+gts_omb_oma_01 = open(f'{args.work_root}/sens/wrfda/gts_omb_oma_01', 'r')
 
 header = ''
 header += 'obs_type@detail_impact:STRING\t'
+header += 'sid@detail_impact:STRING\t'
 header += 'lon@detail_impact:REAL\t'
 header += 'lat@detail_impact:REAL\t'
 header += 'date@detail_impact:INTEGER\t'
@@ -108,8 +108,9 @@ while True:
 				if len(line) < 10:
 					gts_omb_oma_01.seek(pos)
 					break
-				k = 21
+				k = 16
 				try:
+					sid      =                           line[k:k+6 ] ; k += 6
 					lat      = handle_real_missing_value(line[k:k+9 ]); k += 9
 					lon      = handle_real_missing_value(line[k:k+9 ]); k += 9
 					p        = handle_real_missing_value(line[k:k+17]); k += 17
@@ -172,6 +173,7 @@ while True:
 
 				# Write output to tempfile.
 				output.write(obs_type + '\t')
+				output.write(sid      + '\t')
 				output.write(lon      + '\t')
 				output.write(lat      + '\t')
 				if args.datetime:
@@ -205,7 +207,6 @@ while True:
 				output.write(q_qc     + '\t')
 				output.write(q_obserr + '\t')
 				output.write(q_incr   + '\t')
-				output.write('\n')
 	else:
 		break
 
