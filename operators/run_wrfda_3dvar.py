@@ -46,8 +46,6 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None, forc
 
 	cli.stage(f'Run da_wrfvar.exe at {wrfda_work_dir} ...')
 
-	be_work_dir = os.path.dirname(os.path.abspath(work_root)) + '/be/' + dom_str
-
 	if os.path.isfile(f'wrfvar_output_{start_time_str}') and not args.force and not force:
 		run(f'ls -l wrfvar_output_{start_time_str}')
 		cli.notice(f'wrfvar_output_{start_time_str} already exist.')
@@ -60,6 +58,10 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None, forc
 
 	# BE matrix
 	if 'cv_options' in config['wrfvar7']:
+		be_work_dir = os.path.dirname(os.path.abspath(work_root)) + '/be/' + dom_str
+		if not os.path.isdir(be_work_dir):
+			be_work_dir = os.path.dirname(os.path.abspath(work_root)) + '/../be/' + dom_str
+
 		if config['wrfvar7']['cv_options'] == 5:
 			if not os.path.isfile(f'{be_work_dir}/be.dat.cv5'):
 				cli.error(f'BE matrix {be_work_dir}/be.dat.cv5 does not exist!')

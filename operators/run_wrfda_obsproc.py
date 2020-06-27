@@ -6,6 +6,7 @@ from netCDF4 import Dataset
 import os
 import re
 import pendulum
+from jinja2 import Template
 import f90nml
 import sys
 script_root = os.path.dirname(os.path.realpath(__file__))
@@ -59,7 +60,8 @@ def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args, wrf_wor
 			cli.error('Currently, we only support 3DVar...')
 	else:
 		namelist_obsproc = f90nml.read(f'{wrfda_root}/var/obsproc/namelist.obsproc.3dvar.wrfvar-tut')
-	namelist_obsproc['record1']['obs_gts_filename' ] = 'obs.gts.{}'.format(start_time.format('YYYYMMDDHHmm'))
+
+	namelist_obsproc['record1']['obs_gts_filename' ] = f'obs.gts.{start_time.format("YYYYMMDDHHmm")}'
 	namelist_obsproc['record2']['time_window_min'  ] = start_time.subtract(minutes=time_window/2).format('YYYY-MM-DD_HH:mm:ss')
 	namelist_obsproc['record2']['time_analysis'    ] = start_time.format('YYYY-MM-DD_HH:mm:ss')
 	namelist_obsproc['record2']['time_window_max'  ] = start_time.add(minutes=time_window/2).format('YYYY-MM-DD_HH:mm:ss')
@@ -78,10 +80,21 @@ def run_wrfda_obsproc(work_root, wrfda_root, littler_root, config, args, wrf_wor
 	expected_files = [f'obs_gts_{start_time.format("YYYY-MM-DD_HH:mm:ss")}.3DVAR']
 	if not check_files(expected_files) or args.force:
 		run('rm -f obs_gts_*')
-		if os.path.exists(f'{littler_root}/{start_time.format("YYYYMMDD")}/obs.gts.{start_time.format("YYYYMMDDHHmm")}'):
-			run(f'ln -sf {littler_root}/{start_time.format("YYYYMMDD")}/obs.gts.{start_time.format("YYYYMMDDHHmm")} {wrfda_work_dir}')
+
+		if has_key(config, ('custom', 'littler')):
+			if 'dir_pattern' in config['custom']['littler'] and 'file_pattern' in config['custom']['littler']:
+				dir_name = Template(config['custom']['littler']['dir_pattern']).render(time=start_time)
+				file_name = Template(config['custom']['littler']['file_pattern']).render(time=start_time)
+				littler_path = f'{littler_root}/{dir_name}/{file_name}'
+			else:
+				cli.error('No dir_pattern and file_pattern in custom->littler section!')
 		else:
-			cli.error(f'Failed! {littler_root}/{start_time.format("YYYYMMDD")}/obs.gts.{start_time.format("YYYYMMDDHHmm")} Not Found.')
+			littler_path = f'{littler_root}/{start_time.format("YYYYMMDD")}/obs.gts.{start_time.format("YYYYMMDDHHmm")}'
+
+		if os.path.exists(littler_path):
+			run(f'ln -sf {littler_path} {wrfda_work_dir}/obs.gts.{start_time.format("YYYYMMDDHHmm")}')
+		else:
+			cli.error(f'Failed! {littler_path} Not Found.')
 		submit_job(f'{wrfda_root}/var/obsproc/obsproc.exe', 1, config, args, wait=True)
 		if not check_files(expected_files):
 			cli.error(f'Failed!')
