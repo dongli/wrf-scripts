@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-root_url = 'https://www.ftp.ncep.noaa.gov/pub/data/nccf/com/gfs/prod'
+root_url = 'https://www.ftp.ncep.noaa.gov/data/nccf/com/gfs/prod/'
 
 import subprocess
 import argparse
@@ -59,6 +59,7 @@ if __name__ == '__main__':
 	parser.add_argument('-s', '--start-time', dest='start_time', help='Download GFS data start in this date time (YYYYMMDDHH).', type=parse_time)
 	parser.add_argument('-f', '--forecast-hours', dest='forecast_hours', help='Download forecast hours (HH-HH+XX).', type=parse_forecast_hours)
 	parser.add_argument('-e', '--resolution', help='Set GFS resolution (1p00, 0p50, 0p25).', choices=('1p00', '0p50', '0p25'), default='0p25')
+	parser.add_argument('-a', '--analysis', help='Use GDAS analysis.', action='store_true')
 	args = parser.parse_args()
 	
 	if not args.output_root:
