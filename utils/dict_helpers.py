@@ -16,6 +16,8 @@ def has_key(x, keys):
 
 def get_value(x, keys, default=None):
 	if has_key(x, keys):
+		if type(keys) == str:
+			return x[keys]
 		if len(keys) == 1:
 			return x[keys[0]]
 		if len(keys) == 2:
