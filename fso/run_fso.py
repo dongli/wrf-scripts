@@ -7,7 +7,7 @@ from pprint import pprint
 import os
 import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
-from utils import cli, parse_config, has_key, run, copy_netcdf_file, wrf_version, Version
+from utils import cli, parse_config, has_key, get_value, run, copy_netcdf_file, wrf_version, Version
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../operators')
 import wrf_operators as wrf
 
@@ -138,9 +138,6 @@ end_time = config['custom']['end_time']
 datetime_fmt = 'YYYY-MM-DD_HH:mm:ss'
 start_time_str = start_time.format(datetime_fmt)
 end_time_str = end_time.format(datetime_fmt)
-if not args.ref_root:
-	cli.warning('Use background as reference.')
-	args.ref_root = args.bkg_root
 
 if not os.path.isdir(args.work_root + '/fb'):  os.mkdir(args.work_root + '/fb')
 if not os.path.isdir(args.work_root + '/fa'):  os.mkdir(args.work_root + '/fa')
@@ -153,9 +150,10 @@ wrf.config_wps(args.work_root, args.wps_root, args.geog_root, config, args)
 wrf.run_wps_geogrid(args.work_root, args.wps_root, config, args)
 
 # Spin up 6 hours.
+spinup_hours = get_value(config['custom'], 'spinup_hours', 6)
 spinup_config = copy.deepcopy(config)
-spinup_config['custom']['start_time'] = config['custom']['start_time'].subtract(hours=6)
-spinup_config['custom']['forecast_hours'] += 6
+spinup_config['custom']['start_time'] = config['custom']['start_time'].subtract(hours=spinup_hours)
+spinup_config['custom']['forecast_hours'] += spinup_hours
 wrf.config_wps(args.work_root, args.wps_root, args.geog_root, spinup_config, args)
 
 # Run forecast with xb as initial condition.
@@ -185,11 +183,15 @@ wrf.run_wrf(args.work_root + '/fa', args.wrf_root, config, args)
 cli.banner('                   Interpolate reference at valid time')
 ref_config = copy.deepcopy(config)
 ref_config['custom']['start_time'] = config['custom']['end_time']
-ref_config['custom']['background'] = {
-	'type': 'gfs',
-	'file_pattern': 'gdas.t{{ bkg_start_time.format("HH") }}z.pgrb2.*.f{{ "%03d" % bkg_forecast_hour }}',
-	'dir_pattern': 'gdas.{{ bkg_start_time.format("YYYYMMDD") }}/{{ bkg_start_time.format("HH") }}'
-}
+if not args.ref_root:
+	cli.warning('Use background as reference.')
+	args.ref_root = args.bkg_root
+else:
+	ref_config['custom']['background'] = {
+		'type': 'gfs',
+		'file_pattern': 'gdas.t{{ bkg_start_time.format("HH") }}z.pgrb2.*.f{{ "%03d" % bkg_forecast_hour }}',
+		'dir_pattern': 'gdas.{{ bkg_start_time.format("YYYYMMDD") }}/{{ bkg_start_time.format("HH") }}'
+	}
 wrf.config_wps(args.work_root + '/ref', args.wps_root, args.geog_root, ref_config, args)
 run(f'ln -sf {args.work_root}/wps/geo_em.d01.nc {args.work_root}/ref/wps')
 wrf.run_wps_ungrib_metgrid(args.work_root + '/ref', args.wps_root, args.ref_root, ref_config, args)
