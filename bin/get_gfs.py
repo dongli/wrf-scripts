@@ -12,14 +12,14 @@ import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import parse_time, parse_forecast_hours, edit_file, run, cli, check_files, check_file_size, is_downloading
 
-def get_gfs(output_root, start_time, forecast_hours, resolution, args):
+def get_gfs(output_root, start_time, forecast_hours, resolution, prefix, args):
 	if not os.path.isdir(output_root):
 		os.makedirs(output_root)
 		cli.notice(f'Create directory {output_root}.')
 
 	def download_gfs(start_time, forecast_hour):
-		dir_name = f'gfs.{start_time.format("YYYYMMDD")}/{start_time.format("HH")}'
-		file_name = 'gfs.t{:02d}z.pgrb2.{}.f{:03d}'.format(start_time.hour, resolution, forecast_hour)
+		dir_name = f'{prefix}.{start_time.format("YYYYMMDD")}/{start_time.format("HH")}'
+		file_name = '{}.t{:02d}z.pgrb2.{}.f{:03d}'.format(prefix, start_time.hour, resolution, forecast_hour)
 		url = f'{root_url}/{dir_name}/{file_name}'
 		if not os.path.isdir(f'{output_root}/{dir_name}'):
 			os.makedirs(f'{output_root}/{dir_name}')
@@ -44,10 +44,10 @@ def get_gfs(output_root, start_time, forecast_hours, resolution, args):
 			os.remove(local_file_path)
 			cli.error(f'Failed to download {file_name}!')
 
-	res = requests.head(f'{root_url}/gfs.{start_time.format("YYYYMMDD")}/{start_time.format("HH")}')
+	res = requests.head(f'{root_url}/{prefix}.{start_time.format("YYYYMMDD")}/{start_time.format("HH")}')
 	if res.status_code not in (200, 301):
 		print(res.status_code)
-		print(f'{root_url}/gfs.{start_time.format("YYYYMMDD")}/{start_time.format("HH")}')
+		print(f'{root_url}/{prefix}.{start_time.format("YYYYMMDD")}/{start_time.format("HH")}')
 		cli.error(f'Remote GFS data at {start_time} do not exist!')
 
 	for forecast_hour in forecast_hours:
@@ -59,14 +59,19 @@ if __name__ == '__main__':
 	parser.add_argument('-s', '--start-time', dest='start_time', help='Download GFS data start in this date time (YYYYMMDDHH).', type=parse_time)
 	parser.add_argument('-f', '--forecast-hours', dest='forecast_hours', help='Download forecast hours (HH-HH+XX).', type=parse_forecast_hours)
 	parser.add_argument('-e', '--resolution', help='Set GFS resolution (1p00, 0p50, 0p25).', choices=('1p00', '0p50', '0p25'), default='0p25')
-	parser.add_argument('-a', '--analysis', help='Use GDAS analysis.', action='store_true')
+	parser.add_argument('-g', '--gdas', help='Use GDAS analysis.', action='store_true')
 	args = parser.parse_args()
-	
+
+	if args.gdas:
+		prefix = 'gdas'
+	else:
+		prefix = 'gfs'
+
 	if not args.output_root:
 		if os.getenv('RAWDATA_ROOT'):
-			args.output_root = os.getenv('RAWDATA_ROOT') + '/gfs'
+			args.output_root = os.getenv('RAWDATA_ROOT') + '/' + prefix
 		else:
 			cli.error('Option --output-root or environment variable RAWDATA_ROOT need to be set!')
 	args.output_root = os.path.abspath(args.output_root)
 
-	get_gfs(args.output_root, args.start_time, args.forecast_hours, args.resolution, args)
+	get_gfs(args.output_root, args.start_time, args.forecast_hours, args.resolution, prefix, args)
