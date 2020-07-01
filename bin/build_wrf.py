@@ -36,6 +36,10 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		else:
 			cli.error('JASPERINC and JASPERLIB environment variables are not set!')
 
+	if not 'WRFIO_NCD_LARGE_FILE_SUPPORT' in os.environ:
+		os.environ['WRFIO_NCD_LARGE_FILE_SUPPORT'] = '1'
+		cli.notice('Set WRFIO_NCD_LARGE_FILE_SUPPORT to 1.')
+
 	# ---------------------------------------------------------------------------------
 	#                                    WRF
 	os.chdir(wrf_root)
