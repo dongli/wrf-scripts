@@ -58,7 +58,7 @@ def run_wrfda_update_bc(work_root, wrfda_root, update_lowbc, config, args, wrf_w
 	else:
 		expected_file = f'wrfbdy_{dom_str}_{start_time_str}.lateral_updated'
 	if not check_files(expected_file) or args.force:
-		submit_job(f'{wrfda_root}/var/build/da_update_bc.exe', args.np, config, args, wait=True)
+		submit_job(f'{wrfda_root}/var/build/da_update_bc.exe', 1, config, args, wait=True)
 		run(f'cp wrfbdy_{dom_str} {expected_file}')
 	else:
 		run(f'ls -l {expected_file}')

@@ -138,7 +138,7 @@ def run_wps_ungrib_metgrid(work_root, wps_root, bkg_root, config, args):
 	if not check_files(expected_files) or args.force:
 		# Remove possible existing met_em files.
 		run('rm -f met_em.*')
-		submit_job(f'{wps_root}/metgrid/src/metgrid.exe', args.np, config, args, logfile='metgrid.log.0000', wait=True)
+		submit_job(f'{wps_root}/metgrid/src/metgrid.exe', min(20, args.np), config, args, logfile='metgrid.log.0000', wait=True)
 		if not check_files(expected_files):
 			cli.error(f'Failed! Check output {wps_work_dir}/metgrid.log.0000.')
 		cli.notice('Succeeded.')

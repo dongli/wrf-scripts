@@ -161,8 +161,10 @@ def wrfda_conv(config, wrf_work_dir=None, tag=None, fg_d01=None, fg_d02=None, wr
 if start_time.hour == 0:
 	cli.banner('Run WRF cold run')
 
+	coldrun_start_time = config['custom']['start_time'].subtract(hours=6)
+	coldrun_start_time_str = coldrun_start_time.format(datetime_fmt)
 	coldrun_config = copy.deepcopy(config)
-	coldrun_config['custom']['start_time'] = config['custom']['start_time'].subtract(hours=6)
+	coldrun_config['custom']['start_time'] = coldrun_start_time
 
 	# NOTE: Generate more 6hr for next warm run.
 	coldrun_config['custom']['forecast_hours'] = 12
@@ -181,7 +183,11 @@ if start_time.hour == 0:
 	coldrun_config['custom']['end_time'] = coldrun_config['custom']['start_time'].add(hours=coldrun_config['custom']['forecast_hours'])
 	wrf.config_wrf(args.work_root, args.wrf_root, args.wrfda_root, coldrun_config, args, tag='coldrun')
 
-	wrfda_conv(coldrun_config, tag='coldrun')
+	fg_d01 = f'{args.work_root}/wrf_coldrun/wrfinput_d01_{coldrun_start_time_str}'
+	fg_d02 = f'{args.work_root}/wrf_coldrun/wrfinput_d02_{coldrun_start_time_str}'
+	wrfbdy = f'{args.work_root}/wrf_coldrun/wrfbdy_d01'
+
+	wrfda_conv(coldrun_config, tag='coldrun', fg_d01=fg_d01, fg_d02=fg_d02, wrfbdy=wrfbdy)
 
 	# Run WRF for 6 hours.
 	wrf.run_wrf(args.work_root, args.wrf_root, coldrun_config, args, tag='coldrun')
