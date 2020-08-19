@@ -20,10 +20,15 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		cli.warning('HDF5 environment variable is not set')
 
 	if not 'NETCDF' in os.environ:
-		res = subprocess.run(['which', 'ncdump'], stdout=subprocess.PIPE)
+		res = subprocess.run(['which', 'nf-config'], stdout=subprocess.PIPE)
 		if res.returncode == 0:
 			os.environ['NETCDF'] = os.path.dirname(os.path.dirname(res.stdout.decode('utf-8')))
-			cli.notice(f'Set NETCDF to {os.environ["NETCDF"]}')
+			res = subprocess.run(['nf-config', '--includedir'], stdout=subprocess.PIPE)
+			os.environ['NETCDF_INC'] = res.stdout.decode('utf-8').strip()
+			res = subprocess.run(['nf-config', '--flibs'], stdout=subprocess.PIPE)
+			os.environ['NETCDF_LIB'] = re.search(r'-L([^ ]*)', res.stdout.decode('utf-8'))[1]
+			cli.notice(f'Set NETCDF_INC to {os.environ["NETCDF_INC"]}')
+			cli.notice(f'Set NETCDF_LIB to {os.environ["NETCDF_LIB"]}')
 	if not 'NETCDF' in os.environ:
 		cli.warning('NETCDF environment variable is not set!')
 
@@ -49,7 +54,7 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 	# Fix possible code bugs.
 	if Version('3.6.1') <= version <= Version('3.8.1'):
 		edit_file('phys/module_cu_g3.F', [['integer,  dimension \(12\) :: seed', 'integer,  dimension (33) :: seed']])
-	if args.force: run('./clean -a &> /dev/null')
+	if args.force: run('./clean -a 1> /dev/null 2>&1')
 	expected_exe_files = ('main/wrf.exe', 'main/real.exe', 'main/ndown.exe', 'main/tc.exe')
 	if not check_files(expected_exe_files):
 		cli.notice('Configure WRF ...')
@@ -115,7 +120,7 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		if args.verbose:
 			run(f'./compile em_real')
 		else:
-			run(f'./compile em_real &> compile.out')
+			run(f'./compile em_real 1> compile.out 2>&1')
 		
 		if check_files(expected_exe_files):
 			cli.notice('Succeeded.')
@@ -130,7 +135,7 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 	# ---------------------------------------------------------------------------------
 	#                                    WPS
 	os.chdir(wps_root)
-	if args.force: run('./clean -a &> /dev/null')
+	if args.force: run('./clean -a 1> /dev/null 2>&1')
 	expected_exe_files = ('geogrid/src/geogrid.exe', 'metgrid/src/metgrid.exe', 'ungrib/src/ungrib.exe')
 	if not check_files(expected_exe_files):
 		cli.notice('Configure WPS ...')
@@ -179,7 +184,7 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		if args.verbose:
 			run('./compile')
 		else:
-			run('./compile &> compile.out')
+			run('./compile 1> compile.out 2>&1')
 
 		if check_files(expected_exe_files):
 			cli.notice('Succeeded.')
@@ -194,7 +199,7 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 	# ---------------------------------------------------------------------------------
 	#                                    WRFPLUS
 	os.chdir(wrfplus_root)
-	if args.force: run('./clean -a &> /dev/null')
+	if args.force: run('./clean -a 1> /dev/null 2>&1')
 	if Version('3.6.1') <= version <= Version('3.8.1'):
 		edit_file('phys/module_cu_g3.F', [['integer,  dimension \(12\) :: seed', 'integer,  dimension (33) :: seed']])
 	if version >= Version('4.0'):
@@ -248,7 +253,7 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		if args.verbose:
 			run(f'./compile {build_target}')
 		else:
-			run(f'./compile {build_target} &> compile.out')
+			run(f'./compile {build_target} 1> compile.out 2>&1')
 
 		if check_files(expected_exe_files):
 			cli.notice('Succeeded.')
@@ -264,7 +269,7 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 	#                                    WRFDA
 	os.chdir(wrfda_root)
 	os.environ['WRFPLUS_DIR'] = wrfplus_root
-	if args.force: run('./clean -a &> /dev/null')
+	if args.force: run('./clean -a 1> /dev/null 2>&1')
 	if Version('3.6.1') <= version <= Version('3.9.1'):
 		cli.warning(f'Fix {wrfda_root}/var/da/da_define_structures/da_zero_y.inc')
 		edit_file('var/da/da_define_structures/da_zero_y.inc', [
@@ -368,7 +373,7 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		if args.verbose:
 			run(f'./compile all_wrfvar')
 		else:
-			run(f'./compile all_wrfvar &> compile.out')
+			run(f'./compile all_wrfvar 1> compile.out 2>&1')
 
 		if check_files(expected_exe_files, fatal=True):
 			cli.notice('Succeeded.')
