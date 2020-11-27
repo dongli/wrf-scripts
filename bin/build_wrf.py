@@ -45,6 +45,10 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		os.environ['WRFIO_NCD_LARGE_FILE_SUPPORT'] = '1'
 		cli.notice('Set WRFIO_NCD_LARGE_FILE_SUPPORT to 1.')
 
+	if args.rttov:
+		os.environ['RTTOV'] = args.rttov
+		cli.notice(f'Use RTTOV in {args.rttov}.')
+
 	# ---------------------------------------------------------------------------------
 	#                                    WRF
 	os.chdir(wrf_root)
@@ -397,6 +401,7 @@ if __name__ == '__main__':
 	parser.add_argument('-g', '--use-grib', dest='use_grib', help='Use GRIB IO capability of WRF', action='store_true')
 	parser.add_argument(      '--openmp', help='Use OpenMP parallelism.', action='store_true')
 	parser.add_argument('-j', '--jobs', help='Set job size to compile.', type=int, default=2)
+	parser.add_argument(      '--rttov', help='Use RTTOV for satelliate DA.')
 	parser.add_argument('-s', '--compiler-suite', dest='compiler_suite', help='Compiler suite', choices=['gnu', 'pgi', 'intel'], required=True)
 	parser.add_argument('-f', '--force', help='Force to rebuild if already built', action='store_true')
 	parser.add_argument('-d', '--debug', help='Build WRF with debug compile options', action='store_true')
