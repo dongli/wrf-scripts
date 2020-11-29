@@ -29,7 +29,7 @@ def config_wrfda(work_root, wrfda_root, config, args, wrf_work_dir=None, tag=Non
 
 	if max_dom > 1:
 		if not has_key(config, ('custom', 'wrfda', 'dom')):
-			cli.error('You need to set custom->da->dom to set which domain to work on!')
+			cli.error('You need to set custom->wrfda->dom to set which domain to work on!')
 		dom_idx = config['custom']['wrfda']['dom']
 		dom_str = 'd' + str(dom_idx + 1).zfill(2)
 		if tag != None:

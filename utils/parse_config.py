@@ -126,7 +126,7 @@ def parse_config(config_json):
 		if not section in config: config[section] = {}
 	if not has_key(config, ('wrfvar3', 'ob_format')):
 		config['wrfvar3']['ob_format'] = 2
-	if config['wrfvar3']['ob_format'] == 1 and not has_key(config, ('custom', 'da', 'prepbufr_source')):
-		config['custom']['da']['prepbufr_source'] = 'gdas'
+	if config['wrfvar3']['ob_format'] == 1 and not has_key(config, ('custom', 'wrfda', 'prepbufr_source')):
+		config['custom']['wrfda']['prepbufr_source'] = 'gdas'
 
 	return config

@@ -4,6 +4,7 @@ import argparse
 from glob import glob
 import os
 import pendulum
+from jinja2 import Template
 import re
 import sys
 import config_wrfda
@@ -104,6 +105,15 @@ def run_wrfda_3dvar(work_root, wrfda_root, config, args, wrf_work_dir=None, forc
 				cli.notice('Use previous analysis data as the background.')
 				run(f'mv wrfvar_output_{start_time_str} wrfvar_output_conv_{start_time_str}')
 				run(f'ln -sf wrfvar_output_conv_{start_time_str} fg')
+		elif 'conv_obs' in config['custom']:
+			if 'dir_pattern' in config['custom']['conv_obs']:
+				obs_dir = Template(config['custom']['conv_obs']['dir_pattern']).render(obs_time=start_time)
+			if 'file_pattern' in config['custom']['conv_obs']:
+				obs_file = Template(config['custom']['conv_obs']['file_pattern']).render(obs_time=start_time)
+			if config['wrfvar3']['ob_format'] == 1:
+				run(f'ln -sf {args.prepbufr_root}/{obs_dir}/{obs_file} ob.bufr')
+			elif config['wrfvar3']['ob_format'] == 2:
+				run(f'ln -sf {args.prepbufr_root}/{obs_dir}/{obs_file} ob.ascii')
 		elif config['wrfvar3']['ob_format'] == 2 and os.path.isfile(f'{obsproc_work_dir}/obs_gts_{start_time.format(datetime_fmt)}.3DVAR'):
 			# LITTLE_R conventional data
 			run(f'ln -sf {obsproc_work_dir}/obs_gts_{start_time.format(datetime_fmt)}.3DVAR ob.ascii')

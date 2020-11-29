@@ -239,6 +239,10 @@ if not os.path.isfile(f'{args.work_root}/fb/wrfplus/final_sens_d01'):
 else:
 	run(f'ls -l {args.work_root}/fb/wrfplus/final_sens_d01')
 
+xt.close()
+xaf.close()
+xbf.close()
+
 # Run adjoint model with forecast error.
 cli.banner('                   Run adjoint for forecast from background')
 wrf.config_wrfplus(args.work_root + '/fb', args.wrfplus_root, config, args)
