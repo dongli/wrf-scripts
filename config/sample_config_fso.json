@@ -1,13 +1,18 @@
 {
   "tag": "test",
   "custom": {
-    "start_time": "2020062000",
+    "start_time": "2016071018",
     "forecast_hours": 12,
-    "spinup_hours": 12,
-    "littler": {
-      "dir_pattern": "{{ time.format('YYYYMMDDHH') }}",
-	  "file_pattern": "ob.ascii"
-	},
+    "background": {
+      "type": "cra",
+      "vtable": "GFS",
+      "dir_pattern": "{{bkg_time.format('YYYYMMDD')}}",
+      "file_pattern": ["gdas.t{{bkg_time.format('HH')}}z.master.grb2anl", "gdas.t{{bkg_time.format('HH')}}z.sfluxgrbf00.grib2"]
+    },
+    "conv_obs": {
+      "dir_pattern": "{{obs_time.format('YYYYMMDD')}}",
+      "file_pattern": "gdas.t{{obs_time.format('HH')}}z.prepbufr_pre-qc"
+    },
     "wrfda": {
       "type": "3dvar",
       "time_window": 360
@@ -17,70 +22,89 @@
     }
   },
   "domains": {
-    "e_we": 76,
-    "e_sn": 64,
-    "e_vert": 47,
-    "dx": 3000.0,
-    "dy": 3000.0,
     "max_dom": 1,
-    "p_top_requested": 5000
+    "e_we": 300,
+    "e_sn": 250,
+    "e_vert": 30,
+    "dx": 15000.0,
+    "dy": 15000.0,
+    "time_step": 60,
+    "parent_id": [1],
+    "parent_grid_ratio": [1],
+    "parent_time_step_ratio": [1]
   },
   "geogrid": {
     "map_proj": "lambert",
-    "ref_lat": 23.2,
-    "ref_lon": 113.5,
+    "ref_lat": 35.0,
+    "ref_lon": 107.0,
     "truelat1": 30.0,
     "truelat2": 60.0,
-    "stand_lon": 113.5,
-    "geog_data_res": ["default"]
+    "stand_lon": 115.0,
+    "geog_data_res": "default"
   },
   "physics": {
-    "mp_physics": [8],
-    "ra_lw_physics": [1],
-    "ra_sw_physics": [2],
-    "radt": [5],
-    "sf_sfclay_physics": [1],
-    "sf_surface_physics": [2],
-    "sf_urban_physics": [0],
-    "bl_pbl_physics": [1],
-    "bldt": [0],
-    "cu_physics": [0],
-    "cudt": [0],
+    "mp_physics": 4,
+    "ra_lw_physics": 1,
+    "ra_sw_physics": 1,
+    "radt": 9,
+    "sf_sfclay_physics": 1,
+    "sf_surface_physics": 1,
+    "sf_urban_physics": 0,
+    "bl_pbl_physics": 1,
+    "bldt": 0,
+    "cu_physics": 1,
+    "cudt": 0,
     "isfflx": 1,
-    "ifsnow": 0,
+    "ifsnow": 1,
     "icloud": 1,
-    "surface_input_source": 1,
-    "num_soil_layers": 4,
-    "mp_zero_out": 2,
-    "mp_zero_out_thresh": 1.0e-14
+    "surface_input_source": 3,
+    "num_soil_layers": 4
   },
-  "dynamics": {
-    "gwd_opt": 0,
-    "rk_ord": 3,
-    "w_damping": 1,
-    "diff_opt": 1,
-    "km_opt": 4,
-    "diff_6th_opt": 0,
-    "diff_6th_factor": 0.12,
-    "damp_opt": 0,
-    "base_temp": 290,
-    "zdamp": 5000,
-    "dampcoef": 0.0,
-    "khdif": 0,
-    "kvdif": 0,
-    "smdiv": 0.1,
-    "emdiv": 0.01,
-    "epssm": 0.1,
-    "non_hydrostatic": true,
-    "time_step_sound": 6,
-    "moist_adv_opt": 1,
-    "scalar_adv_opt": 1,
-    "h_mom_adv_order": 5,
-    "v_mom_adv_order": 3,
-    "h_sca_adv_order": 5,
-    "v_sca_adv_order": 3
+  "wrfvar3": {
+    "ob_format": 1
+  },
+  "wrfvar4": {
+    "use_synopobs": true,
+    "use_shipsobs": false,
+    "use_metarobs": false,
+    "use_soundobs": true,
+    "use_pilotobs": false,
+    "use_airepobs": false,
+    "use_geoamvobs": false,
+    "use_polaramvobs": false,
+    "use_bogusobs": false,
+    "use_buoyobs": false,
+    "use_profilerobs": false,
+    "use_satemobs": false,
+    "use_gpspwobs": false,
+    "use_gpsrefobs": false,
+    "use_qscatobs": false,
+    "use_radarobs": false,
+    "use_radar_rv": false,
+    "use_radar_rf": false,
+    "use_radar_rqv": false,
+    "use_radar_rhv": false,
+    "use_3dvar_phy": false,
+    "use_rainobs": false,
+    "thin_rainobs": false,
+    "use_airsretobs": false,
+    "use_hirs2obs": false,
+    "use_hirs3obs": false,
+    "use_hirs4obs": false,
+    "use_mhsobs": false,
+    "use_msuobs": false,
+    "use_amsuaobs": false,
+    "use_amsubobs": false,
+    "use_airsobs": false,
+    "use_eos_amsuaobs": false,
+    "use_ssmisobs": false,
+    "use_atmsobs": false,
+    "use_iasiobs": false,
+    "use_seviriobs": false,
+    "use_amsr2obs": false,
+    "use_obs_errfac": false
   },
   "wrfvar7": {
-    "cv_options": 7
+    "cv_options": 3
   }
 }

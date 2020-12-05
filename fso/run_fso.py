@@ -166,15 +166,15 @@ wrf.run_wrf(args.work_root + '/fb', args.wrf_root, spinup_config, args)
 # Run forecast with xa as initial condition.
 cli.banner('                   Run forecast with xa as initial condition')
 if not os.path.isdir(args.work_root + '/fa/wrf'): os.mkdir(args.work_root + '/fa/wrf')
-run(f'cp {args.work_root}/fb/wrf/wrfout_d01_{start_time_str} {args.work_root}/fa/wrf/wrfout_d01_{start_time_str}')
-run(f'cp {args.work_root}/fb/wrf/wrfbdy_d01 {args.work_root}/fa/wrf/wrfbdy_d01')
+fg = f'{args.work_root}/fb/wrf/wrfout_d01_{start_time_str}'
+run(f'cp --remove-destination {args.work_root}/fb/wrf/wrfbdy_d01 {args.work_root}/fa/wrf/wrfbdy_d01')
 config['wrfvar6']['orthonorm_gradient'] = True
 config['wrfvar6']['use_lanczos'] = True
 config['wrfvar6']['write_lanczos'] = True
-wrf.config_wrfda(args.work_root + '/fa', args.wrfda_root, config, args)
+wrf.config_wrfda(args.work_root + '/fa', args.wrfda_root, config, args, fg=fg)
 if config['wrfvar3']['ob_format'] == 2:
 	wrf.run_wrfda_obsproc(args.work_root + '/fa', args.wrfda_root, args.littler_root, config, args)
-wrf.run_wrfda_3dvar(args.work_root + '/fa', args.wrfda_root, config, args)
+wrf.run_wrfda_3dvar(args.work_root + '/fa', args.wrfda_root, config, args, fg=fg)
 wrf.run_wrfda_update_bc(args.work_root + '/fa', args.wrfda_root, False, config, args)
 wrf.config_wrf(args.work_root + '/fa', args.wrf_root, args.wrfda_root, config, args)
 wrf.run_wrf(args.work_root + '/fa', args.wrf_root, config, args)

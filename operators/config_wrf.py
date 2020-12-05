@@ -12,6 +12,12 @@ import sys
 sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/../utils')
 from utils import cli, parse_config, wrf_version, Version
 
+def get_num_land_cat(wrfinput):
+	wrfinput = Dataset(wrfinput)
+	num_land_cat = wrfinput.getncattr('NUM_LAND_CAT')
+	wrfinput.close()
+	return num_land_cat
+
 def config_wrf(work_root, wrf_root, wrfda_root, config, args, tag=None):
 	phys_config = config['physics'] if 'physics' in config else {}
 
@@ -32,10 +38,13 @@ def config_wrf(work_root, wrf_root, wrfda_root, config, args, tag=None):
 	version = wrf_version(wrf_root)
 
 	if os.path.isfile(f'{wrf_work_dir}/wrfinput_d01_{start_time_str}'):
-		wrfinput = Dataset(f'{wrf_work_dir}/wrfinput_d01_{start_time_str}')
-		num_land_cat = wrfinput.getncattr('NUM_LAND_CAT')
-		wrfinput.close()
+		num_land_cat = get_num_land_cat(f'{wrf_work_dir}/wrfinput_d01_{start_time_str}')
+	elif os.path.isfile(f'{wrf_work_dir}/wrfinput_d01'):
+		num_land_cat = get_num_land_cat(f'{wrf_work_dir}/wrfinput_d01')
+	elif os.path.isfile(f'{wrf_work_dir}/wrfout_d01_{start_time_str}'):
+		num_land_cat = get_num_land_cat(f'{wrf_work_dir}/wrfout_d01_{start_time_str}')
 	else:
+		cli.warning(f'Cannot get num_land_cat parameter from an existing wrfinput_d01 file in {wrf_work_dir}!')
 		num_land_cat = None
 
 	cli.notice('Edit namelist.input for WRF.')
@@ -68,11 +77,11 @@ def config_wrf(work_root, wrf_root, wrfda_root, config, args, tag=None):
 	if version == Version('3.9.1'):
 		namelist_input['dynamics']['gwd_opt'] = 0
 	namelist_input.write('./namelist.input', force=True)
-	
+
 	cli.notice('Succeeded.')
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description="Configure WRF model.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
+	parser = argparse.ArgumentParser(description="Configure WRF model.\n\nLongrun Weather Inc., NWP operation software.\nCopyright (C) 2018-2020 - All Rights Reserved.", formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument('-c', '--codes', help='Root directory of all codes (e.g. WRF, WPS)')
 	parser.add_argument(      '--wrf-root', dest='wrf_root', help='WRF root directory (e.g. WRF)')
 	parser.add_argument(      '--wrfda-root', dest='wrfda_root', help='WRFDA root directory (e.g. WRFDA)')

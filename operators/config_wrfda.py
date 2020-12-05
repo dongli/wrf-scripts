@@ -123,6 +123,11 @@ def config_wrfda(work_root, wrfda_root, config, args, wrf_work_dir=None, tag=Non
 		for key, value in config[section].items():
 			namelist_input[section][key] = value
 
+	# Validate some parameters.
+	for key in ('as1', 'as2', 'as3', 'as4', 'as5'):
+		if namelist_input['wrfvar7'][key] == -1:
+			cli.error(f'wrfvar7->{key} is -1!')
+
 	namelist_input.write(f'{wrfda_work_dir}/namelist.input', force=True)
 
 	cli.notice('Succeeded.')

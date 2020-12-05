@@ -19,7 +19,10 @@ if args.wrf_version:
 	else:
 		run(f'wget -c https://github.com/wrf-model/WRF/archive/V{wrf_version}.tar.gz -O wrf-{wrf_version}.tar.gz')
 		run(f'wget -c https://www2.mmm.ucar.edu/wrf/src/WRFDA_V{wrf_version}.tar.gz')
-		run(f'wget -c https://www2.mmm.ucar.edu/wrf/src/WRFPLUS_V{wrf_version}.tar.gz')
+		if wrf_version == Version('3.6.1'):
+			run('wget -c https://www2.mmm.ucar.edu/wrf/users/wrfda/download/WRFPLUS_V3.6.1_r7511.tar.gz')
+		else:
+			run(f'wget -c https://www2.mmm.ucar.edu/wrf/src/WRFPLUS_V{wrf_version}.tar.gz')
 if args.wps_version:
 	wps_version = Version(args.wps_version)
 	if wps_version >= Version('4.0'):
