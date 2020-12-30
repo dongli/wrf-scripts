@@ -41,6 +41,9 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 		else:
 			cli.error('JASPERINC and JASPERLIB environment variables are not set!')
 
+	if not 'LIBPNG_ROOT' in os.environ:
+		cli.warning('LIBPNG_ROOT environment variable is not set. Library PNG may not be found!')
+
 	if not 'WRFIO_NCD_LARGE_FILE_SUPPORT' in os.environ:
 		os.environ['WRFIO_NCD_LARGE_FILE_SUPPORT'] = '1'
 		cli.notice('Set WRFIO_NCD_LARGE_FILE_SUPPORT to 1.')
