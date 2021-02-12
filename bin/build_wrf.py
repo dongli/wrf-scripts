@@ -207,12 +207,14 @@ def build_wrf(wrf_root, wps_root, wrfplus_root, wrfda_root, args):
 	#                                    WRFPLUS
 	os.chdir(wrfplus_root)
 	if args.force: run('./clean -a 1> /dev/null 2>&1')
-	if Version('3.6.1') <= version <= Version('3.8.1'):
+	if Version('3.6.1') <= version <= Version('3.9.1'):
 		edit_file('phys/module_cu_g3.F', [['integer,  dimension \(12\) :: seed', 'integer,  dimension (33) :: seed']])
 		if version == Version('3.6.1'):
 			line_number = 841
 		elif version == Version('3.8.1'):
 			line_number = 855
+		elif version == Version('3.9.1'):
+			line_number = 856
 		else:
 			error('Find out the wrong OpenMP directive in WRFPLUS/main/module_wrf_top.F!')
 		edit_file('main/module_wrf_top.F', [[line_number, '   !$OMP DEFAULT (SHARED) PRIVATE ( ij )\n']])
